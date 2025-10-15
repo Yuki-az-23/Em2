@@ -1,0 +1,126 @@
+/* EM2 Global Styles */
+@import './variables.css';
+@import './reset.css';
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+}
+
+h1 { font-size: var(--font-size-4xl); }
+h2 { font-size: var(--font-size-3xl); }
+h3 { font-size: var(--font-size-2xl); }
+h4 { font-size: var(--font-size-xl); }
+h5 { font-size: var(--font-size-lg); }
+h6 { font-size: var(--font-size-base); }
+
+p {
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+a {
+  color: var(--emotion-sad-blue);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--emotion-sad-blue-light);
+  text-decoration: underline;
+}
+
+/* Container */
+.container {
+  width: 100%;
+  max-width: var(--container-xl);
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+}
+
+/* Utility classes */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.mt-xs { margin-top: var(--spacing-xs); }
+.mt-sm { margin-top: var(--spacing-sm); }
+.mt-md { margin-top: var(--spacing-md); }
+.mt-lg { margin-top: var(--spacing-lg); }
+.mt-xl { margin-top: var(--spacing-xl); }
+
+.mb-xs { margin-bottom: var(--spacing-xs); }
+.mb-sm { margin-bottom: var(--spacing-sm); }
+.mb-md { margin-bottom: var(--spacing-md); }
+.mb-lg { margin-bottom: var(--spacing-lg); }
+.mb-xl { margin-bottom: var(--spacing-xl); }
+
+/* Loading state */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+/* Error state */
+.error {
+  color: var(--color-error);
+  padding: var(--spacing-md);
+  background-color: rgba(239, 68, 68, 0.1);
+  border-radius: var(--border-radius-md);
+  margin: var(--spacing-md) 0;
+}
+
+/* Responsive images */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Accessible focus styles */
+:focus-visible {
+  outline: 2px solid var(--emotion-sad-blue);
+  outline-offset: 2px;
+}
+
+/* Emotion-specific classes for quick styling */
+.emotion-joy { color: var(--emotion-joy-yellow); }
+.emotion-trust { color: var(--emotion-trust-lime); }
+.emotion-feared { color: var(--emotion-feared-green); }
+.emotion-surprised { color: var(--emotion-surprised-aqua); }
+.emotion-sad { color: var(--emotion-sad-blue); }
+.emotion-disgust { color: var(--emotion-disgust-pink); }
+.emotion-angry { color: var(--emotion-angry-red); }
+.emotion-anticipated { color: var(--emotion-anticipated-orange); }
+
+.emotion-bg-joy { background-color: var(--emotion-joy-yellow); }
+.emotion-bg-trust { background-color: var(--emotion-trust-lime); }
+.emotion-bg-feared { background-color: var(--emotion-feared-green); }
+.emotion-bg-surprised { background-color: var(--emotion-surprised-aqua); }
+.emotion-bg-sad { background-color: var(--emotion-sad-blue); }
+.emotion-bg-disgust { background-color: var(--emotion-disgust-pink); }
+.emotion-bg-angry { background-color: var(--emotion-angry-red); }
+.emotion-bg-anticipated { background-color: var(--emotion-anticipated-orange); }
