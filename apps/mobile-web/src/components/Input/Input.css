@@ -1,0 +1,173 @@
+/* Input Component Styles */
+
+.input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  width: 100%;
+}
+
+.input__label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.input__required {
+  color: var(--emotion-angry-red);
+  font-weight: bold;
+}
+
+.input__wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input__field {
+  width: 100%;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  transition: all var(--transition-normal);
+}
+
+.input__field:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.1);
+}
+
+.input__field:hover:not(:disabled):not(:focus) {
+  border-color: var(--color-primary-light);
+}
+
+.input__field::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* Sizes */
+.input__field--sm {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  min-height: 32px;
+}
+
+.input__field--md {
+  padding: var(--spacing-sm) var(--spacing-md);
+  min-height: 40px;
+}
+
+.input__field--lg {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-lg);
+  min-height: 48px;
+}
+
+/* With icon */
+.input__field--with-icon {
+  padding-left: calc(var(--spacing-lg) + 24px);
+}
+
+.input__icon {
+  position: absolute;
+  left: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.input__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Error state */
+.input__field--error {
+  border-color: var(--emotion-angry-red);
+}
+
+.input__field--error:focus {
+  border-color: var(--emotion-angry-red);
+  box-shadow: 0 0 0 3px rgba(220, 20, 60, 0.1);
+}
+
+.input__error {
+  font-size: var(--font-size-sm);
+  color: var(--emotion-angry-red);
+  margin: 0;
+}
+
+/* Helper text */
+.input__helper {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* Disabled state */
+.input__field--disabled,
+.input__field:disabled {
+  background: var(--color-surface-hover);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Emotion themes */
+.input__field--emotion-joy:focus {
+  border-color: var(--emotion-joy-yellow);
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+}
+
+.input__field--emotion-trust:focus {
+  border-color: var(--emotion-trust-lime);
+  box-shadow: 0 0 0 3px rgba(127, 255, 0, 0.1);
+}
+
+.input__field--emotion-feared:focus {
+  border-color: var(--emotion-feared-green);
+  box-shadow: 0 0 0 3px rgba(34, 139, 34, 0.1);
+}
+
+.input__field--emotion-surprised:focus {
+  border-color: var(--emotion-surprised-aqua);
+  box-shadow: 0 0 0 3px rgba(0, 206, 209, 0.1);
+}
+
+.input__field--emotion-sad:focus {
+  border-color: var(--emotion-sad-blue);
+  box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.1);
+}
+
+.input__field--emotion-disgust:focus {
+  border-color: var(--emotion-disgust-pink);
+  box-shadow: 0 0 0 3px rgba(255, 105, 180, 0.1);
+}
+
+.input__field--emotion-angry:focus {
+  border-color: var(--emotion-angry-red);
+  box-shadow: 0 0 0 3px rgba(220, 20, 60, 0.1);
+}
+
+.input__field--emotion-anticipated:focus {
+  border-color: var(--emotion-anticipated-orange);
+  box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .input__field--lg {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-base);
+    min-height: 44px;
+  }
+}

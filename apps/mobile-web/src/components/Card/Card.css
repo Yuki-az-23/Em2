@@ -1,0 +1,108 @@
+/* Card Component Styles */
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  transition: all var(--transition-normal);
+}
+
+/* Variants */
+.card--default {
+  border: 1px solid var(--color-border);
+}
+
+.card--outlined {
+  border: 2px solid var(--color-border);
+}
+
+.card--elevated {
+  border: none;
+  box-shadow: var(--shadow-md);
+}
+
+/* Hoverable */
+.card--hoverable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Clickable */
+.card--clickable {
+  cursor: pointer;
+}
+
+.card--clickable:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.card--clickable:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Emotion themes - border accent */
+.card--emotion-joy {
+  border-left: 4px solid var(--emotion-joy-yellow);
+}
+
+.card--emotion-trust {
+  border-left: 4px solid var(--emotion-trust-lime);
+}
+
+.card--emotion-feared {
+  border-left: 4px solid var(--emotion-feared-green);
+}
+
+.card--emotion-surprised {
+  border-left: 4px solid var(--emotion-surprised-aqua);
+}
+
+.card--emotion-sad {
+  border-left: 4px solid var(--emotion-sad-blue);
+}
+
+.card--emotion-disgust {
+  border-left: 4px solid var(--emotion-disgust-pink);
+}
+
+.card--emotion-angry {
+  border-left: 4px solid var(--emotion-angry-red);
+}
+
+.card--emotion-anticipated {
+  border-left: 4px solid var(--emotion-anticipated-orange);
+}
+
+/* Card sections */
+.card__header {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-background);
+}
+
+.card__body {
+  padding: var(--spacing-lg);
+}
+
+.card__footer {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-background);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .card__header,
+  .card__footer {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .card__body {
+    padding: var(--spacing-md);
+  }
+}
