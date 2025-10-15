@@ -1,0 +1,230 @@
+/* Spinner Component Styles */
+
+.spinner {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.spinner--center {
+  width: 100%;
+  justify-content: center;
+  padding: var(--spacing-xl) 0;
+}
+
+/* Sizes */
+.spinner--xs {
+  width: 16px;
+  height: 16px;
+}
+
+.spinner--sm {
+  width: 24px;
+  height: 24px;
+}
+
+.spinner--md {
+  width: 32px;
+  height: 32px;
+}
+
+.spinner--lg {
+  width: 48px;
+  height: 48px;
+}
+
+.spinner--xl {
+  width: 64px;
+  height: 64px;
+}
+
+/* Circle variant */
+.spinner__circle {
+  animation: spinner-rotate 2s linear infinite;
+}
+
+.spinner__path {
+  stroke: var(--color-primary);
+  stroke-linecap: round;
+  animation: spinner-dash 1.5s ease-in-out infinite;
+}
+
+@keyframes spinner-rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinner-dash {
+  0% {
+    stroke-dasharray: 1, 150;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -124;
+  }
+}
+
+/* Dots variant */
+.spinner__dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.spinner__dot {
+  width: 25%;
+  height: 25%;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: spinner-dot-bounce 1.4s ease-in-out infinite both;
+}
+
+.spinner__dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.spinner__dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes spinner-dot-bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Pulse variant */
+.spinner__pulse {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: spinner-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes spinner-pulse {
+  0%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Emotion themes */
+.spinner--emotion-joy .spinner__path,
+.spinner--emotion-joy .spinner__dot,
+.spinner--emotion-joy .spinner__pulse {
+  stroke: var(--emotion-joy-yellow);
+  background: var(--emotion-joy-yellow);
+}
+
+.spinner--emotion-trust .spinner__path,
+.spinner--emotion-trust .spinner__dot,
+.spinner--emotion-trust .spinner__pulse {
+  stroke: var(--emotion-trust-lime);
+  background: var(--emotion-trust-lime);
+}
+
+.spinner--emotion-feared .spinner__path,
+.spinner--emotion-feared .spinner__dot,
+.spinner--emotion-feared .spinner__pulse {
+  stroke: var(--emotion-feared-green);
+  background: var(--emotion-feared-green);
+}
+
+.spinner--emotion-surprised .spinner__path,
+.spinner--emotion-surprised .spinner__dot,
+.spinner--emotion-surprised .spinner__pulse {
+  stroke: var(--emotion-surprised-aqua);
+  background: var(--emotion-surprised-aqua);
+}
+
+.spinner--emotion-sad .spinner__path,
+.spinner--emotion-sad .spinner__dot,
+.spinner--emotion-sad .spinner__pulse {
+  stroke: var(--emotion-sad-blue);
+  background: var(--emotion-sad-blue);
+}
+
+.spinner--emotion-disgust .spinner__path,
+.spinner--emotion-disgust .spinner__dot,
+.spinner--emotion-disgust .spinner__pulse {
+  stroke: var(--emotion-disgust-pink);
+  background: var(--emotion-disgust-pink);
+}
+
+.spinner--emotion-angry .spinner__path,
+.spinner--emotion-angry .spinner__dot,
+.spinner--emotion-angry .spinner__pulse {
+  stroke: var(--emotion-angry-red);
+  background: var(--emotion-angry-red);
+}
+
+.spinner--emotion-anticipated .spinner__path,
+.spinner--emotion-anticipated .spinner__dot,
+.spinner--emotion-anticipated .spinner__pulse {
+  stroke: var(--emotion-anticipated-orange);
+  background: var(--emotion-anticipated-orange);
+}
+
+/* Label */
+.spinner__label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  animation: overlay-fade-in 0.2s ease-out;
+}
+
+@keyframes overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .spinner__circle,
+  .spinner__dot,
+  .spinner__pulse {
+    animation: none;
+  }
+
+  .spinner__path {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+}
