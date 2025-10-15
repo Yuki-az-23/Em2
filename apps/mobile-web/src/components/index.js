@@ -21,3 +21,7 @@ export { BraceButton } from './BraceButton/BraceButton.jsx';
 
 // User Components
 export { FollowButton } from './FollowButton/FollowButton.jsx';
+
+// EditorJS Components
+export { Editor } from './Editor/Editor.jsx';
+export { ContentRenderer } from './ContentRenderer/ContentRenderer.jsx';

@@ -1,0 +1,416 @@
+/**
+ * Editor Component Styles
+ *
+ * Emotion-themed styling for EditorJS wrapper
+ * with EM2 design system integration.
+ */
+
+/* ============================================
+   BASE EDITOR STYLES
+   ============================================ */
+
+.editor {
+  position: relative;
+  width: 100%;
+  background: var(--color-white);
+  border: 2px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  transition: border-color var(--transition-normal);
+}
+
+.editor:focus-within {
+  border-color: var(--editor-theme-color, var(--emotion-joy-yellow));
+  outline: none;
+}
+
+/* Editor Holder */
+.editor__holder {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-gray-900);
+}
+
+/* Read-only Mode */
+.editor--readonly {
+  background: var(--color-gray-50);
+  border-color: var(--color-gray-200);
+  pointer-events: none;
+}
+
+.editor--readonly .editor__holder {
+  opacity: 0.8;
+}
+
+/* Over Limit State */
+.editor--over-limit {
+  border-color: var(--emotion-angry-red);
+}
+
+/* ============================================
+   STATS DISPLAY
+   ============================================ */
+
+.editor__stats {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-gray-200);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+}
+
+.editor__stat {
+  font-weight: var(--font-weight-medium);
+}
+
+.editor__stat--error {
+  color: var(--emotion-angry-red);
+  font-weight: var(--font-weight-semibold);
+}
+
+.editor__stat-separator {
+  color: var(--color-gray-400);
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+
+.editor__loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-gray-600);
+  font-size: var(--font-size-sm);
+}
+
+.editor__spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-gray-200);
+  border-top-color: var(--editor-theme-color, var(--emotion-joy-yellow));
+  border-radius: 50%;
+  animation: editor-spin 0.8s linear infinite;
+}
+
+@keyframes editor-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   EMOTION THEMES
+   ============================================ */
+
+/* Joy (Yellow) */
+.editor--joy {
+  --editor-theme-color: var(--emotion-joy-yellow);
+}
+
+.editor--joy:focus-within {
+  border-color: var(--emotion-joy-yellow);
+  box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.1);
+}
+
+/* Trust (Lime) */
+.editor--trust {
+  --editor-theme-color: var(--emotion-trust-lime);
+}
+
+.editor--trust:focus-within {
+  border-color: var(--emotion-trust-lime);
+  box-shadow: 0 0 0 3px rgba(0, 255, 0, 0.1);
+}
+
+/* Feared (Green) */
+.editor--feared {
+  --editor-theme-color: var(--emotion-feared-green);
+}
+
+.editor--feared:focus-within {
+  border-color: var(--emotion-feared-green);
+  box-shadow: 0 0 0 3px rgba(0, 128, 0, 0.1);
+}
+
+/* Surprised (Aqua) */
+.editor--surprised {
+  --editor-theme-color: var(--emotion-surprised-aqua);
+}
+
+.editor--surprised:focus-within {
+  border-color: var(--emotion-surprised-aqua);
+  box-shadow: 0 0 0 3px rgba(0, 255, 255, 0.1);
+}
+
+/* Sad (Blue) */
+.editor--sad {
+  --editor-theme-color: var(--emotion-sad-blue);
+}
+
+.editor--sad:focus-within {
+  border-color: var(--emotion-sad-blue);
+  box-shadow: 0 0 0 3px rgba(0, 0, 255, 0.1);
+}
+
+/* Disgust (Pink) */
+.editor--disgust {
+  --editor-theme-color: var(--emotion-disgust-pink);
+}
+
+.editor--disgust:focus-within {
+  border-color: var(--emotion-disgust-pink);
+  box-shadow: 0 0 0 3px rgba(255, 192, 203, 0.1);
+}
+
+/* Angry (Red) */
+.editor--angry {
+  --editor-theme-color: var(--emotion-angry-red);
+}
+
+.editor--angry:focus-within {
+  border-color: var(--emotion-angry-red);
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.1);
+}
+
+/* Anticipated (Orange) */
+.editor--anticipated {
+  --editor-theme-color: var(--emotion-anticipated-orange);
+}
+
+.editor--anticipated:focus-within {
+  border-color: var(--emotion-anticipated-orange);
+  box-shadow: 0 0 0 3px rgba(255, 165, 0, 0.1);
+}
+
+/* ============================================
+   EDITORJS CUSTOM STYLES
+   ============================================ */
+
+/* EditorJS Container */
+.editor__holder .codex-editor {
+  position: relative;
+}
+
+.editor__holder .codex-editor__redactor {
+  padding-bottom: var(--space-2) !important;
+}
+
+/* EditorJS Toolbar */
+.editor__holder .ce-toolbar__content {
+  max-width: 100% !important;
+}
+
+.editor__holder .ce-toolbar__plus {
+  color: var(--editor-theme-color, var(--emotion-joy-yellow));
+}
+
+.editor__holder .ce-toolbar__plus:hover {
+  background: var(--editor-theme-color, var(--emotion-joy-yellow));
+  color: var(--color-white);
+}
+
+/* EditorJS Blocks */
+.editor__holder .ce-block__content {
+  max-width: 100% !important;
+  margin: 0 !important;
+}
+
+.editor__holder .ce-block {
+  margin-bottom: var(--space-2);
+}
+
+/* Paragraph */
+.editor__holder .ce-paragraph {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-gray-900);
+}
+
+/* Headers */
+.editor__holder .ce-header {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray-900);
+  line-height: var(--line-height-tight);
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.editor__holder h2.ce-header {
+  font-size: var(--font-size-2xl);
+}
+
+.editor__holder h3.ce-header {
+  font-size: var(--font-size-xl);
+}
+
+.editor__holder h4.ce-header {
+  font-size: var(--font-size-lg);
+}
+
+/* Lists */
+.editor__holder .cdx-list {
+  padding-left: var(--space-6);
+}
+
+.editor__holder .cdx-list__item {
+  padding: var(--space-1) 0;
+  line-height: var(--line-height-relaxed);
+}
+
+/* Quote */
+.editor__holder .cdx-quote {
+  border-left: 4px solid var(--editor-theme-color, var(--emotion-joy-yellow));
+  padding-left: var(--space-4);
+  margin: var(--space-4) 0;
+  font-style: italic;
+  color: var(--color-gray-700);
+}
+
+.editor__holder .cdx-quote__text {
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-relaxed);
+  min-height: 1.5em;
+}
+
+.editor__holder .cdx-quote__caption {
+  margin-top: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+}
+
+/* Code Block */
+.editor__holder .ce-code__textarea {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+  background: var(--color-gray-900);
+  color: var(--color-gray-100);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  min-height: 100px;
+  border: none;
+}
+
+/* Inline Code */
+.editor__holder .ce-inline-code {
+  background: var(--color-gray-100);
+  color: var(--emotion-angry-red);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-family-mono);
+  font-size: 0.9em;
+}
+
+/* Marker (Highlight) */
+.editor__holder .cdx-marker {
+  background: var(--editor-theme-color, var(--emotion-joy-yellow));
+  color: var(--color-gray-900);
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+}
+
+/* Delimiter */
+.editor__holder .ce-delimiter {
+  text-align: center;
+  margin: var(--space-6) 0;
+}
+
+.editor__holder .ce-delimiter::before {
+  content: '***';
+  font-size: var(--font-size-xl);
+  color: var(--color-gray-400);
+  letter-spacing: var(--space-2);
+}
+
+/* Image */
+.editor__holder .cdx-image {
+  margin: var(--space-4) 0;
+}
+
+.editor__holder .cdx-image img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+}
+
+.editor__holder .cdx-image__caption {
+  margin-top: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  text-align: center;
+}
+
+/* Link */
+.editor__holder a {
+  color: var(--editor-theme-color, var(--emotion-joy-yellow));
+  text-decoration: underline;
+  transition: opacity var(--transition-fast);
+}
+
+.editor__holder a:hover {
+  opacity: 0.8;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 640px) {
+  .editor {
+    padding: var(--space-3);
+  }
+
+  .editor__holder .ce-header h2 {
+    font-size: var(--font-size-xl);
+  }
+
+  .editor__holder .ce-header h3 {
+    font-size: var(--font-size-lg);
+  }
+
+  .editor__holder .ce-header h4 {
+    font-size: var(--font-size-base);
+  }
+
+  .editor__stats {
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    font-size: var(--font-size-xs);
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .editor,
+  .editor__holder a {
+    transition: none;
+  }
+
+  .editor__spinner {
+    animation: none;
+    border-top-color: var(--color-gray-400);
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .editor {
+    border-width: 3px;
+  }
+
+  .editor:focus-within {
+    outline: 3px solid var(--editor-theme-color);
+    outline-offset: 2px;
+  }
+}

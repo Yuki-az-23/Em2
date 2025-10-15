@@ -1,0 +1,452 @@
+/**
+ * ContentRenderer Component Styles
+ *
+ * Styles for rendering EditorJS content with emotion theming
+ */
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+.content-renderer {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-gray-900);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.content-renderer--error {
+  padding: var(--space-4);
+  background: var(--color-gray-100);
+  border-radius: var(--radius-md);
+  color: var(--color-gray-600);
+  text-align: center;
+}
+
+/* ============================================
+   CONTENT BLOCKS
+   ============================================ */
+
+.content-block {
+  margin-bottom: var(--space-4);
+}
+
+.content-block:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================
+   PARAGRAPH
+   ============================================ */
+
+.content-block--paragraph {
+  line-height: var(--line-height-relaxed);
+}
+
+.content-block--paragraph:empty {
+  display: none;
+}
+
+/* ============================================
+   HEADERS
+   ============================================ */
+
+.content-block--header {
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--color-gray-900);
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-3);
+}
+
+.content-block--header:first-child {
+  margin-top: 0;
+}
+
+.content-block--header-2 {
+  font-size: var(--font-size-2xl);
+}
+
+.content-block--header-3 {
+  font-size: var(--font-size-xl);
+}
+
+.content-block--header-4 {
+  font-size: var(--font-size-lg);
+}
+
+/* ============================================
+   LISTS
+   ============================================ */
+
+.content-block--list {
+  padding-left: var(--space-6);
+  margin: var(--space-4) 0;
+}
+
+.content-block--list li {
+  margin-bottom: var(--space-2);
+  line-height: var(--line-height-relaxed);
+}
+
+.content-block--list li:last-child {
+  margin-bottom: 0;
+}
+
+.content-block--list-ordered {
+  list-style-type: decimal;
+}
+
+.content-block--list-unordered {
+  list-style-type: disc;
+}
+
+/* Nested Lists */
+.content-block--list .content-block--list {
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+/* ============================================
+   QUOTE
+   ============================================ */
+
+.content-block--quote {
+  position: relative;
+  border-left: 4px solid var(--quote-color, var(--emotion-joy-yellow));
+  padding-left: var(--space-4);
+  margin: var(--space-6) 0;
+  font-style: italic;
+  color: var(--color-gray-700);
+}
+
+.content-block__quote-text {
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--space-2);
+}
+
+.content-block__quote-caption {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-style: normal;
+  color: var(--color-gray-600);
+}
+
+.content-block__quote-caption::before {
+  content: '— ';
+}
+
+/* Emotion-specific quote colors */
+.content-block--quote-joy { --quote-color: var(--emotion-joy-yellow); }
+.content-block--quote-trust { --quote-color: var(--emotion-trust-lime); }
+.content-block--quote-feared { --quote-color: var(--emotion-feared-green); }
+.content-block--quote-surprised { --quote-color: var(--emotion-surprised-aqua); }
+.content-block--quote-sad { --quote-color: var(--emotion-sad-blue); }
+.content-block--quote-disgust { --quote-color: var(--emotion-disgust-pink); }
+.content-block--quote-angry { --quote-color: var(--emotion-angry-red); }
+.content-block--quote-anticipated { --quote-color: var(--emotion-anticipated-orange); }
+
+/* ============================================
+   CODE
+   ============================================ */
+
+.content-block--code {
+  background: var(--color-gray-900);
+  color: var(--color-gray-100);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  overflow-x: auto;
+  margin: var(--space-4) 0;
+}
+
+.content-block--code code {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+  white-space: pre;
+}
+
+/* Inline Code */
+.content-renderer code {
+  background: var(--color-gray-100);
+  color: var(--emotion-angry-red);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-family-mono);
+  font-size: 0.9em;
+}
+
+/* Marker/Highlight */
+.content-renderer mark {
+  background: var(--emotion-joy-yellow);
+  color: var(--color-gray-900);
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+}
+
+/* ============================================
+   DELIMITER
+   ============================================ */
+
+.content-block--delimiter {
+  text-align: center;
+  margin: var(--space-8) 0;
+  color: var(--color-gray-400);
+  font-size: var(--font-size-xl);
+  letter-spacing: var(--space-2);
+}
+
+/* ============================================
+   IMAGE
+   ============================================ */
+
+.content-block--image {
+  margin: var(--space-6) 0;
+  text-align: center;
+}
+
+.content-block--image img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.content-block__image-caption {
+  margin-top: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  font-style: italic;
+}
+
+/* ============================================
+   EMBED
+   ============================================ */
+
+.content-block--embed {
+  position: relative;
+  margin: var(--space-6) 0;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  height: 0;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--color-gray-100);
+}
+
+.content-block--embed iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-md);
+}
+
+.content-block__embed-caption {
+  margin-top: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  text-align: center;
+}
+
+/* ============================================
+   LINK PREVIEW
+   ============================================ */
+
+.content-block--link {
+  display: block;
+  padding: var(--space-4);
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  margin: var(--space-4) 0;
+  text-decoration: none;
+  color: inherit;
+  transition: all var(--transition-normal);
+}
+
+.content-block--link:hover {
+  background: var(--color-gray-100);
+  border-color: var(--color-gray-300);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+
+.content-block__link-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-2);
+}
+
+.content-block__link-description {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  margin-bottom: var(--space-3);
+  line-height: var(--line-height-relaxed);
+}
+
+.content-block__link-image {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-3);
+}
+
+.content-block__link-url {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+  word-break: break-all;
+}
+
+/* ============================================
+   READ MORE BUTTON
+   ============================================ */
+
+.content-renderer__read-more {
+  display: inline-block;
+  margin-top: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  background: transparent;
+  border: 2px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  color: var(--color-gray-700);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.content-renderer__read-more:hover {
+  background: var(--color-gray-100);
+  border-color: var(--color-gray-400);
+  color: var(--color-gray-900);
+}
+
+.content-renderer__read-more:active {
+  transform: scale(0.98);
+}
+
+/* ============================================
+   UNSUPPORTED BLOCK
+   ============================================ */
+
+.content-block--unsupported {
+  padding: var(--space-3);
+  background: var(--color-gray-100);
+  border: 1px dashed var(--color-gray-300);
+  border-radius: var(--radius-md);
+  color: var(--color-gray-600);
+  font-size: var(--font-size-sm);
+  text-align: center;
+  margin: var(--space-4) 0;
+}
+
+/* ============================================
+   TYPOGRAPHY ENHANCEMENTS
+   ============================================ */
+
+/* Links within content */
+.content-renderer a {
+  color: var(--emotion-sad-blue);
+  text-decoration: underline;
+  transition: opacity var(--transition-fast);
+}
+
+.content-renderer a:hover {
+  opacity: 0.8;
+}
+
+/* Bold text */
+.content-renderer strong,
+.content-renderer b {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray-900);
+}
+
+/* Italic text */
+.content-renderer em,
+.content-renderer i {
+  font-style: italic;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 640px) {
+  .content-block--header-2 {
+    font-size: var(--font-size-xl);
+  }
+
+  .content-block--header-3 {
+    font-size: var(--font-size-lg);
+  }
+
+  .content-block--header-4 {
+    font-size: var(--font-size-base);
+  }
+
+  .content-block--quote {
+    padding-left: var(--space-3);
+    margin: var(--space-4) 0;
+  }
+
+  .content-block__quote-text {
+    font-size: var(--font-size-base);
+  }
+
+  .content-block--code {
+    padding: var(--space-3);
+    font-size: var(--font-size-xs);
+  }
+
+  .content-block--list {
+    padding-left: var(--space-4);
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .content-block--link,
+  .content-renderer__read-more {
+    transition: none;
+  }
+
+  .content-block--link:hover {
+    transform: none;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .content-block--link {
+    border-width: 2px;
+  }
+
+  .content-renderer a {
+    text-decoration-thickness: 2px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .content-renderer__read-more {
+    display: none;
+  }
+
+  .content-block--embed {
+    page-break-inside: avoid;
+  }
+
+  .content-block--image {
+    page-break-inside: avoid;
+  }
+}
