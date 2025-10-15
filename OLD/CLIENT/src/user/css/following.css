@@ -1,0 +1,16 @@
+.img-avter{
+    width:50px;
+    height: 50px;
+    border-radius:50px;
+    border:1px solid black;
+}
+
+.follower{
+    display:flex;
+    flex-direction:row;
+    margin:3%;
+}
+
+.follower-name{
+    margin:1% 1% 1% 10%;
+}

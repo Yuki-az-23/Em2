@@ -1,0 +1,332 @@
+#yellow{
+    background-color: #ffc107;
+}
+#lime{
+    background-color: #20c997;
+}
+#green{
+    background-color: #198754;
+}
+#aqua{
+    background-color: #0dcaf0;
+}
+#blue{
+    background-color: #0d6efd;
+}
+#pink{
+    background-color: #d63384;
+}
+#red{
+    background-color: #dc3545;
+}
+#orange{
+    background-color: #fd7e14;
+}
+
+.container-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    grid-template-rows: masonry;
+  }
+
+.center{
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+.M4{
+    margin-left:4%;
+}
+.hader{
+    width: auto;
+    height:80px;
+}
+.grid-container-hader {
+    display: grid;
+    grid-template-columns: 30% 70%;
+    grid-template-rows: 100%;
+    gap: 0px 0px;
+    grid-template-areas:
+      "Aevter side"
+  }
+.Aevter { 
+    grid-area: Aevter;
+    padding:5%;
+    height: auto;
+ }
+.side { 
+    grid-area: side;
+    height: auto;
+}
+
+.PC-5{
+    padding:5%;
+}
+
+.title{
+    font-size:1.5rem;  
+}
+.link{
+    height: 45%;
+    width: 100%;
+    margin:35% auto 10% 25%;
+    display:block;
+}
+.imgStyle{
+    height: 100%;
+    width: 100%;
+    border-radius:50%;
+    border:1px solid black;
+    margin:3% 1% 3% 3%;
+}
+.card{
+    border-radius:20px;
+}
+/* //mobile */
+@media only screen and (max-width: 550px) {
+    .title{
+        font-size:1rem;
+        color:black;
+        margin:0;
+        margin-bottom:0;
+    }
+    .link{
+        height: 50px;
+        width: 50px;
+        margin:27% 15% 10% 20%;
+        display:block;
+    }
+    .imgStyle{
+        height: 100%;
+        width: 100%;
+        border-radius:50%;
+        border:1px solid black;
+        margin:1% 1% 1% 1%;
+        object-fit:cover;
+    }
+    .side { 
+        grid-area: side;
+        height: auto;
+        margin-top: 13%;
+    }
+    .hader{
+        width: auto;
+        height:80px;
+        margin:0 0 10% 10% ;
+    }
+    .RepateTitle{
+        font-size:2rem;
+    }
+    .body-img{
+        width: auto;
+        height: auto;
+        object-fit:cover;
+    }
+}
+
+/* //table */
+@media only screen and (min-width: 768px) {
+    .title{
+        font-size:1.3rem;
+        color:black;
+        margin:0;
+        margin-bottom:0;
+    }
+    .link{
+        height: 70px;
+        width: 70px;
+        margin:20% 15% 10% 20%;
+        display:block;
+    }
+    .imgStyle{
+        height: 100%;
+        width: 100%;
+        border-radius:50%;
+        border:1px solid black;
+        margin:1% 1% 3% 1%;
+        object-fit:cover;
+    }
+    .side { 
+        grid-area: side;
+        height: auto;
+        margin-top: 9%;
+    }
+    .hader{
+        width: auto;
+        height:80px;
+        margin:0 0 10% 3% ;
+    }
+    .RepateTitle{
+        font-size:2rem;
+    }
+    .body-img{
+        width: auto;
+        height: auto;
+        object-fit:cover;
+    }
+}
+
+@media only screen and (min-width: 1240px) {
+    .title{
+        font-size:1.2rem;
+        color:black;
+        margin:0;
+        margin-bottom:0;
+    }
+    .link{
+        height: 60px;
+        width: 60px;
+        margin:20% 15% 10% 40%;
+        display:block;
+    }
+    .imgStyle{
+        height: 100%;
+        width: 100%;
+        border-radius:50%;
+        border:1px solid black;
+        margin:1% 1% 3% 1%;
+        object-fit:cover;
+    }
+    .side { 
+        grid-area: side;
+        height: auto;
+        margin-top: 9%;
+    }
+    .hader{
+        width: auto;
+        height:80px;
+        margin:0 0 10% 10%  ;
+    }
+    .RepateTitle{
+        font-size:2rem;
+    }
+    .body-img{
+        width: auto;
+        height: auto;
+        object-fit:cover;
+    }
+}
+
+@media only screen and (min-width: 2400px) {
+    .title{
+        font-size:1.4rem;
+        color:black;
+        margin:0;
+        margin-bottom:0;
+    }
+    .link{
+        height: 90px;
+        width: 90px;
+        margin:20% 15% 10% 20%;
+        display:block;
+    }
+    .imgStyle{
+        height: 100%;
+        width: 100%;
+        border-radius:50%;
+        border:1px solid black;
+        margin:1% 1% 3% 1%;
+        object-fit:cover;
+    }
+    .side { 
+        grid-area: side;
+        height: auto;
+        margin-top: 12%;
+    }
+    .hader{
+        width: auto;
+        height:80px;
+        margin:0 0 13% 10%  ;
+    }
+    .RepateTitle{
+        font-size:2rem;
+    }
+    .body-img{
+        width: auto;
+        height: auto;
+        object-fit:cover;
+    }
+}
+@media only screen and (min-width: 3200px) {
+    .title{
+        font-size:1.6rem;
+        color:black;
+        margin:0;
+        margin-bottom:0;
+    }
+    .link{
+        height: 100px;
+        width: 100px;
+        margin:20% 15% 10% 20%;
+        display:block;
+    }
+    .imgStyle{
+        height: 100%;
+        width: 100%;
+        border-radius:50%;
+        border:1px solid black;
+        margin:1% 1% 3% 1%;
+        object-fit:cover;
+    }
+    .side { 
+        grid-area: side;
+        height: auto;
+        margin-top: 11%;
+    }
+    .hader{
+        width: auto;
+        height:80px;
+        margin:0 0 13% 10%  ;
+    }
+    .RepateTitle{
+        font-size:2rem;
+    }
+    .body-img{
+        width: auto;
+        height: auto;
+        object-fit:cover;
+    }
+}
+
+@media only screen and (min-width: 3800px) {
+    .title{
+        font-size:1.8rem;
+        color:black;
+        margin:0;
+        margin-bottom:0;
+    }
+    .link{
+        height: 120px;
+        width: 120px;
+        margin:20% 15% 10% 5%;
+        display:block;
+    }
+    .imgStyle{
+        height: 100%;
+        width: 100%;
+        border-radius:50%;
+        border:1px solid black;
+        margin:1% 1% 3% 1%;
+        object-fit:cover;
+    }
+    .side { 
+        grid-area: side;
+        height: auto;
+        margin-top: 11%;
+    }
+    .hader{
+        width: auto;
+        height:80px;
+        margin:0 0 13% 10%  ;
+    }
+    .RepateTitle{
+        font-size:2rem;
+    }
+    .body-img{
+        width: auto;
+        height: auto;
+        object-fit:cover;
+    }
+
+}
