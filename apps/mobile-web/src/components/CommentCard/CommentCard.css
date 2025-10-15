@@ -1,0 +1,120 @@
+/* CommentCard Component Styles */
+
+.comment-card {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) 0;
+}
+
+.comment-card--reply {
+  padding-left: var(--spacing-xl);
+  margin-top: var(--spacing-sm);
+}
+
+/* Author Avatar */
+.comment-card__author-avatar {
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.comment-card__author-avatar:hover {
+  opacity: 0.8;
+}
+
+/* Content */
+.comment-card__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+/* Header */
+.comment-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.comment-card__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.comment-card__author-name {
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.comment-card__author-name:hover {
+  color: var(--color-primary);
+}
+
+.comment-card__timestamp {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* Text */
+.comment-card__text {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+/* Actions */
+.comment-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-xs);
+}
+
+.comment-card__action-btn {
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.comment-card__action-btn:hover {
+  color: var(--color-primary);
+}
+
+.comment-card__action-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--border-radius-sm);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .comment-card {
+    gap: var(--spacing-xs);
+  }
+
+  .comment-card--reply {
+    padding-left: var(--spacing-lg);
+  }
+
+  .comment-card__text {
+    font-size: var(--font-size-xs);
+  }
+}

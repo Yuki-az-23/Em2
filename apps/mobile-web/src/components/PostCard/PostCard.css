@@ -1,0 +1,130 @@
+/* PostCard Component Styles */
+
+.post-card {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Header */
+.post-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.post-card__author {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+  flex: 1;
+  min-width: 0;
+}
+
+.post-card__author:hover {
+  opacity: 0.8;
+}
+
+.post-card__author-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.post-card__author-name {
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.post-card__timestamp {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* Content */
+.post-card__content {
+  padding: var(--spacing-lg);
+}
+
+.post-card__title {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.3;
+}
+
+.post-card__body {
+  color: var(--color-text);
+  line-height: 1.6;
+  font-size: var(--font-size-base);
+
+  /* Limit height and show ellipsis */
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Footer */
+.post-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-background);
+}
+
+.post-card__stats {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.post-card__stat {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.post-card__stat-icon {
+  font-size: 1.1em;
+}
+
+.post-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .post-card__header,
+  .post-card__content,
+  .post-card__footer {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .post-card__title {
+    font-size: var(--font-size-base);
+  }
+
+  .post-card__body {
+    font-size: var(--font-size-sm);
+    -webkit-line-clamp: 3;
+  }
+}
