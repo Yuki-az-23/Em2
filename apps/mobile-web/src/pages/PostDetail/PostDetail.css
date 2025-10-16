@@ -1,0 +1,315 @@
+/**
+ * PostDetail Page Styles
+ */
+
+/* ============================================
+   POST DETAIL CONTAINER
+   ============================================ */
+
+.post-detail {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+/* ============================================
+   BACK BUTTON
+   ============================================ */
+
+.post-detail-back {
+  margin-bottom: var(--space-4);
+}
+
+/* ============================================
+   POST CARD
+   ============================================ */
+
+.post-detail-card {
+  margin-bottom: var(--space-6);
+}
+
+/* ============================================
+   POST HEADER
+   ============================================ */
+
+.post-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.post-detail-author {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex: 1;
+}
+
+.post-detail-author-info {
+  flex: 1;
+}
+
+.post-detail-author-name {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-900);
+  margin: 0 0 var(--space-1) 0;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.post-detail-author-name:hover {
+  color: var(--emotion-sad-blue);
+}
+
+.post-detail-meta {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+}
+
+.post-detail-header-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ============================================
+   POST CONTENT
+   ============================================ */
+
+.post-detail-content {
+  padding: var(--space-2) 0;
+}
+
+.post-detail-title {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray-900);
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--space-4);
+}
+
+.post-detail-badges {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-6);
+}
+
+.post-detail-body {
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-gray-800);
+}
+
+/* ============================================
+   POST ACTIONS
+   ============================================ */
+
+.post-detail-actions {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.post-detail-comment-count {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray-700);
+}
+
+/* ============================================
+   COMMENTS SECTION
+   ============================================ */
+
+.post-detail-comments {
+  margin-top: var(--space-8);
+}
+
+.post-detail-comments h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-6);
+}
+
+/* ============================================
+   COMMENT FORM
+   ============================================ */
+
+.post-detail-comment-form {
+  margin-bottom: var(--space-6);
+}
+
+.post-detail-comment-form-header {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.post-detail-comment-form-header h4 {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-900);
+  margin: 0;
+}
+
+.post-detail-comment-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+/* ============================================
+   COMMENTS LIST
+   ============================================ */
+
+.post-detail-comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.post-detail-comments-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8);
+  color: var(--color-gray-600);
+}
+
+.post-detail-comments-empty {
+  padding: var(--space-8);
+  text-align: center;
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  color: var(--color-gray-600);
+}
+
+.post-detail-comments-empty p {
+  margin: 0;
+  font-size: var(--font-size-base);
+}
+
+/* ============================================
+   ERROR STATE
+   ============================================ */
+
+.post-detail-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12) var(--space-4);
+  text-align: center;
+}
+
+.post-detail-error h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--emotion-angry-red);
+  margin-bottom: var(--space-2);
+}
+
+.post-detail-error p {
+  font-size: var(--font-size-base);
+  color: var(--color-gray-600);
+  margin-bottom: var(--space-6);
+  max-width: 400px;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+  .post-detail {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .post-detail-header {
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .post-detail-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .post-detail-title {
+    font-size: var(--font-size-3xl);
+  }
+
+  .post-detail-body {
+    font-size: var(--font-size-base);
+  }
+
+  .post-detail-comments h2 {
+    font-size: var(--font-size-xl);
+  }
+
+  .post-detail-comment-form-actions {
+    flex-direction: column;
+  }
+
+  .post-detail-comment-form-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .post-detail-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .post-detail-author {
+    flex-wrap: wrap;
+  }
+
+  .post-detail-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .post-detail-author-name {
+    transition: none;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .post-detail-author-name:hover {
+    text-decoration: underline;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .post-detail-back,
+  .post-detail-header-actions,
+  .post-detail-actions,
+  .post-detail-comment-form {
+    display: none;
+  }
+
+  .post-detail-comments-list {
+    page-break-inside: avoid;
+  }
+}
