@@ -9,6 +9,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import EditorJS from '@editorjs/editorjs';
 import { getEditorConfig, getEmotionTheme, validateEditorData } from '../../config/editorConfig';
 import './Editor.css';
+import './blocks/EmotionBlock.css';
 
 /**
  * Editor Component

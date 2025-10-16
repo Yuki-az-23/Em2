@@ -347,6 +347,91 @@
 }
 
 /* ============================================
+   EMOTION BLOCK DISPLAY
+   ============================================ */
+
+.content-block--emotion-display {
+  padding: var(--space-4);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--color-gray-200);
+  margin: var(--space-4) 0;
+}
+
+.emotion-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--badge-bg);
+  border: 2px solid var(--badge-border);
+  border-radius: var(--radius-full);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-900);
+}
+
+.emotion-badge__icon {
+  font-size: var(--font-size-lg);
+  line-height: 1;
+}
+
+.emotion-badge__name {
+  text-transform: capitalize;
+}
+
+.emotion-badge__text {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-gray-700);
+}
+
+/* Emotion-specific badge colors */
+.emotion-badge--joy {
+  --badge-bg: rgba(255, 255, 0, 0.1);
+  --badge-border: var(--emotion-joy-yellow);
+}
+
+.emotion-badge--trust {
+  --badge-bg: rgba(0, 255, 0, 0.1);
+  --badge-border: var(--emotion-trust-lime);
+}
+
+.emotion-badge--feared {
+  --badge-bg: rgba(0, 128, 0, 0.1);
+  --badge-border: var(--emotion-feared-green);
+}
+
+.emotion-badge--surprised {
+  --badge-bg: rgba(0, 255, 255, 0.1);
+  --badge-border: var(--emotion-surprised-aqua);
+}
+
+.emotion-badge--sad {
+  --badge-bg: rgba(0, 0, 255, 0.1);
+  --badge-border: var(--emotion-sad-blue);
+}
+
+.emotion-badge--disgust {
+  --badge-bg: rgba(255, 192, 203, 0.1);
+  --badge-border: var(--emotion-disgust-pink);
+}
+
+.emotion-badge--angry {
+  --badge-bg: rgba(255, 0, 0, 0.1);
+  --badge-border: var(--emotion-angry-red);
+}
+
+.emotion-badge--anticipated {
+  --badge-bg: rgba(255, 165, 0, 0.1);
+  --badge-border: var(--emotion-anticipated-orange);
+}
+
+/* ============================================
    TYPOGRAPHY ENHANCEMENTS
    ============================================ */
 

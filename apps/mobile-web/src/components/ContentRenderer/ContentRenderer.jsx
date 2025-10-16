@@ -102,6 +102,9 @@ const Block = ({ block, emotion }) => {
     case 'linkTool':
       return <LinkBlock data={data} />;
 
+    case 'emotion':
+      return <EmotionBlockRenderer data={data} />;
+
     default:
       return <UnsupportedBlock type={type} />;
   }
@@ -288,6 +291,38 @@ const LinkBlock = ({ data }) => {
         {sanitizeText(data.link)}
       </div>
     </a>
+  );
+};
+
+/**
+ * EmotionBlock Renderer
+ */
+const EmotionBlockRenderer = ({ data }) => {
+  if (!data.emotion) return null;
+
+  const EMOTIONS = {
+    joy: { icon: '😊', name: 'Joy' },
+    trust: { icon: '🤝', name: 'Trust' },
+    feared: { icon: '😨', name: 'Feared' },
+    surprised: { icon: '😲', name: 'Surprised' },
+    sad: { icon: '😢', name: 'Sad' },
+    disgust: { icon: '🤢', name: 'Disgust' },
+    angry: { icon: '😠', name: 'Angry' },
+    anticipated: { icon: '🤔', name: 'Anticipated' },
+  };
+
+  const emotion = EMOTIONS[data.emotion.toLowerCase()] || EMOTIONS.joy;
+
+  return (
+    <div className="content-block content-block--emotion-display">
+      <div className={`emotion-badge emotion-badge--${data.emotion.toLowerCase()}`}>
+        <span className="emotion-badge__icon">{emotion.icon}</span>
+        <span className="emotion-badge__name">{emotion.name}</span>
+      </div>
+      {data.text && (
+        <p className="emotion-badge__text">{sanitizeText(data.text)}</p>
+      )}
+    </div>
   );
 };
 

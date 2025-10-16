@@ -16,6 +16,7 @@ import Embed from '@editorjs/embed';
 import LinkTool from '@editorjs/link';
 import Marker from '@editorjs/marker';
 import Delimiter from '@editorjs/delimiter';
+import EmotionBlock from '../components/Editor/blocks/EmotionBlock.js';
 
 /**
  * Default EditorJS configuration
@@ -262,6 +263,15 @@ export const getEditorConfig = (options = {}) => {
             },
           },
         },
+      },
+
+      /**
+       * EmotionBlock tool
+       * Custom EM2 block for expressing emotions
+       */
+      emotion: {
+        class: EmotionBlock,
+        shortcut: 'CMD+SHIFT+E',
       },
     },
 
