@@ -1,0 +1,341 @@
+/**
+ * EditProfile Page Styles
+ */
+
+/* ============================================
+   EDIT PROFILE CONTAINER
+   ============================================ */
+
+.edit-profile {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+/* ============================================
+   PAGE HEADER
+   ============================================ */
+
+.edit-profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-4);
+  border-bottom: 2px solid var(--color-gray-200);
+}
+
+.edit-profile-header h1 {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray-900);
+  margin: 0;
+}
+
+.edit-profile-header-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ============================================
+   ERROR BANNER
+   ============================================ */
+
+.edit-profile-error-banner {
+  padding: var(--space-4);
+  background: rgba(255, 0, 0, 0.1);
+  border: 2px solid var(--emotion-angry-red);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-6);
+}
+
+.edit-profile-error-banner p {
+  margin: 0;
+  color: var(--emotion-angry-red);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ============================================
+   CONTENT LAYOUT
+   ============================================ */
+
+.edit-profile-content {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: var(--space-6);
+}
+
+.edit-profile-main h2,
+.edit-profile-sidebar h2 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-4);
+}
+
+.edit-profile-sidebar h3 {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-3);
+}
+
+.edit-profile-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ============================================
+   FORM FIELDS
+   ============================================ */
+
+.edit-profile-field {
+  margin-bottom: var(--space-6);
+}
+
+.edit-profile-field:last-child {
+  margin-bottom: 0;
+}
+
+.edit-profile-error-text {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--emotion-angry-red);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ============================================
+   PHOTO UPLOAD
+   ============================================ */
+
+.edit-profile-photo {
+  margin-bottom: var(--space-6);
+}
+
+.edit-profile-photo label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-700);
+  margin-bottom: var(--space-3);
+}
+
+.edit-profile-photo-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+}
+
+.edit-profile-photo-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ============================================
+   EMOTION BRIDGE
+   ============================================ */
+
+.edit-profile-bridge-description {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--space-6);
+}
+
+.edit-profile-current {
+  margin-bottom: var(--space-6);
+  padding: var(--space-4);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+}
+
+.edit-profile-current label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray-700);
+  margin-bottom: var(--space-2);
+}
+
+.edit-profile-current-badges {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.edit-profile-picker {
+  margin-bottom: var(--space-6);
+}
+
+.edit-profile-picker:last-child {
+  margin-bottom: 0;
+}
+
+.edit-profile-picker label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-700);
+  margin-bottom: var(--space-3);
+}
+
+/* ============================================
+   TIPS
+   ============================================ */
+
+.edit-profile-tips {
+  margin: 0;
+  padding-left: var(--space-5);
+  list-style-type: disc;
+}
+
+.edit-profile-tips li {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--space-2);
+}
+
+.edit-profile-tips li:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================
+   MOBILE ACTIONS
+   ============================================ */
+
+.edit-profile-mobile-actions {
+  display: none;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 2px solid var(--color-gray-200);
+}
+
+/* ============================================
+   ERROR STATE
+   ============================================ */
+
+.edit-profile-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12) var(--space-4);
+  text-align: center;
+}
+
+.edit-profile-error h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--emotion-angry-red);
+  margin-bottom: var(--space-2);
+}
+
+.edit-profile-error p {
+  font-size: var(--font-size-base);
+  color: var(--color-gray-600);
+  margin-bottom: var(--space-6);
+  max-width: 400px;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .edit-profile-content {
+    grid-template-columns: 1fr 350px;
+  }
+}
+
+@media (max-width: 768px) {
+  .edit-profile {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .edit-profile-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+  }
+
+  .edit-profile-header h1 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .edit-profile-header-actions {
+    display: none; /* Show mobile actions instead */
+  }
+
+  .edit-profile-content {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-profile-sidebar {
+    order: -1; /* Move sidebar above main content */
+  }
+
+  .edit-profile-mobile-actions {
+    display: flex;
+  }
+}
+
+@media (max-width: 640px) {
+  .edit-profile-photo-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .edit-profile-photo-actions button {
+    width: 100%;
+  }
+
+  .edit-profile-mobile-actions {
+    flex-direction: column;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .edit-profile-content {
+    transition: none;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .edit-profile-header {
+    border-bottom-width: 3px;
+  }
+
+  .edit-profile-error-banner {
+    border-width: 3px;
+  }
+
+  .edit-profile-mobile-actions {
+    border-top-width: 3px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .edit-profile-header-actions,
+  .edit-profile-photo-actions,
+  .edit-profile-mobile-actions {
+    display: none;
+  }
+
+  .edit-profile-content {
+    grid-template-columns: 1fr;
+  }
+}

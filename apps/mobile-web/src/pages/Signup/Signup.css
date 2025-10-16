@@ -1,0 +1,245 @@
+/**
+ * Signup Page Styles
+ */
+
+/* ============================================
+   SIGNUP CONTAINER
+   ============================================ */
+
+.signup {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.signup-container {
+  max-width: 600px;
+  width: 100%;
+}
+
+/* ============================================
+   BRANDING
+   ============================================ */
+
+.signup-branding {
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+.signup-branding h1 {
+  font-size: var(--font-size-6xl);
+  font-weight: var(--font-weight-black);
+  color: var(--color-white);
+  margin: 0 0 var(--space-2) 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.signup-branding p {
+  font-size: var(--font-size-xl);
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+}
+
+/* ============================================
+   SIGNUP CARD
+   ============================================ */
+
+.signup-card {
+  margin: 0 auto;
+}
+
+.signup-card h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-2);
+  text-align: center;
+}
+
+.signup-subtitle {
+  font-size: var(--font-size-base);
+  color: var(--color-gray-600);
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+/* ============================================
+   ERROR MESSAGE
+   ============================================ */
+
+.signup-error {
+  padding: var(--space-3);
+  background: rgba(255, 0, 0, 0.1);
+  border: 2px solid var(--emotion-angry-red);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+}
+
+.signup-error p {
+  margin: 0;
+  color: var(--emotion-angry-red);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-align: center;
+}
+
+.signup-error-text {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--emotion-angry-red);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ============================================
+   SIGNUP FORM
+   ============================================ */
+
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+/* ============================================
+   EMOTION BRIDGE SECTION
+   ============================================ */
+
+.signup-bridge {
+  padding: var(--space-6);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  margin: var(--space-4) 0;
+}
+
+.signup-bridge h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-2);
+  text-align: center;
+}
+
+.signup-bridge-description {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
+.signup-current {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-3);
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+}
+
+.signup-picker {
+  margin-bottom: var(--space-4);
+}
+
+.signup-picker:last-child {
+  margin-bottom: 0;
+}
+
+.signup-picker label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-700);
+  margin-bottom: var(--space-3);
+  text-align: center;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
+.signup-footer {
+  text-align: center;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-gray-200);
+}
+
+.signup-footer p {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  margin: 0;
+}
+
+.signup-link {
+  color: var(--emotion-sad-blue);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+  transition: opacity var(--transition-fast);
+}
+
+.signup-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+  .signup {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .signup-branding h1 {
+    font-size: var(--font-size-4xl);
+  }
+
+  .signup-branding p {
+    font-size: var(--font-size-lg);
+  }
+
+  .signup-bridge {
+    padding: var(--space-4);
+  }
+}
+
+@media (max-width: 640px) {
+  .signup-branding h1 {
+    font-size: var(--font-size-3xl);
+  }
+
+  .signup-card h2 {
+    font-size: var(--font-size-xl);
+  }
+
+  .signup-bridge h3 {
+    font-size: var(--font-size-base);
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .signup-link {
+    transition: none;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .signup {
+    background: var(--color-gray-900);
+  }
+
+  .signup-error {
+    border-width: 3px;
+  }
+}
