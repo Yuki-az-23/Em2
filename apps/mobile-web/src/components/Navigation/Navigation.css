@@ -110,6 +110,80 @@
 }
 
 /* ============================================
+   ONLINE USERS
+   ============================================ */
+
+.navigation-online-users {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.navigation-online-users:hover {
+  background: var(--color-gray-100);
+  border-color: var(--color-gray-300);
+}
+
+.navigation-online-users__icon {
+  font-size: var(--font-size-lg);
+  line-height: 1;
+}
+
+/* Online Users Modal */
+.online-users-modal {
+  padding: var(--space-6);
+}
+
+.online-users-modal h2 {
+  margin: 0 0 var(--space-4) 0;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+}
+
+.online-users-modal__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.online-users-modal__user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.online-users-modal__user:hover {
+  background: var(--color-gray-100);
+  transform: translateX(4px);
+}
+
+.online-users-modal__user-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.online-users-modal__user-name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-900);
+}
+
+/* ============================================
    RESPONSIVE DESIGN
    ============================================ */
 
