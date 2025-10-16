@@ -1,0 +1,367 @@
+/**
+ * CreatePost Page Styles
+ */
+
+/* ============================================
+   CREATE POST CONTAINER
+   ============================================ */
+
+.create-post {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+/* ============================================
+   PAGE HEADER
+   ============================================ */
+
+.create-post-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-4);
+  border-bottom: 2px solid var(--color-gray-200);
+}
+
+.create-post-header h1 {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray-900);
+  margin: 0;
+}
+
+.create-post-header__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ============================================
+   ERROR MESSAGE
+   ============================================ */
+
+.create-post-error {
+  padding: var(--space-4);
+  background: rgba(255, 0, 0, 0.1);
+  border: 2px solid var(--emotion-angry-red);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-6);
+}
+
+.create-post-error p {
+  margin: 0;
+  color: var(--emotion-angry-red);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ============================================
+   CONTENT LAYOUT
+   ============================================ */
+
+.create-post-content {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: var(--space-6);
+}
+
+.create-post-editor {
+  min-width: 0; /* Allow grid item to shrink */
+}
+
+.create-post-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ============================================
+   FORM FIELDS
+   ============================================ */
+
+.create-post-field {
+  margin-bottom: var(--space-6);
+}
+
+.create-post-field:last-child {
+  margin-bottom: 0;
+}
+
+.create-post-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-700);
+  margin-bottom: var(--space-3);
+}
+
+.create-post-field-error {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--emotion-angry-red);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ============================================
+   POST STATS
+   ============================================ */
+
+.create-post-stats {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-gray-200);
+}
+
+/* ============================================
+   SETTINGS SIDEBAR
+   ============================================ */
+
+.create-post-sidebar h3 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-4);
+}
+
+.create-post-sidebar h4 {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-3);
+}
+
+.create-post-setting {
+  margin-bottom: var(--space-6);
+}
+
+.create-post-setting:last-child {
+  margin-bottom: 0;
+}
+
+.create-post-setting label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-700);
+  margin-bottom: var(--space-3);
+}
+
+/* ============================================
+   CURRENT SELECTION
+   ============================================ */
+
+.create-post-current {
+  padding: var(--space-4);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-4);
+}
+
+.create-post-current p {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray-700);
+  margin-bottom: var(--space-2);
+}
+
+.create-post-current__badges {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* ============================================
+   TIPS
+   ============================================ */
+
+.create-post-tips {
+  margin: 0;
+  padding-left: var(--space-5);
+  list-style-type: disc;
+}
+
+.create-post-tips li {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--space-2);
+}
+
+.create-post-tips li:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================
+   PREVIEW MODAL
+   ============================================ */
+
+.create-post-preview {
+  padding: var(--space-6);
+}
+
+.create-post-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-4);
+  border-bottom: 2px solid var(--color-gray-200);
+}
+
+.create-post-preview-header h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray-900);
+  margin: 0;
+}
+
+.create-post-preview-content {
+  margin-bottom: var(--space-6);
+}
+
+.create-post-preview-content h1 {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-3);
+}
+
+.create-post-preview-meta {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.create-post-preview-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 2px solid var(--color-gray-200);
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .create-post-content {
+    grid-template-columns: 1fr 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .create-post {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .create-post-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+  }
+
+  .create-post-header h1 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .create-post-header__actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .create-post-header__actions button {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .create-post-content {
+    grid-template-columns: 1fr;
+  }
+
+  .create-post-sidebar {
+    order: -1; /* Move sidebar above editor on mobile */
+  }
+
+  .create-post-preview {
+    padding: var(--space-4);
+  }
+
+  .create-post-preview-header h2 {
+    font-size: var(--font-size-xl);
+  }
+
+  .create-post-preview-content h1 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .create-post-preview-footer {
+    flex-direction: column;
+  }
+
+  .create-post-preview-footer button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .create-post-header__actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .create-post-header__actions button {
+    width: 100%;
+  }
+
+  .create-post-stats {
+    flex-wrap: wrap;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .create-post-preview {
+    transition: none;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .create-post-header {
+    border-bottom-width: 3px;
+  }
+
+  .create-post-error {
+    border-width: 3px;
+  }
+
+  .create-post-preview-header,
+  .create-post-preview-footer {
+    border-width: 3px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .create-post-header__actions,
+  .create-post-sidebar,
+  .create-post-preview-footer {
+    display: none;
+  }
+
+  .create-post-content {
+    grid-template-columns: 1fr;
+  }
+}
