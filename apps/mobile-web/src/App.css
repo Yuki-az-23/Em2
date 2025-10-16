@@ -1,42 +1,67 @@
-#root {
-  max-width: 1280px;
+/**
+ * App Global Styles
+ */
+
+/* ============================================
+   ROOT
+   ============================================ */
+
+.app {
+  min-height: 100vh;
+  background: var(--color-gray-50);
+}
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+
+.app-content {
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  padding: var(--space-4);
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+/* Focus Visible for Keyboard Navigation */
+*:focus-visible {
+  outline: 3px solid var(--color-gray-900);
+  outline-offset: 2px;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  *:focus-visible {
+    outline-width: 4px;
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
-.card {
-  padding: 2em;
-}
+/* ============================================
+   PRINT STYLES
+   ============================================ */
 
-.read-the-docs {
-  color: #888;
+@media print {
+  .app {
+    background: white;
+  }
+
+  /* Hide navigation and interactive elements */
+  nav,
+  button,
+  .modal {
+    display: none !important;
+  }
 }
