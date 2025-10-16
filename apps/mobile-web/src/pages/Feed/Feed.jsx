@@ -18,7 +18,7 @@ import {
   ModalFooter,
   Badge
 } from '../../components';
-import { usePost, useUser, useECBridge, useBrace } from '../../hooks';
+import { usePost, useUser, useECBridge, useBrace, useRealtimePosts } from '../../hooks';
 import './Feed.css';
 
 /**
@@ -27,9 +27,28 @@ import './Feed.css';
 export const Feed = () => {
   const navigate = useNavigate();
   const { user, loading: userLoading } = useUser();
-  const { posts, loading: postsLoading, error, refresh } = usePost();
+  const { posts: initialPosts, loading: postsLoading, error, refresh } = usePost();
   const { updateECBridge } = useECBridge();
   const { toggleBrace, isBraced } = useBrace();
+
+  // Real-time posts with live updates
+  const { posts: livePosts, isSubscribed } = useRealtimePosts({
+    initialPosts,
+    enabled: !postsLoading && !error,
+    onInsert: (newPost) => {
+      console.log('New post arrived:', newPost);
+      // Optional: Show notification
+    },
+    onUpdate: (updatedPost) => {
+      console.log('Post updated:', updatedPost);
+    },
+    onDelete: (deletedPost) => {
+      console.log('Post deleted:', deletedPost);
+    },
+  });
+
+  // Use live posts if subscribed, otherwise use initial posts
+  const posts = isSubscribed ? livePosts : initialPosts;
 
   // ECBridge modal state
   const [showECBridgeModal, setShowECBridgeModal] = useState(false);
@@ -226,6 +245,11 @@ export const Feed = () => {
           Showing {posts.length} {posts.length === 1 ? 'post' : 'posts'} based
           on your emotion bridge
         </p>
+        {isSubscribed && (
+          <Badge variant="success">
+            🔴 Live
+          </Badge>
+        )}
       </div>
 
       {/* Posts List */}

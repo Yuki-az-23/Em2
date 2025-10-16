@@ -23,7 +23,7 @@ import {
   Spinner,
   FollowButton,
 } from '../../components';
-import { usePost, useUser, useBrace, useComments, useFollow } from '../../hooks';
+import { usePost, useUser, useBrace, useComments, useFollow, useRealtimeComments, useRealtimeBraces } from '../../hooks';
 import './PostDetail.css';
 
 /**
@@ -34,9 +34,40 @@ export const PostDetail = () => {
   const navigate = useNavigate();
   const { user } = useUser();
   const { post, loading, error, deletePost } = usePost(postId);
-  const { toggleBrace, isBraced } = useBrace();
-  const { comments, addComment, loading: commentsLoading } = useComments(postId);
+  const { toggleBrace, isBraced: checkIsBraced } = useBrace();
+  const { comments: initialComments, addComment, loading: commentsLoading } = useComments(postId);
   const { toggleFollow, isFollowing } = useFollow();
+
+  // Real-time comments with live updates
+  const {
+    comments: liveComments,
+    commentCount: liveCommentCount,
+    isSubscribed: commentsSubscribed,
+  } = useRealtimeComments({
+    postId,
+    initialComments,
+    enabled: !commentsLoading && !error,
+    onInsert: (newComment) => {
+      console.log('New comment:', newComment);
+    },
+  });
+
+  // Real-time braces with live count
+  const {
+    braceCount: liveBraceCount,
+    isBraced,
+    isSubscribed: bracesSubscribed,
+  } = useRealtimeBraces({
+    postId,
+    initialCount: post?.brace?.length || 0,
+    initialIsBraced: checkIsBraced(postId),
+    userId: user?.id,
+    enabled: !!post && !error,
+  });
+
+  // Use live data if subscribed, otherwise use initial data
+  const comments = commentsSubscribed ? liveComments : initialComments;
+  const braceCount = bracesSubscribed ? liveBraceCount : (post?.brace?.length || 0);
 
   // Comment form state
   const [commentText, setCommentText] = useState('');

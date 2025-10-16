@@ -18,7 +18,7 @@ import {
   FollowButton,
   Modal,
 } from '../../components';
-import { useUser, usePost, useFollow } from '../../hooks';
+import { useUser, usePost, useFollow, useRealtimeFollows } from '../../hooks';
 import './Profile.css';
 
 /**
@@ -30,7 +30,26 @@ export const Profile = () => {
   const { user: currentUser } = useUser();
   const { user: profileUser, loading: userLoading } = useUser(userId);
   const { posts, loading: postsLoading } = usePost({ userId });
-  const { toggleFollow, isFollowing, followers, following } = useFollow();
+  const { toggleFollow, isFollowing: checkIsFollowing, followers, following } = useFollow();
+
+  // Real-time follows with live counts
+  const {
+    followersCount: liveFollowersCount,
+    followingCount: liveFollowingCount,
+    isFollowing,
+    isSubscribed: followsSubscribed,
+  } = useRealtimeFollows({
+    userId,
+    initialFollowersCount: profileUser?.followers?.length || 0,
+    initialFollowingCount: profileUser?.following?.length || 0,
+    initialIsFollowing: checkIsFollowing(userId),
+    currentUserId: currentUser?.id,
+    enabled: !!profileUser && !userLoading,
+  });
+
+  // Use live counts if subscribed, otherwise use initial counts
+  const followersCount = followsSubscribed ? liveFollowersCount : (profileUser?.followers?.length || 0);
+  const followingCount = followsSubscribed ? liveFollowingCount : (profileUser?.following?.length || 0);
 
   // Modal state
   const [showFollowersModal, setShowFollowersModal] = useState(false);
