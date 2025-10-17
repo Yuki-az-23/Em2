@@ -34,7 +34,7 @@ export const CreatePost = () => {
 
   // Form state
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState(null);
   const [emotion, setEmotion] = useState(user?.emotion || 'joy');
   const [color, setColor] = useState(user?.color || 'yellow');
 
@@ -54,12 +54,15 @@ export const CreatePost = () => {
       newErrors.title = 'Title must be less than 100 characters';
     }
 
-    if (!content || !content.trim()) {
+    if (!content || !validateEditorData(content)) {
       newErrors.content = 'Content is required';
-    } else if (content.trim().length < 10) {
-      newErrors.content = 'Content must be at least 10 characters';
-    } else if (content.length > 10000) {
-      newErrors.content = 'Content must be less than 10,000 characters';
+    } else {
+      const plainText = getPlainText(content);
+      if (plainText.length < 10) {
+        newErrors.content = 'Content must be at least 10 characters';
+      } else if (plainText.length > 10000) {
+        newErrors.content = 'Content must be less than 10,000 characters';
+      }
     }
 
     if (!emotion) {
@@ -120,7 +123,7 @@ export const CreatePost = () => {
   };
 
   // Calculate stats
-  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+  const wordCount = content ? getWordCount(content) : 0;
   const readingTime = Math.ceil(wordCount / 200); // 200 words per minute
 
   return (
@@ -173,26 +176,17 @@ export const CreatePost = () => {
                 />
               </div>
 
-              {/* Content Textarea (EditorJS temporarily disabled) */}
+              {/* Rich Text Editor */}
               <div className="create-post-field">
                 <label className="create-post-label">Content</label>
-                <textarea
-                  className="create-post-textarea"
-                  value={content || ''}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Share your emotions and thoughts... (Rich text editor coming soon)"
+                <Editor
+                  data={content}
+                  onChange={setContent}
+                  emotion={emotion}
+                  placeholder="Share your emotions and thoughts..."
+                  showStats={true}
                   maxLength={10000}
-                  rows={15}
-                  style={{
-                    width: '100%',
-                    padding: 'var(--space-4)',
-                    border: '2px solid var(--color-gray-300)',
-                    borderRadius: 'var(--radius-md)',
-                    fontSize: 'var(--font-size-base)',
-                    fontFamily: 'var(--font-family-primary)',
-                    lineHeight: 'var(--line-height-relaxed)',
-                    resize: 'vertical',
-                  }}
+                  minHeight={500}
                 />
                 {errors.content && (
                   <span className="create-post-field-error">{errors.content}</span>
