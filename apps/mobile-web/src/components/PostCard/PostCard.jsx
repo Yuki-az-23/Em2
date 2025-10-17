@@ -1,6 +1,7 @@
 import { Card } from '../Card/Card.jsx';
 import { Avatar } from '../Avatar/Avatar.jsx';
 import { Badge } from '../Badge/Badge.jsx';
+import { share, haptics } from '../../services/native';
 import './PostCard.css';
 
 /**
@@ -125,6 +126,24 @@ export const PostCard = ({
               <span className="post-card__stat-icon">💬</span>
               {comment_count}
             </span>
+            {share.isShareAvailable() && (
+              <button
+                className="post-card__share"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    await share.sharePost({ id: post.id, title, emotion });
+                    haptics.notifySuccess();
+                  } catch (error) {
+                    console.error('Share failed:', error);
+                  }
+                }}
+                title="Share post"
+              >
+                <span className="post-card__stat-icon">📤</span>
+                Share
+              </button>
+            )}
           </div>
 
           {actions && (

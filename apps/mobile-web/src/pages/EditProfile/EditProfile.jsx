@@ -19,6 +19,7 @@ import {
   LoadingOverlay,
 } from '../../components';
 import { useUser, useECBridge } from '../../hooks';
+import { camera, haptics } from '../../services/native';
 import './EditProfile.css';
 
 /**
@@ -68,7 +69,7 @@ export const EditProfile = () => {
     }
   }, [name, email, emotion, color, photoFile, user]);
 
-  // Handle photo selection
+  // Handle photo selection from file input
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -87,6 +88,33 @@ export const EditProfile = () => {
       setPhotoFile(file);
       setPhotoPreview(URL.createObjectURL(file));
       setErrors({ ...errors, photo: null });
+      haptics.impactLight();
+    }
+  };
+
+  // Handle native camera
+  const handleTakePhoto = async () => {
+    try {
+      const photo = await camera.selectPhotoSource({
+        quality: 80,
+        width: 1024,
+        height: 1024,
+        allowEditing: true,
+      });
+
+      // Convert data URL to file
+      const file = camera.dataUrlToFile(photo.dataUrl, 'profile-photo.jpg');
+
+      setPhotoFile(file);
+      setPhotoPreview(photo.dataUrl);
+      setErrors({ ...errors, photo: null });
+      haptics.notifySuccess();
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      if (error.message !== 'User cancelled photos app') {
+        setErrors({ ...errors, photo: 'Failed to capture photo' });
+        haptics.notifyError();
+      }
     }
   };
 
@@ -236,18 +264,29 @@ export const EditProfile = () => {
                       onChange={handlePhotoChange}
                       style={{ display: 'none' }}
                     />
-                    <Button
-                      variant="outline"
-                      onClick={() => document.getElementById('photo-upload').click()}
-                    >
-                      Upload Photo
-                    </Button>
+                    {camera.isCameraAvailable() ? (
+                      <Button
+                        variant="primary"
+                        emotion={emotion}
+                        onClick={handleTakePhoto}
+                      >
+                        📸 Take Photo
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        onClick={() => document.getElementById('photo-upload').click()}
+                      >
+                        Upload Photo
+                      </Button>
+                    )}
                     {photoFile && (
                       <Button
                         variant="ghost"
                         onClick={() => {
                           setPhotoFile(null);
                           setPhotoPreview(user.photo);
+                          haptics.impactLight();
                         }}
                       >
                         Remove
