@@ -83,13 +83,21 @@ export const Signup = () => {
     }
 
     try {
-      await signup({
-        name: name.trim(),
+      const { user, error } = await signup({
         email: email.trim(),
         password,
-        emotion,
-        color,
+        metadata: {
+          name: name.trim(),
+          emotion,
+          color,
+        },
       });
+
+      if (error) {
+        throw error;
+      }
+
+      // Navigate to feed after successful signup
       navigate('/feed');
     } catch (error) {
       console.error('Signup failed:', error);
