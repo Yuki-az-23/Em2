@@ -8,6 +8,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { MainRouter } from './router/MainRouter';
+import { ErrorBoundary } from './components';
 import { statusBar } from './services/native';
 import './App.css';
 
@@ -22,11 +23,13 @@ function App() {
   }, []);
 
   return (
-    <BrowserRouter>
-      <div className="app">
-        <MainRouter />
-      </div>
-    </BrowserRouter>
+    <ErrorBoundary showDetails={import.meta.env.DEV}>
+      <BrowserRouter>
+        <div className="app">
+          <MainRouter />
+        </div>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

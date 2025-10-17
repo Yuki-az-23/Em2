@@ -10,6 +10,9 @@ export { Avatar, AvatarGroup } from './Avatar/Avatar.jsx';
 export { Badge, BadgeIcon } from './Badge/Badge.jsx';
 export { Spinner, LoadingOverlay } from './Spinner/Spinner.jsx';
 export { TypingIndicator } from './TypingIndicator/TypingIndicator.jsx';
+export { ErrorBoundary } from './ErrorBoundary/ErrorBoundary.jsx';
+export { LazyImage } from './LazyImage/LazyImage.jsx';
+export { SkeletonLoader, SkeletonText, SkeletonCard } from './SkeletonLoader/SkeletonLoader.jsx';
 
 // Emotion Components
 export { EmotionPicker } from './EmotionPicker/EmotionPicker.jsx';

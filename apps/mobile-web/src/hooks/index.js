@@ -14,6 +14,11 @@ export { usePost } from './usePost';
 // ECBridge
 export { useECBridge } from './useECBridge';
 
+// Social
+export { useBrace } from './useBrace';
+export { useComments } from './useComments';
+export { useFollow } from './useFollow';
+
 // Real-time
 export { useRealtimePosts } from './useRealtimePosts';
 export { useRealtimeComments } from './useRealtimeComments';
