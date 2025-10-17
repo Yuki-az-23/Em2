@@ -17,9 +17,10 @@ export { SkeletonLoader, SkeletonText, SkeletonCard } from './SkeletonLoader/Ske
 // Emotion Components
 export { EmotionPicker } from './EmotionPicker/EmotionPicker.jsx';
 export { ColorPicker } from './ColorPicker/ColorPicker.jsx';
+export { CircularEmotionPicker } from './ECBridge/CircularEmotionPicker.jsx';
 
 // Post Components
-export { PostCard } from './PostCard/PostCard.jsx';
+export { PostCard } from './Post/PostCard.jsx';
 export { CommentCard } from './CommentCard/CommentCard.jsx';
 export { BraceButton } from './BraceButton/BraceButton.jsx';
 
