@@ -7,25 +7,8 @@
 
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import { useAuth } from '../hooks';
 import { LoadingOverlay } from '../components';
-
-/**
- * Check if user is authenticated
- * Uses localStorage JWT token
- */
-const isAuthenticated = () => {
-  const jwt = localStorage.getItem('jwt');
-  if (!jwt) return false;
-
-  try {
-    // Parse JWT and check expiration
-    const payload = JSON.parse(atob(jwt.split('.')[1]));
-    const isExpired = payload.exp * 1000 < Date.now();
-    return !isExpired;
-  } catch (error) {
-    return false;
-  }
-};
 
 /**
  * PrivateRoute Component
@@ -35,10 +18,15 @@ const isAuthenticated = () => {
  * @returns {JSX.Element}
  */
 export const PrivateRoute = ({ children }) => {
-  const authenticated = isAuthenticated();
+  const { user, loading, isAuthenticated } = useAuth();
 
-  if (!authenticated) {
-    // Redirect to login if not authenticated
+  // Show loading overlay while checking auth status
+  if (loading) {
+    return <LoadingOverlay />;
+  }
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 

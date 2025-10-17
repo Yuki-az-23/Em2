@@ -5,20 +5,10 @@
  * Posts are filtered and sorted based on user's ECBridge emotion/color.
  */
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  PostCard,
-  LoadingOverlay,
-  Spinner,
-  Button,
-  EmotionPicker,
-  ColorPicker,
-  Modal,
-  ModalFooter,
-  Badge
-} from '../../components';
-import { usePost, useUser, useECBridge, useBrace, useRealtimePosts } from '../../hooks';
+import { Button, Card, CardBody, Badge } from '../../components';
+import { useAuth } from '../../hooks';
 import './Feed.css';
 
 /**
@@ -26,262 +16,101 @@ import './Feed.css';
  */
 export const Feed = () => {
   const navigate = useNavigate();
-  const { user, loading: userLoading } = useUser();
-  const { posts: initialPosts, loading: postsLoading, error, refresh } = usePost();
-  const { updateECBridge } = useECBridge();
-  const { toggleBrace, isBraced } = useBrace();
+  const { user, logout } = useAuth();
 
-  // Real-time posts with live updates
-  const { posts: livePosts, isSubscribed } = useRealtimePosts({
-    initialPosts,
-    enabled: !postsLoading && !error,
-    onInsert: (newPost) => {
-      console.log('New post arrived:', newPost);
-      // Optional: Show notification
-    },
-    onUpdate: (updatedPost) => {
-      console.log('Post updated:', updatedPost);
-    },
-    onDelete: (deletedPost) => {
-      console.log('Post deleted:', deletedPost);
-    },
-  });
-
-  // Use live posts if subscribed, otherwise use initial posts
-  const posts = isSubscribed ? livePosts : initialPosts;
-
-  // ECBridge modal state
-  const [showECBridgeModal, setShowECBridgeModal] = useState(false);
-  const [selectedEmotion, setSelectedEmotion] = useState('');
-  const [selectedColor, setSelectedColor] = useState('');
-  const [updating, setUpdating] = useState(false);
-
-  // Initialize ECBridge state from user
-  useEffect(() => {
-    if (user) {
-      setSelectedEmotion(user.emotion || 'joy');
-      setSelectedColor(user.color || 'yellow');
-    }
-  }, [user]);
-
-  // Handle ECBridge update
-  const handleECBridgeUpdate = async () => {
-    setUpdating(true);
-    try {
-      await updateECBridge(selectedEmotion, selectedColor);
-      setShowECBridgeModal(false);
-      refresh(); // Refresh feed with new ECBridge settings
-    } catch (err) {
-      console.error('Failed to update ECBridge:', err);
-      alert('Failed to update emotion settings');
-    } finally {
-      setUpdating(false);
-    }
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
   };
 
-  // Handle post click
-  const handlePostClick = (postId) => {
-    navigate(`/post/${postId}`);
-  };
-
-  // Handle create post
-  const handleCreatePost = () => {
-    navigate('/post/create');
-  };
-
-  // Loading state
-  if (userLoading || postsLoading) {
-    return <LoadingOverlay />;
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="feed-error">
-        <h2>Failed to load feed</h2>
-        <p>{error}</p>
-        <Button onClick={refresh}>Try Again</Button>
-      </div>
-    );
-  }
-
-  // Empty state
-  if (!posts || posts.length === 0) {
-    return (
-      <div className="feed">
-        <div className="feed-header">
-          <h1>Feed</h1>
-          <div className="feed-header__actions">
-            <Button
-              variant="primary"
-              emotion={user?.emotion}
-              onClick={handleCreatePost}
-            >
-              Create Post
-            </Button>
-            <Button
-              variant="outline"
-              emotion={user?.emotion}
-              onClick={() => setShowECBridgeModal(true)}
-            >
-              Set Emotion
-            </Button>
-          </div>
-        </div>
-
-        <div className="feed-empty">
-          <div className="feed-empty__icon">📭</div>
-          <h2>No posts yet</h2>
-          <p>Follow users to see their posts in your feed</p>
-          <Button variant="primary" onClick={() => navigate('/users')}>
-            Discover Users
-          </Button>
-        </div>
-
-        {/* ECBridge Modal */}
-        {renderECBridgeModal()}
-      </div>
-    );
-  }
-
-  // Render ECBridge Modal
-  function renderECBridgeModal() {
-    return (
-      <Modal
-        isOpen={showECBridgeModal}
-        onClose={() => setShowECBridgeModal(false)}
-        size="md"
-      >
-        <div className="ecbridge-modal">
-          <h2>Set Your Emotion Bridge</h2>
-          <p className="ecbridge-modal__description">
-            Your emotion settings determine how you interact with content and
-            what appears in your feed.
-          </p>
-
-          <div className="ecbridge-modal__current">
-            <Badge variant="emotion" emotion={user?.emotion}>
-              Current: {user?.emotion}
-            </Badge>
-            <Badge variant="default">{user?.color}</Badge>
-          </div>
-
-          <div className="ecbridge-modal__pickers">
-            <div className="ecbridge-modal__section">
-              <label>Select Emotion</label>
-              <EmotionPicker
-                selected={selectedEmotion}
-                onChange={setSelectedEmotion}
-                layout="grid"
-              />
-            </div>
-
-            <div className="ecbridge-modal__section">
-              <label>Select Color</label>
-              <ColorPicker
-                selected={selectedColor}
-                onChange={setSelectedColor}
-                layout="grid"
-              />
-            </div>
-          </div>
-
-          <ModalFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowECBridgeModal(false)}
-              disabled={updating}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              emotion={selectedEmotion}
-              onClick={handleECBridgeUpdate}
-              loading={updating}
-            >
-              Update Emotion Bridge
-            </Button>
-          </ModalFooter>
-        </div>
-      </Modal>
-    );
-  }
-
-  // Main render
   return (
     <div className="feed">
-      {/* Feed Header */}
-      <div className="feed-header">
-        <div className="feed-header__title">
-          <h1>Feed</h1>
-          {user && (
-            <Badge variant="emotion" emotion={user.emotion}>
-              {user.emotion}
-            </Badge>
-          )}
+      <div className="feed-container">
+        {/* Header */}
+        <div className="feed-header">
+          <h1>Welcome to EM2!</h1>
+          <p>Your emotional social network</p>
         </div>
-        <div className="feed-header__actions">
-          <Button
-            variant="primary"
-            emotion={user?.emotion}
-            onClick={handleCreatePost}
-          >
-            Create Post
-          </Button>
-          <Button
-            variant="outline"
-            emotion={user?.emotion}
-            onClick={() => setShowECBridgeModal(true)}
-          >
-            Set Emotion
-          </Button>
-        </div>
-      </div>
 
-      {/* Feed Info */}
-      <div className="feed-info">
-        <p>
-          Showing {posts.length} {posts.length === 1 ? 'post' : 'posts'} based
-          on your emotion bridge
-        </p>
-        {isSubscribed && (
-          <Badge variant="success">
-            🔴 Live
-          </Badge>
+        {/* User Info Card */}
+        {user && (
+          <Card variant="elevated" className="feed-welcome-card">
+            <CardBody>
+              <h2>Hello, {user.user_metadata?.name || user.email}!</h2>
+              <p>You're successfully logged in.</p>
+
+              {/* User's Emotion Bridge */}
+              {user.user_metadata?.emotion && user.user_metadata?.color && (
+                <div className="feed-user-bridge">
+                  <h3>Your Emotion Bridge:</h3>
+                  <div className="feed-badges">
+                    <Badge variant="emotion" emotion={user.user_metadata.emotion}>
+                      {user.user_metadata.emotion}
+                    </Badge>
+                    <Badge variant="default">{user.user_metadata.color}</Badge>
+                  </div>
+                </div>
+              )}
+
+              {/* User Info */}
+              <div className="feed-user-info">
+                <p><strong>Email:</strong> {user.email}</p>
+                <p><strong>User ID:</strong> {user.id.substring(0, 8)}...</p>
+                <p><strong>Joined:</strong> {new Date(user.created_at).toLocaleDateString()}</p>
+              </div>
+
+              {/* Actions */}
+              <div className="feed-actions">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/profile')}
+                >
+                  View Profile
+                </Button>
+                <Button
+                  variant="outline"
+                  emotion="angry"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </Button>
+              </div>
+            </CardBody>
+          </Card>
         )}
+
+        {/* Coming Soon Section */}
+        <Card variant="outline" className="feed-coming-soon">
+          <CardBody>
+            <h3>Coming Soon</h3>
+            <ul>
+              <li>📝 Create and view posts (repeats)</li>
+              <li>💬 Comment on posts with ECBridge emotions</li>
+              <li>❤️ Brace (like) posts</li>
+              <li>👥 Follow other users</li>
+              <li>🌈 ECBridge feed filtering</li>
+              <li>⚡ Real-time updates</li>
+            </ul>
+          </CardBody>
+        </Card>
+
+        {/* Navigation Info */}
+        <Card variant="outline" className="feed-nav-info">
+          <CardBody>
+            <h3>Navigation</h3>
+            <p>The navigation system is set up with the following routes:</p>
+            <ul>
+              <li><code>/feed</code> - This page (Feed)</li>
+              <li><code>/post/create</code> - Create a new post</li>
+              <li><code>/profile</code> - Your profile</li>
+              <li><code>/profile/edit</code> - Edit your profile</li>
+            </ul>
+            <p className="feed-note">
+              <strong>Note:</strong> These pages exist but their functionality is still being implemented.
+            </p>
+          </CardBody>
+        </Card>
       </div>
-
-      {/* Posts List */}
-      <div className="feed-posts">
-        {posts.map((post) => (
-          <PostCard
-            key={post._id}
-            author={post.postedBy}
-            emotion={post.emotion}
-            title={post.title}
-            content={post.body}
-            braceCount={post.brace?.length || 0}
-            commentCount={post.comments?.length || 0}
-            timestamp={post.created}
-            isBraced={isBraced(post._id)}
-            onBrace={() => toggleBrace(post._id)}
-            onClick={() => handlePostClick(post._id)}
-          />
-        ))}
-      </div>
-
-      {/* Load More (Future: Infinite Scroll) */}
-      {posts.length >= 20 && (
-        <div className="feed-load-more">
-          <Button variant="outline" onClick={refresh}>
-            Load More Posts
-          </Button>
-        </div>
-      )}
-
-      {/* ECBridge Modal */}
-      {renderECBridgeModal()}
     </div>
   );
 };
