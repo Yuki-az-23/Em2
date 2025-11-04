@@ -96,6 +96,9 @@ const Block = ({ block, emotion }) => {
     case 'image':
       return <ImageBlock data={data} />;
 
+    case 'video':
+      return <VideoBlock data={data} />;
+
     case 'embed':
       return <EmbedBlock data={data} />;
 
@@ -225,6 +228,34 @@ const ImageBlock = ({ data }) => {
       />
       {data.caption && (
         <figcaption className="content-block__image-caption">
+          {sanitizeText(data.caption)}
+        </figcaption>
+      )}
+    </figure>
+  );
+};
+
+/**
+ * Video Block
+ */
+const VideoBlock = ({ data }) => {
+  if (!data.file || !data.file.url) return null;
+
+  return (
+    <figure className="content-block content-block--video">
+      <video
+        src={data.file.url}
+        controls
+        preload="metadata"
+        className="content-block__video-player"
+        onError={(e) => {
+          console.error('Video load error:', e);
+        }}
+      >
+        Your browser does not support the video tag.
+      </video>
+      {data.caption && (
+        <figcaption className="content-block__video-caption">
           {sanitizeText(data.caption)}
         </figcaption>
       )}

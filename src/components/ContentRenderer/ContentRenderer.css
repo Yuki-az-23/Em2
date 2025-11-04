@@ -224,6 +224,31 @@
 }
 
 /* ============================================
+   VIDEO
+   ============================================ */
+
+.content-block--video {
+  margin: var(--space-6) 0;
+  text-align: center;
+}
+
+.content-block__video-player {
+  max-width: 100%;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  background: var(--color-gray-900);
+}
+
+.content-block__video-caption {
+  margin-top: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  font-style: italic;
+}
+
+/* ============================================
    EMBED
    ============================================ */
 
@@ -532,6 +557,10 @@
   }
 
   .content-block--image {
+    page-break-inside: avoid;
+  }
+
+  .content-block--video {
     page-break-inside: avoid;
   }
 }
