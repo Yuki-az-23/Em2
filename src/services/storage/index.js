@@ -9,4 +9,7 @@ export {
   deletePostImage,
   deletePostVideo,
   validateImageUrl,
+  STORAGE_CONFIG,
+  ERROR_MESSAGES,
+  ERROR_CODES,
 } from './mediaStorage.js';
