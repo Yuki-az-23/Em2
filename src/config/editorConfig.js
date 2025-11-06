@@ -16,7 +16,10 @@ import Embed from '@editorjs/embed';
 import LinkTool from '@editorjs/link';
 import Marker from '@editorjs/marker';
 import Delimiter from '@editorjs/delimiter';
+import VideoTool from '@weekwood/editorjs-video';
 import EmotionBlock from '../components/Editor/blocks/EmotionBlock.js';
+import { uploadPostImage, uploadPostVideo, validateImageUrl } from '../services/storage/mediaStorage.js';
+import { supabase } from '../services/supabase/client.js';
 
 /**
  * Default EditorJS configuration
@@ -144,12 +147,12 @@ export const getEditorConfig = (options = {}) => {
 
       /**
        * Link tool
-       * For creating hyperlinks with previews
+       * For creating hyperlinks (without preview endpoint)
        */
       linkTool: {
         class: LinkTool,
         config: {
-          endpoint: '/api/link/fetch', // Endpoint for link preview data
+          // No endpoint needed - will just create basic links without previews
         },
       },
 
@@ -172,14 +175,14 @@ export const getEditorConfig = (options = {}) => {
 
       /**
        * Image tool
-       * For uploading and displaying images
+       * For uploading and displaying images via Supabase Storage
        */
       image: {
         class: ImageTool,
         config: {
           /**
-           * Custom uploader function
-           * Integrates with EM2's image upload API
+           * Supabase Storage uploader
+           * Uploads images to post-images bucket
            */
           uploader: {
             /**
@@ -188,35 +191,22 @@ export const getEditorConfig = (options = {}) => {
              * @returns {Promise<{success: number, file: {url: string}}>}
              */
             uploadByFile: async (file) => {
-              const formData = new FormData();
-              formData.append('image', file);
-
               try {
-                const response = await fetch('/api/posts/photo', {
-                  method: 'POST',
-                  body: formData,
-                  headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
-                  },
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                  throw new Error(data.error || 'Upload failed');
+                // Get current user ID
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                  throw new Error('You must be logged in to upload images');
                 }
 
-                return {
-                  success: 1,
-                  file: {
-                    url: data.url || `/api/posts/photo/${data.postId}`,
-                  },
-                };
+                // Upload to Supabase Storage
+                const result = await uploadPostImage(file, user.id);
+                return result;
+
               } catch (error) {
                 console.error('Image upload error:', error);
                 return {
                   success: 0,
-                  error: error.message,
+                  error: error.message || 'Failed to upload image',
                 };
               }
             },
@@ -224,6 +214,61 @@ export const getEditorConfig = (options = {}) => {
             /**
              * Upload image from URL
              * @param {string} url - Image URL
+             * @returns {Promise<{success: number, file: {url: string}}>}
+             */
+            uploadByUrl: async (url) => {
+              return await validateImageUrl(url);
+            },
+          },
+
+          // Image tool configuration
+          types: 'image/*',
+          captionPlaceholder: 'Enter image caption',
+          buttonContent: 'Select an image',
+        },
+      },
+
+      /**
+       * Video tool
+       * For uploading and displaying videos via Supabase Storage
+       */
+      video: {
+        class: VideoTool,
+        config: {
+          /**
+           * Supabase Storage uploader
+           * Uploads videos to post-videos bucket
+           */
+          uploader: {
+            /**
+             * Upload video from device
+             * @param {File} file - Video file to upload
+             * @returns {Promise<{success: number, file: {url: string}}>}
+             */
+            uploadByFile: async (file) => {
+              try {
+                // Get current user ID
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                  throw new Error('You must be logged in to upload videos');
+                }
+
+                // Upload to Supabase Storage
+                const result = await uploadPostVideo(file, user.id);
+                return result;
+
+              } catch (error) {
+                console.error('Video upload error:', error);
+                return {
+                  success: 0,
+                  error: error.message || 'Failed to upload video',
+                };
+              }
+            },
+
+            /**
+             * Upload video from URL
+             * @param {string} url - Video URL
              * @returns {Promise<{success: number, file: {url: string}}>}
              */
             uploadByUrl: async (url) => {
@@ -238,7 +283,7 @@ export const getEditorConfig = (options = {}) => {
                   },
                 };
               } catch (error) {
-                console.error('Invalid image URL:', error);
+                console.error('Invalid video URL:', error);
                 return {
                   success: 0,
                   error: 'Invalid URL format',
@@ -247,21 +292,9 @@ export const getEditorConfig = (options = {}) => {
             },
           },
 
-          // Image tool configuration
-          types: 'image/*',
-          captionPlaceholder: 'Enter image caption',
-          buttonContent: 'Select an image',
-          uploader: {
-            uploadByFile: async (file) => {
-              // Placeholder for actual upload logic
-              return {
-                success: 1,
-                file: {
-                  url: URL.createObjectURL(file),
-                },
-              };
-            },
-          },
+          // Video tool configuration
+          captionPlaceholder: 'Enter video caption',
+          buttonContent: 'Select a video',
         },
       },
 
