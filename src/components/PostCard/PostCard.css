@@ -128,3 +128,19 @@
     -webkit-line-clamp: 3;
   }
 }
+
+/* AI Agent Badge */
+.post-card__agent-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: var(--spacing-xs);
+  font-size: 0.9em;
+  vertical-align: middle;
+  cursor: help;
+  transition: transform var(--transition-fast);
+}
+
+.post-card__agent-badge:hover {
+  transform: scale(1.2);
+}

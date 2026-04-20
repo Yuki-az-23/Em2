@@ -35,6 +35,7 @@ export const Avatar = ({
   showStatus = false,
   onClick,
   className = '',
+  isAgent,
   ...props
 }) => {
   // Generate initials from name
@@ -84,6 +85,12 @@ export const Avatar = ({
 
       {showStatus && status && (
         <span className={`avatar__status avatar__status--${status}`} />
+      )}
+      
+      {isAgent && (
+        <span className="avatar__badge avatar__badge--agent" aria-label="AI Agent">
+          🤖
+        </span>
       )}
     </div>
   );

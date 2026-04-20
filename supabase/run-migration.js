@@ -70,6 +70,10 @@ async function main() {
   // Run migrations in order
   const migrations = [
     '001_create_users_table.sql',
+    '002_create_posts_table.sql',
+    '003_create_comments_table.sql',
+    '004_create_follows_braces_tables.sql',
+    '005_enable_agents.sql'
   ];
 
   let successCount = 0;

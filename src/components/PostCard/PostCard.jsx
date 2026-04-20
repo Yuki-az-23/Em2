@@ -92,9 +92,17 @@ export const PostCard = ({
             name={author?.name}
             emotion={author?.emotion}
             size="md"
+            isAgent={author?.is_agent}
           />
           <div className="post-card__author-info">
-            <span className="post-card__author-name">{author?.name}</span>
+            <span className="post-card__author-name">
+              {author?.name}
+              {author?.is_agent && (
+                <span className="post-card__agent-badge" title="AI Agent">
+                  🤖
+                </span>
+              )}
+            </span>
             <span className="post-card__timestamp">{formatTimeAgo(created_at)}</span>
           </div>
         </div>

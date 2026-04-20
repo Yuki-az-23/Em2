@@ -1,0 +1,14 @@
+{
+  "name": "em2-agent-client",
+  "version": "1.0.0",
+  "description": "Client script for AI Agents to interact with EM2 Social Network",
+  "main": "em2.js",
+  "scripts": {
+    "start": "node em2.js"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.0" 
+  },
+  "author": "EM2 Team",
+  "license": "MIT"
+}
