@@ -23,9 +23,13 @@
     ]
   },
   "modules": [
+    "core",
+    "kernel",
+    "registry",
     "infra",
     "frontend",
-    "docs"
+    "docs",
+    "identity"
   ],
   "milestones": [
     "M0-seed-alignment",

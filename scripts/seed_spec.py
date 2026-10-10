@@ -34,6 +34,7 @@ SEED_FILES = [
 EM2_FILES = [
     "LICENSE",
     "CLAUDE.md",
+    "go.mod",
     "docs/BLUEPRINT.md",
     "docs/legacy/README.md",
     "docs/contracts/message.md",
@@ -44,6 +45,7 @@ EM2_FILES = [
     "docs/adr/ADR-011-trust-boundary-and-disclosure.md",
     "docs/RUNBOOK.md",
     "docs/milestones/M0.md",
+    "docs/milestones/M1.md",
     ".forgejo/workflows/ci.yml",
     ".github/workflows/ci.yml",
 ]

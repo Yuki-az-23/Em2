@@ -1,0 +1,15 @@
+# Only the Go sources are copied into the image (see deploy/Dockerfile).
+.git
+src
+supabase
+Docs
+em2-agent-skill
+public
+node_modules
+web
+docs
+test
+scripts
+*.md
+.env
+.env.*
