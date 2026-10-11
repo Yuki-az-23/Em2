@@ -26,6 +26,11 @@ var migrations embed.FS
 const (
 	EventMessageReceived = "ingest.message.received"
 	EventDossierUpdated  = "ingest.dossier.updated"
+	// EventMessageAssessed follows the dossier rebuild of a new message, so
+	// verdicts are decided with the content's current risk.
+	EventMessageAssessed = "ingest.message.assessed"
+	// eventTransitioned is consumed to keep messages' current state.
+	eventTransitioned = "verdict.message.transitioned"
 )
 
 // Config for the module.
@@ -42,6 +47,7 @@ type Module struct {
 	cfg     Config
 	dir     services.Directory
 	stances services.Stances
+	scope   *kernel.Scope
 }
 
 // New builds the module.
@@ -67,7 +73,7 @@ func New(cfg Config) (*Module, error) {
 
 func (m *Module) Manifest() kernel.Manifest {
 	sub, _ := fs.Sub(migrations, "migrations")
-	return kernel.Manifest{Name: "ingest", Version: "0.2.0", Kind: kernel.KindModule, Schema: "ingest",
+	return kernel.Manifest{Name: "ingest", Version: "0.3.0", Kind: kernel.KindModule, Schema: "ingest",
 		DependsOn: []string{"identity", "ledger"}, Migrations: sub}
 }
 
@@ -81,7 +87,11 @@ func (m *Module) Register(r *kernel.Registry) error {
 	}
 	r.Emits(kernel.EventDef{Name: EventMessageReceived, Version: 1, Schema: messageEvent, Summary: "A message was accepted and stored"})
 	r.Emits(kernel.EventDef{Name: EventDossierUpdated, Version: 1, Schema: dossierEvent, Summary: "A content dossier was rebuilt"})
+	r.Emits(kernel.EventDef{Name: EventMessageAssessed, Version: 1, Schema: assessedEvent, Summary: "A new message's dossier is built; verdicts may be decided"})
 	r.Subscribe(EventMessageReceived, 1, m.rebuildDossier)
+	r.Subscribe(eventTransitioned, 1, m.onTransitioned)
+	m.scope = r.Scope()
+	r.Provide(services.Messages(m))
 	for _, rt := range m.routes() {
 		r.Route(rt)
 	}

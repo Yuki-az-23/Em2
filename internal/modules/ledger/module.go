@@ -1,6 +1,7 @@
-// Package ledger owns each principal's accountable state. In M2 that is the
-// bridge (current emotion/color) and its history; M4 adds settings, quotas,
-// reputation, blocks, ingress endpoints and reconciliation.
+// Package ledger owns each principal's accountable state: the bridge (current
+// emotion/color) and its history, and from M3 the receiver settings
+// (threshold, filter), blocks and the ingress upstream. M4 adds quotas,
+// reputation, snapshots and reconciliation.
 package ledger
 
 import (
@@ -24,15 +25,32 @@ var migrations embed.FS
 // internal event: bridges are never shown to other principals (ADR-011).
 const EventBridgeUpdated = "ledger.bridge.updated"
 
+// EventSettingsUpdated is emitted when a principal changes threshold or
+// filter, so their deferred deliveries can be re-evaluated.
+const EventSettingsUpdated = "ledger.settings.updated"
+
+// Config for the module.
+type Config struct {
+	DefaultThreshold float64 // receiver threshold τ when the principal has not set one
+}
+
 // Module is the ledger module.
-type Module struct{ scope *kernel.Scope }
+type Module struct {
+	cfg   Config
+	scope *kernel.Scope
+}
 
 // New builds the module.
-func New() *Module { return &Module{} }
+func New(cfg Config) *Module {
+	if cfg.DefaultThreshold <= 0 {
+		cfg.DefaultThreshold = 0.5
+	}
+	return &Module{cfg: cfg}
+}
 
 func (m *Module) Manifest() kernel.Manifest {
 	sub, _ := fs.Sub(migrations, "migrations")
-	return kernel.Manifest{Name: "ledger", Version: "0.2.0", Kind: kernel.KindModule, Schema: "ledger", Migrations: sub}
+	return kernel.Manifest{Name: "ledger", Version: "0.3.0", Kind: kernel.KindModule, Schema: "ledger", Migrations: sub}
 }
 
 var (
@@ -56,6 +74,11 @@ var (
 func (m *Module) Register(r *kernel.Registry) error {
 	m.scope = r.Scope()
 	r.Provide(services.Stances(m))
+	r.Provide(services.Receivers(m))
+	r.Provide(services.Endpoints(m))
+	r.Emits(kernel.EventDef{Name: EventSettingsUpdated, Version: 1, Summary: "A principal changed their threshold or filter",
+		Schema: schema.Object(schema.Req("principal_id", schema.UUID()))})
+	m.settingsRoutes(r)
 	r.Emits(kernel.EventDef{Name: EventBridgeUpdated, Version: 1, Summary: "A principal set a new bridge",
 		Schema: schema.Object(schema.Req("principal_id", schema.UUID()), schema.Req("emotion", schema.String()),
 			schema.Req("color", schema.String()), schema.Req("source", schema.String()))})
@@ -167,8 +190,13 @@ func (m *Module) onPrincipalDeleted(c kernel.Ctx, e kernel.Envelope) error {
 	if _, err := c.DB().Exec(c, `DELETE FROM bridges WHERE principal_id = $1`, p.PrincipalID); err != nil {
 		return err
 	}
-	_, err := c.DB().Exec(c, `DELETE FROM bridge_history WHERE principal_id = $1`, p.PrincipalID)
-	return err
+	for _, q := range []string{`DELETE FROM bridge_history WHERE principal_id = $1`, `DELETE FROM settings WHERE principal_id = $1`,
+		`DELETE FROM blocks WHERE principal_id = $1 OR blocked_id = $1`, `DELETE FROM endpoints WHERE principal_id = $1`} {
+		if _, err := c.DB().Exec(c, q, p.PrincipalID); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Stance implements services.Stances. It runs in the ledger's own scope.

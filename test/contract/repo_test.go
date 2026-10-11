@@ -184,6 +184,19 @@ func TestLicenseIsAGPL(t *testing.T) {
 	}
 }
 
+// receiverOwned lists the operations whose caller is the receiver (or, for
+// preview and the ruleset, the public rules on caller-supplied values). Only
+// these may carry verdict fields; a verdict belongs to its receiver (ADR-011).
+var receiverOwned = map[string]bool{
+	"GET /v1/me/feed":                true,
+	"GET /v1/me/deferred":            true,
+	"GET /v1/me/settings":            true,
+	"PATCH /v1/me/settings":          true,
+	"POST /v1/bridge/preview":        true,
+	"GET /v1/bridge/rulesets/active": true,
+	"POST /v1/egress/fetch":          true,
+}
+
 // ADR-011: the public API document carries no build version, no admin
 // routes, and no field that would hand a sender receiver-side verdict data.
 func TestPublicOpenAPIHygiene(t *testing.T) {
@@ -201,9 +214,55 @@ func TestPublicOpenAPIHygiene(t *testing.T) {
 	if v := doc["info"].(map[string]any)["version"]; v != "v1" {
 		t.Fatalf("info.version = %v", v)
 	}
-	for _, field := range []string{`"threshold"`, `"score"`, `"rule_version"`, `"bridge_of`, `"password_hash"`, `"key_hash"`, `"refresh_hash"`} {
+	for _, field := range []string{`"bridge_of`, `"password_hash"`, `"key_hash"`, `"refresh_hash"`} {
 		if strings.Contains(s, field) {
 			t.Errorf("public OpenAPI exposes %s", field)
+		}
+	}
+	comps, _ := json.Marshal(doc["components"])
+	paths := doc["paths"].(map[string]map[string]any)
+	for path, ops := range paths {
+		for method, op := range ops {
+			key := strings.ToUpper(method) + " " + path
+			ob, _ := json.Marshal(op)
+			for _, field := range []string{`"threshold"`, `"score"`, `"rule_version"`} {
+				if strings.Contains(string(ob), field) && !receiverOwned[key] {
+					t.Errorf("%s exposes %s; verdict data is for its receiver only", key, field)
+				}
+			}
+		}
+	}
+	for _, field := range []string{`"threshold"`, `"score"`, `"rule_version"`} {
+		if strings.Contains(string(comps), field) {
+			t.Errorf("a shared component exposes %s", field)
+		}
+	}
+}
+
+// ADR-011: verdicts and the ECBridge engine never read what a sender claimed.
+func TestVerdictCodeNeverReadsClaims(t *testing.T) {
+	root := repoRoot(t)
+	for _, dir := range []string{"internal/modules/verdict", "pkg/ecbridge"} {
+		err := filepath.WalkDir(filepath.Join(root, dir), func(path string, d os.DirEntry, err error) error {
+			if err != nil || d.IsDir() || !strings.HasSuffix(path, ".go") {
+				return err
+			}
+			b, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			for i, line := range strings.Split(string(b), "\n") {
+				if strings.HasPrefix(strings.TrimSpace(line), "//") {
+					continue
+				}
+				if regexp.MustCompile(`(?i)claims`).MatchString(line) {
+					t.Errorf("%s:%d reads claims; verdict inputs are stance, state, risk and the receiver only", path, i+1)
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
 		}
 	}
 }

@@ -91,3 +91,38 @@ func Bus(in BusInput) (core.Message, *markdown.Doc, error) {
 	m.Claims = claims
 	return m, doc, nil
 }
+
+// DirectInput is a message addressed to one principal: an ingress request,
+// an upstream's reply, or content an agent fetched through egress.
+type DirectInput struct {
+	ID         string
+	At         time.Time
+	Plane      core.Plane
+	Sender     core.Principal // authenticated sender, or the fetching agent for egress
+	Stance     *core.EC       // nil for egress content: its emotion is not known
+	External   string         // egress origin URL
+	ReceiverID string
+	ParentID   string
+	BodyMD     string
+	Header     http.Header
+}
+
+// Direct normalizes a direct message. Header values become claims exactly as
+// on the bus.
+func Direct(in DirectInput) (core.Message, *markdown.Doc, error) {
+	m, doc, err := Bus(BusInput{ID: in.ID, At: in.At, Sender: in.Sender, Stance: in.Stance, ParentID: in.ParentID,
+		BodyMD: in.BodyMD, Header: in.Header})
+	if err != nil {
+		return m, nil, err
+	}
+	m.Plane = in.Plane
+	m.ChannelID = ""
+	m.Receiver = core.Ref{Kind: core.RefPrincipal, ID: in.ReceiverID}
+	if in.External != "" {
+		m.Sender = core.Ref{Kind: core.RefExternal, ID: in.External}
+		m.Stance = nil
+		m.Provenance.SourceURL = in.External
+		m.Claims.Upstream = in.External
+	}
+	return m, doc, nil
+}

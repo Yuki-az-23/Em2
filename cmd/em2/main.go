@@ -6,6 +6,7 @@
 //	em2 keygen                print new EM2_SIGNING_KEY and EM2_KEY_PEPPER values
 //	em2 grant-role HANDLE ROLE   give a human the admin or observer role
 //	em2 validate              check configuration, database and migrations
+//	em2 golden [DIR]          write the ECBridge golden tables (default pkg/ecbridge/golden)
 package main
 
 import (
@@ -19,11 +20,13 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
 	"em2.social/em2/internal/app"
 	"em2.social/em2/internal/modules/identity"
+	"em2.social/em2/pkg/ecbridge"
 )
 
 func main() {
@@ -56,6 +59,12 @@ func main() {
 		err = grantRole(ctx, cfg, log, os.Args[2], os.Args[3])
 	case "validate":
 		err = validate(ctx, cfg, log)
+	case "golden":
+		dir := "pkg/ecbridge/golden"
+		if len(os.Args) > 2 {
+			dir = os.Args[2]
+		}
+		err = golden(dir)
 	default:
 		usage()
 		os.Exit(2)
@@ -66,7 +75,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: em2 serve | migrate | openapi [--admin] | keygen | grant-role HANDLE ROLE | validate")
+	fmt.Fprintln(os.Stderr, "usage: em2 serve | migrate | openapi [--admin] | keygen | grant-role HANDLE ROLE | validate | golden [DIR]")
 }
 
 func fatal(err error) {
@@ -233,5 +242,24 @@ func validate(ctx context.Context, cfg app.Config, log *slog.Logger) error {
 		return errors.Join(problems...)
 	}
 	fmt.Println("ok")
+	return nil
+}
+
+// golden writes the ECBridge parity tables computed with the default ruleset.
+func golden(dir string) error {
+	r, err := ecbridge.BuiltinRuleset(ecbridge.DefaultRuleset)
+	if err != nil {
+		return err
+	}
+	for _, name := range ecbridge.GoldenFiles {
+		b, err := ecbridge.Golden(name, r)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(filepath.Join(dir, name), b, 0o644); err != nil {
+			return err
+		}
+		fmt.Println("wrote", filepath.Join(dir, name))
+	}
 	return nil
 }

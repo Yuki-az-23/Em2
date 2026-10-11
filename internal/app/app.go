@@ -18,8 +18,10 @@ import (
 	"em2.social/em2/internal/modules/identity"
 	"em2.social/em2/internal/modules/ingest"
 	"em2.social/em2/internal/modules/ledger"
+	"em2.social/em2/internal/modules/verdict"
 	"em2.social/em2/internal/storage"
 	"em2.social/em2/kernel"
+	"em2.social/em2/pkg/ecbridge"
 )
 
 // Config is everything EM2 reads from its environment.
@@ -100,7 +102,15 @@ func Modules(c Config) ([]kernel.Module, error) {
 	if err != nil {
 		return nil, err
 	}
-	return []kernel.Module{id, ledger.New(), in}, nil
+	rules, err := ecbridge.BuiltinRuleset(ecbridge.DefaultRuleset)
+	if err != nil {
+		return nil, err
+	}
+	vd, err := verdict.New(verdict.Config{Rules: rules})
+	if err != nil {
+		return nil, err
+	}
+	return []kernel.Module{id, ledger.New(ledger.Config{DefaultThreshold: rules.Threshold}), in, vd}, nil
 }
 
 // Open connects to the database (if configured) and boots a kernel with all modules.

@@ -33,14 +33,16 @@ type channelOut struct {
 }
 
 type messageOut struct {
-	ID        string                   `json:"id"`
-	ChannelID string                   `json:"channel_id"`
-	ParentID  string                   `json:"parent_id,omitempty"`
-	Author    services.PublicPrincipal `json:"author"`
-	At        time.Time                `json:"at"`
-	State     *core.EC                 `json:"state,omitempty"`
-	BodyMD    string                   `json:"body_md"`
-	BodyHTML  string                   `json:"body_html"`
+	ID         string                   `json:"id"`
+	Plane      core.Plane               `json:"plane"`
+	ChannelID  string                   `json:"channel_id,omitempty"`
+	ReceiverID string                   `json:"receiver_id,omitempty"`
+	ParentID   string                   `json:"parent_id,omitempty"`
+	Author     services.PublicPrincipal `json:"author"`
+	At         time.Time                `json:"at"`
+	State      *core.EC                 `json:"state,omitempty"`
+	BodyMD     string                   `json:"body_md"`
+	BodyHTML   string                   `json:"body_html"`
 }
 
 // cursor encodes a keyset position (time, id) for newest-first pagination.
@@ -223,6 +225,15 @@ func (m *Module) publish(c kernel.Ctx, req *kernel.Request) (*kernel.Response, e
 	if err != nil {
 		return nil, kernel.BadRequest("The body is not valid Markdown for EM2 (too long, too complex or not UTF-8).")
 	}
+	if err := m.store(c, msg, doc, string(p.Kind)); err != nil {
+		return nil, err
+	}
+	return &kernel.Response{Status: http.StatusAccepted, Location: "/v1/messages/" + msg.ID, Body: map[string]string{"id": msg.ID}}, nil
+}
+
+// store writes a normalized message and announces it. The dossier and the
+// verdicts follow asynchronously from the event.
+func (m *Module) store(c kernel.Ctx, msg core.Message, doc *markdown.Doc, senderKind string) error {
 	ast, _ := json.Marshal(doc.Root)
 	claims, _ := json.Marshal(msg.Claims)
 	prov, _ := json.Marshal(msg.Provenance)
@@ -230,26 +241,51 @@ func (m *Module) publish(c kernel.Ctx, req *kernel.Request) (*kernel.Response, e
 	if links == nil {
 		links = []string{}
 	}
-	var parent any
-	if msg.ParentID != "" {
-		parent = msg.ParentID
+	nullable := func(s string) any {
+		if s == "" {
+			return nil
+		}
+		return s
 	}
-	if _, err := c.DB().Exec(c, `INSERT INTO messages (id, at, plane, direction, sender_id, sender_kind, channel_id, parent_id,
-		stance_emotion, stance_color, content_hash, mime, body_md, body_ast, bytes, links, claims, provenance)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
-		msg.ID, msg.At, msg.Plane, msg.Direction, p.ID, string(p.Kind), msg.ChannelID, parent,
-		int16(stance.Emotion), int16(stance.Color), msg.Content.SHA256, msg.Content.Mime, msg.Content.BodyMD, ast, msg.Content.Bytes,
-		links, claims, prov); err != nil {
-		return nil, err
+	var se, sc any
+	if msg.Stance != nil {
+		se, sc = int16(msg.Stance.Emotion), int16(msg.Stance.Color)
 	}
-	if err := c.Publish(EventMessageReceived, map[string]string{"message_id": msg.ID, "content_hash": hex.EncodeToString(msg.Content.SHA256),
-		"sender_id": p.ID, "channel_id": msg.ChannelID}); err != nil {
-		return nil, err
+	senderID, origin := msg.Sender.ID, ""
+	if msg.Sender.Kind == core.RefExternal {
+		senderID, origin = msg.Receiver.ID, msg.Sender.ID
 	}
-	return &kernel.Response{Status: http.StatusAccepted, Location: "/v1/messages/" + msg.ID, Body: map[string]string{"id": msg.ID}}, nil
+	receiver := ""
+	if msg.ChannelID == "" {
+		receiver = msg.Receiver.ID
+	}
+	if _, err := c.DB().Exec(c, `INSERT INTO messages (id, at, plane, direction, sender_id, sender_kind, channel_id, receiver_id, parent_id,
+		stance_emotion, stance_color, content_hash, mime, body_md, body_ast, bytes, links, claims, provenance, origin)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
+		msg.ID, msg.At, msg.Plane, msg.Direction, senderID, senderKind, nullable(msg.ChannelID), nullable(receiver), nullable(msg.ParentID),
+		se, sc, msg.Content.SHA256, msg.Content.Mime, msg.Content.BodyMD, ast, msg.Content.Bytes,
+		links, claims, prov, nullable(origin)); err != nil {
+		return err
+	}
+	ev := map[string]string{"message_id": msg.ID, "content_hash": hex.EncodeToString(msg.Content.SHA256), "sender_id": senderID}
+	if msg.ChannelID != "" {
+		ev["channel_id"] = msg.ChannelID
+	} else {
+		ev["receiver_id"] = receiver
+	}
+	return c.Publish(EventMessageReceived, ev)
 }
 
-const messageCols = `id, channel_id, parent_id, sender_id, at, stance_emotion, stance_color, body_md, body_ast`
+const messageCols = `id, plane, channel_id, receiver_id, parent_id, sender_id, at, COALESCE(state_emotion, stance_emotion), COALESCE(state_color, stance_color), body_md, body_ast`
+
+// readable limits direct messages to their sender, their receiver and
+// observers; channel messages are readable by every principal.
+func readable(p *core.Principal, alias string) (string, []any) {
+	if p.HasRole("observer") || p.HasRole("admin") {
+		return "true", nil
+	}
+	return "(" + alias + "channel_id IS NOT NULL OR " + alias + "sender_id = $READER OR " + alias + "receiver_id = $READER)", []any{p.ID}
+}
 
 func (m *Module) scanMessages(c kernel.Ctx, sql string, args ...any) ([]messageOut, error) {
 	rows, err := c.DB().Query(c, sql, args...)
@@ -261,15 +297,13 @@ func (m *Module) scanMessages(c kernel.Ctx, sql string, args ...any) ([]messageO
 	var senders []string
 	for rows.Next() {
 		var mo messageOut
-		var parent *string
+		var channel, receiver, parent *string
 		var se, sc *int16
 		var ast []byte
-		if err := rows.Scan(&mo.ID, &mo.ChannelID, &parent, &mo.Author.ID, &mo.At, &se, &sc, &mo.BodyMD, &ast); err != nil {
+		if err := rows.Scan(&mo.ID, &mo.Plane, &channel, &receiver, &parent, &mo.Author.ID, &mo.At, &se, &sc, &mo.BodyMD, &ast); err != nil {
 			return nil, err
 		}
-		if parent != nil {
-			mo.ParentID = *parent
-		}
+		mo.ChannelID, mo.ReceiverID, mo.ParentID = deref(channel), deref(receiver), deref(parent)
 		if se != nil && sc != nil {
 			mo.State = &core.EC{Emotion: core.Emotion(*se), Color: core.Color(*sc)}
 		}
@@ -295,8 +329,17 @@ func (m *Module) scanMessages(c kernel.Ctx, sql string, args ...any) ([]messageO
 	return out, nil
 }
 
+func deref(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
 func (m *Module) getMessage(c kernel.Ctx, req *kernel.Request) (*kernel.Response, error) {
-	items, err := m.scanMessages(c, `SELECT `+messageCols+` FROM messages WHERE id = $1`, req.Params["id"])
+	cond, args := readable(c.Principal(), "")
+	items, err := m.scanMessages(c, `SELECT `+messageCols+` FROM messages WHERE id = $1 AND `+strings.ReplaceAll(cond, "$READER", "$2"),
+		append([]any{req.Params["id"]}, args...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -342,14 +385,15 @@ func (m *Module) listMessages(c kernel.Ctx, req *kernel.Request) (*kernel.Respon
 	return kernel.JSON(http.StatusOK, body), nil
 }
 
-// getDossier shows a dossier to observers and to anyone who sent that content.
+// getDossier shows a dossier to observers, to anyone who sent that content and
+// to the receivers of direct messages that carried it.
 // Everyone else gets the same 404 as for unknown content.
 func (m *Module) getDossier(c kernel.Ctx, req *kernel.Request) (*kernel.Response, error) {
 	hash, _ := hex.DecodeString(req.Params["hash"])
 	p := c.Principal()
 	allowed := p.HasRole("observer") || p.HasRole("admin")
 	if !allowed {
-		if err := c.DB().QueryRow(c, `SELECT EXISTS (SELECT 1 FROM messages WHERE content_hash = $1 AND sender_id = $2)`, hash, p.ID).Scan(&allowed); err != nil {
+		if err := c.DB().QueryRow(c, `SELECT EXISTS (SELECT 1 FROM messages WHERE content_hash = $1 AND (sender_id = $2 OR receiver_id = $2))`, hash, p.ID).Scan(&allowed); err != nil {
 			return nil, err
 		}
 	}

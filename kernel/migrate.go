@@ -221,7 +221,10 @@ func (k *Kernel) grantRoles(ctx context.Context, conn *pgx.Conn) error {
 		schema := pgx.Identifier{m.Schema}.Sanitize()
 		lit := k.roleName(m.Schema)
 		stmts := []string{
-			fmt.Sprintf(`DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '%s') THEN CREATE ROLE %s NOLOGIN; END IF; END $$`, lit, role),
+			// Roles are cluster-wide while the migration lock is per database, so
+			// two databases on one server may create the same role at once.
+			fmt.Sprintf(`DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '%s') THEN CREATE ROLE %s NOLOGIN; END IF;
+				EXCEPTION WHEN duplicate_object OR unique_violation THEN NULL; END $$`, lit, role),
 			fmt.Sprintf(`GRANT %s TO CURRENT_USER`, role),
 			fmt.Sprintf(`CREATE SCHEMA IF NOT EXISTS %s`, schema),
 			fmt.Sprintf(`GRANT USAGE ON SCHEMA %s TO %s`, schema, role),

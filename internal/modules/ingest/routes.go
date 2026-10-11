@@ -19,9 +19,11 @@ var (
 		schema.Req("id", schema.UUID()), schema.Req("handle", schema.String()), schema.Req("title", schema.String()),
 		schema.Req("description", schema.String()), schema.Req("owner", principalV), schema.Req("created_at", schema.DateTime()))
 	messageView = schema.Object(
-		schema.Req("id", schema.UUID()), schema.Req("channel_id", schema.UUID()), schema.Opt("parent_id", schema.UUID()),
+		schema.Req("id", schema.UUID()), schema.Req("plane", schema.Enum("bus", "ingress", "egress")),
+		schema.Opt("channel_id", schema.UUID()), schema.Opt("receiver_id", schema.UUID().Doc("Set on direct messages instead of channel_id.")),
+		schema.Opt("parent_id", schema.UUID()),
 		schema.Req("author", principalV), schema.Req("at", schema.DateTime()),
-		schema.Opt("state", ecSchema.Doc("The message's current emotional state. It starts at the author's bridge and moves only by pressure (from M3).")),
+		schema.Opt("state", ecSchema.Doc("The message's current emotional state. It starts at the author's bridge and moves only by pressure. Absent when not known (external content).")),
 		schema.Req("body_md", schema.String()), schema.Req("body_html", schema.String()))
 	signalView  = schema.Object(schema.Req("name", schema.String()), schema.Req("value", schema.Number()), schema.Req("weight", schema.Number()), schema.Req("evidence", schema.String()))
 	dossierView = schema.Object(
@@ -31,7 +33,11 @@ var (
 		schema.Req("signals", schema.Array(signalView)), schema.Req("version", schema.String()), schema.Opt("links", schema.Array(schema.String())))
 
 	messageEvent = schema.Object(schema.Req("message_id", schema.UUID()), schema.Req("content_hash", schema.String().Match(`[0-9a-f]{64}`)),
-		schema.Req("sender_id", schema.UUID()), schema.Req("channel_id", schema.UUID()))
+		schema.Req("sender_id", schema.UUID()), schema.Opt("channel_id", schema.UUID()), schema.Opt("receiver_id", schema.UUID()))
+	assessedEvent = schema.Object(schema.Req("message_id", schema.UUID()), schema.Req("content_hash", schema.String().Match(`[0-9a-f]{64}`)),
+		schema.Req("plane", schema.Enum("bus", "ingress", "egress")), schema.Req("sender_id", schema.UUID()), schema.Req("sender_kind", schema.String()),
+		schema.Opt("channel_id", schema.UUID()), schema.Opt("receiver_id", schema.UUID()), schema.Opt("parent_id", schema.UUID()),
+		schema.Opt("stance", ecSchema), schema.Req("risk", schema.Number()), schema.Req("at", schema.DateTime()))
 	dossierEvent = schema.Object(schema.Req("content_hash", schema.String().Match(`[0-9a-f]{64}`)), schema.Req("risk", schema.Number()), schema.Req("version", schema.String()))
 )
 
@@ -66,7 +72,7 @@ func (m *Module) routes() []kernel.Route {
 			Auth: kernel.AuthPrincipal, Params: idParam, Responses: map[int]*schema.Schema{200: messageView}, Handler: m.getMessage},
 
 		{Method: "GET", Path: "/v1/dossiers/{hash}", OperationID: "getDossier",
-			Summary: "Evidence about one piece of content. Visible to its authors and to observers.", Tags: []string{"dossiers"},
+			Summary: "Evidence about one piece of content. Visible to its authors, to receivers of direct messages carrying it, and to observers.", Tags: []string{"dossiers"},
 			Auth: kernel.AuthPrincipal, Params: hashParam, Responses: map[int]*schema.Schema{200: dossierView}, Handler: m.getDossier},
 
 		{Method: "POST", Path: "/v1/media", OperationID: "uploadMedia",

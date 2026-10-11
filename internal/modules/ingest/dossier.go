@@ -75,7 +75,48 @@ func (m *Module) rebuildDossier(c kernel.Ctx, e kernel.Envelope) error {
 		hash, st.FirstSeen, now, st.SeenTotal, d.Risk, d.Version, body); err != nil {
 		return err
 	}
-	return c.Publish(EventDossierUpdated, map[string]any{"content_hash": ev.ContentHash, "risk": d.Risk, "version": d.Version})
+	if err := c.Publish(EventDossierUpdated, map[string]any{"content_hash": ev.ContentHash, "risk": d.Risk, "version": d.Version}); err != nil {
+		return err
+	}
+	return m.publishAssessed(c, ev.MessageID, ev.ContentHash, d.Risk)
+}
+
+// publishAssessed announces that a new message's dossier is ready.
+func (m *Module) publishAssessed(c kernel.Ctx, id, hash string, risk float64) error {
+	var plane, sender, kind string
+	var channel, receiver, parent *string
+	var se, sc *int16
+	var at time.Time
+	if err := c.DB().QueryRow(c, `SELECT plane, sender_id, sender_kind, channel_id, receiver_id, parent_id, stance_emotion, stance_color, at
+		FROM messages WHERE id = $1`, id).Scan(&plane, &sender, &kind, &channel, &receiver, &parent, &se, &sc, &at); err != nil {
+		return err
+	}
+	ev := map[string]any{"message_id": id, "content_hash": hash, "plane": plane, "sender_id": sender, "sender_kind": kind,
+		"risk": risk, "at": at.UTC().Format(time.RFC3339Nano)}
+	for k, v := range map[string]*string{"channel_id": channel, "receiver_id": receiver, "parent_id": parent} {
+		if v != nil {
+			ev[k] = *v
+		}
+	}
+	if se != nil && sc != nil {
+		ev["stance"] = core.EC{Emotion: core.Emotion(*se), Color: core.Color(*sc)}
+	}
+	return c.Publish(EventMessageAssessed, ev)
+}
+
+// onTransitioned keeps the message's current state for readers.
+func (m *Module) onTransitioned(c kernel.Ctx, e kernel.Envelope) error {
+	var ev struct {
+		MessageID string  `json:"message_id"`
+		To        core.EC `json:"to"`
+		Version   int     `json:"version"`
+	}
+	if err := json.Unmarshal(e.Payload, &ev); err != nil {
+		return err
+	}
+	_, err := c.DB().Exec(c, `UPDATE messages SET state_emotion = $2, state_color = $3, state_version = $4
+		WHERE id = $1 AND state_version < $4`, ev.MessageID, int16(ev.To.Emotion), int16(ev.To.Color), ev.Version)
+	return err
 }
 
 // dossierJSON is the public shape: the hash as hex rather than base64.

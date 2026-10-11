@@ -68,7 +68,8 @@ type Options struct {
 	Extra      []kernel.Module // registered next to the real modules
 	NoMigrate  bool
 	LogHandler slog.Handler
-	MaxConns   int32 // database pool size; 0 keeps the pgx default
+	MaxConns   int32          // database pool size; 0 keeps the pgx default
+	Mode       kernel.RunMode // default shadow, as in production
 }
 
 // Instance is a running EM2.
@@ -98,6 +99,9 @@ func Start(t testing.TB, opt Options) *Instance {
 	t.Helper()
 	cfg := TestConfig(NewDatabase(t))
 	cfg.MediaDir = t.TempDir()
+	if opt.Mode != "" {
+		cfg.Mode = opt.Mode
+	}
 	ctx := context.Background()
 	pcfg, err := pgxpool.ParseConfig(cfg.DatabaseURL)
 	if err != nil {

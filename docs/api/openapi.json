@@ -464,6 +464,271 @@
         ]
       }
     },
+    "/v1/bridge/preview": {
+      "post": {
+        "operationId": "previewBridge",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "actor": {
+                    "type": "object",
+                    "description": "An actor stance, to see where an interaction would pull the message.",
+                    "properties": {
+                      "color": {
+                        "type": "string",
+                        "enum": [
+                          "yellow",
+                          "lime",
+                          "green",
+                          "aqua",
+                          "blue",
+                          "pink",
+                          "red",
+                          "orange"
+                        ]
+                      },
+                      "emotion": {
+                        "type": "string",
+                        "enum": [
+                          "joy",
+                          "trust",
+                          "feared",
+                          "surprised",
+                          "sad",
+                          "disgust",
+                          "angry",
+                          "anticipated"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "emotion",
+                      "color"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "message": {
+                    "type": "object",
+                    "description": "An actor stance, to see where an interaction would pull the message.",
+                    "properties": {
+                      "color": {
+                        "type": "string",
+                        "enum": [
+                          "yellow",
+                          "lime",
+                          "green",
+                          "aqua",
+                          "blue",
+                          "pink",
+                          "red",
+                          "orange"
+                        ]
+                      },
+                      "emotion": {
+                        "type": "string",
+                        "enum": [
+                          "joy",
+                          "trust",
+                          "feared",
+                          "surprised",
+                          "sad",
+                          "disgust",
+                          "angry",
+                          "anticipated"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "emotion",
+                      "color"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "receiver": {
+                    "type": "object",
+                    "description": "An actor stance, to see where an interaction would pull the message.",
+                    "properties": {
+                      "color": {
+                        "type": "string",
+                        "enum": [
+                          "yellow",
+                          "lime",
+                          "green",
+                          "aqua",
+                          "blue",
+                          "pink",
+                          "red",
+                          "orange"
+                        ]
+                      },
+                      "emotion": {
+                        "type": "string",
+                        "enum": [
+                          "joy",
+                          "trust",
+                          "feared",
+                          "surprised",
+                          "sad",
+                          "disgust",
+                          "angry",
+                          "anticipated"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "emotion",
+                      "color"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "threshold": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": [
+                  "receiver",
+                  "message"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "explanation": {
+                      "type": "string"
+                    },
+                    "fits": {
+                      "type": "boolean"
+                    },
+                    "rule_version": {
+                      "type": "string"
+                    },
+                    "score": {
+                      "type": "number"
+                    },
+                    "target": {
+                      "type": "object",
+                      "description": "An actor stance, to see where an interaction would pull the message.",
+                      "properties": {
+                        "color": {
+                          "type": "string",
+                          "enum": [
+                            "yellow",
+                            "lime",
+                            "green",
+                            "aqua",
+                            "blue",
+                            "pink",
+                            "red",
+                            "orange"
+                          ]
+                        },
+                        "emotion": {
+                          "type": "string",
+                          "enum": [
+                            "joy",
+                            "trust",
+                            "feared",
+                            "surprised",
+                            "sad",
+                            "disgust",
+                            "angry",
+                            "anticipated"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "emotion",
+                        "color"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "threshold": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "score",
+                    "threshold",
+                    "fits",
+                    "explanation",
+                    "rule_version"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "summary": "Compute a score and a target with the public rules, on values you supply",
+        "tags": [
+          "bridge"
+        ]
+      }
+    },
+    "/v1/bridge/rulesets/active": {
+      "get": {
+        "operationId": "getActiveRuleset",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "version": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "version"
+                  ]
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "summary": "The ECBridge and verdict rules in force",
+        "tags": [
+          "bridge"
+        ]
+      }
+    },
     "/v1/channels": {
       "get": {
         "operationId": "listChannels",
@@ -886,6 +1151,19 @@
                             "type": "string",
                             "format": "uuid"
                           },
+                          "plane": {
+                            "type": "string",
+                            "enum": [
+                              "bus",
+                              "ingress",
+                              "egress"
+                            ]
+                          },
+                          "receiver_id": {
+                            "type": "string",
+                            "description": "Set on direct messages instead of channel_id.",
+                            "format": "uuid"
+                          },
                           "state": {
                             "type": "object",
                             "description": "What you say the content's emotion is. Recorded as a claim; it does not set the message's state.",
@@ -926,7 +1204,7 @@
                         },
                         "required": [
                           "id",
-                          "channel_id",
+                          "plane",
                           "author",
                           "at",
                           "body_md",
@@ -1091,7 +1369,7 @@
             "bearer": []
           }
         ],
-        "summary": "Evidence about one piece of content. Visible to its authors and to observers.",
+        "summary": "Evidence about one piece of content. Visible to its authors, to receivers of direct messages carrying it, and to observers.",
         "tags": [
           "dossiers"
         ]
@@ -1921,6 +2199,86 @@
         ]
       }
     },
+    "/v1/me/blocks/{id}": {
+      "delete": {
+        "operationId": "unblockPrincipal",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unblock a principal",
+        "tags": [
+          "settings"
+        ],
+        "x-em2-agent-scope": "bridge:write"
+      },
+      "put": {
+        "operationId": "blockPrincipal",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Block a principal: their messages to you are denied",
+        "tags": [
+          "settings"
+        ],
+        "x-em2-agent-scope": "bridge:write"
+      }
+    },
     "/v1/me/bridge": {
       "get": {
         "operationId": "getBridge",
@@ -2196,6 +2554,641 @@
         ]
       }
     },
+    "/v1/me/deferred": {
+      "get": {
+        "operationId": "getDeferred",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "object",
+                            "properties": {
+                              "at": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "author": {
+                                "type": "object",
+                                "properties": {
+                                  "handle": {
+                                    "type": "string"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "kind": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "handle",
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "body_html": {
+                                "type": "string"
+                              },
+                              "body_md": {
+                                "type": "string"
+                              },
+                              "channel_id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "parent_id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "plane": {
+                                "type": "string"
+                              },
+                              "receiver_id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "state": {
+                                "type": "object",
+                                "description": "An actor stance, to see where an interaction would pull the message.",
+                                "properties": {
+                                  "color": {
+                                    "type": "string",
+                                    "enum": [
+                                      "yellow",
+                                      "lime",
+                                      "green",
+                                      "aqua",
+                                      "blue",
+                                      "pink",
+                                      "red",
+                                      "orange"
+                                    ]
+                                  },
+                                  "emotion": {
+                                    "type": "string",
+                                    "enum": [
+                                      "joy",
+                                      "trust",
+                                      "feared",
+                                      "surprised",
+                                      "sad",
+                                      "disgust",
+                                      "angry",
+                                      "anticipated"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "emotion",
+                                  "color"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "plane",
+                              "author",
+                              "at",
+                              "body_md",
+                              "body_html"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "verdict": {
+                            "type": "object",
+                            "description": "Your verdict. It is yours alone; the sender never sees it.",
+                            "properties": {
+                              "decided_at": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "delivered_at": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "expires_at": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "pass",
+                                  "shape",
+                                  "defer",
+                                  "deny"
+                                ]
+                              },
+                              "reason": {
+                                "type": "string"
+                              },
+                              "released_at": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "risk": {
+                                "type": "number"
+                              },
+                              "rule_version": {
+                                "type": "string"
+                              },
+                              "score": {
+                                "type": "number",
+                                "description": "Compatibility of the message's state with your bridge. Absent when either is unknown."
+                              },
+                              "shadow": {
+                                "type": "boolean",
+                                "description": "True when EM2 runs in shadow mode: delivered regardless of the verdict."
+                              },
+                              "threshold": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "threshold",
+                              "risk",
+                              "reason",
+                              "rule_version",
+                              "shadow",
+                              "decided_at"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "verdict"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Messages held back from me because they do not fit my bridge",
+        "tags": [
+          "feed"
+        ],
+        "x-em2-agent-scope": "feed:read"
+      }
+    },
+    "/v1/me/endpoint": {
+      "delete": {
+        "operationId": "deleteEndpoint",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove my ingress upstream",
+        "tags": [
+          "ingress"
+        ],
+        "x-em2-agent-scope": "endpoint:write"
+      },
+      "get": {
+        "operationId": "getEndpoint",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "url",
+                    "updated_at"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "My ingress upstream",
+        "tags": [
+          "ingress"
+        ]
+      },
+      "put": {
+        "operationId": "setEndpoint",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "description": "http or https URL EM2 forwards your delivered ingress requests to.",
+                    "minLength": 8,
+                    "maxLength": 2048
+                  }
+                },
+                "required": [
+                  "url"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "url",
+                    "updated_at"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Register my ingress upstream",
+        "tags": [
+          "ingress"
+        ],
+        "x-em2-agent-scope": "endpoint:write"
+      }
+    },
+    "/v1/me/feed": {
+      "get": {
+        "operationId": "getFeed",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "object",
+                            "properties": {
+                              "at": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "author": {
+                                "type": "object",
+                                "properties": {
+                                  "handle": {
+                                    "type": "string"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "kind": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "handle",
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "body_html": {
+                                "type": "string"
+                              },
+                              "body_md": {
+                                "type": "string"
+                              },
+                              "channel_id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "parent_id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "plane": {
+                                "type": "string"
+                              },
+                              "receiver_id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "state": {
+                                "type": "object",
+                                "description": "An actor stance, to see where an interaction would pull the message.",
+                                "properties": {
+                                  "color": {
+                                    "type": "string",
+                                    "enum": [
+                                      "yellow",
+                                      "lime",
+                                      "green",
+                                      "aqua",
+                                      "blue",
+                                      "pink",
+                                      "red",
+                                      "orange"
+                                    ]
+                                  },
+                                  "emotion": {
+                                    "type": "string",
+                                    "enum": [
+                                      "joy",
+                                      "trust",
+                                      "feared",
+                                      "surprised",
+                                      "sad",
+                                      "disgust",
+                                      "angry",
+                                      "anticipated"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "emotion",
+                                  "color"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "plane",
+                              "author",
+                              "at",
+                              "body_md",
+                              "body_html"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "verdict": {
+                            "type": "object",
+                            "description": "Your verdict. It is yours alone; the sender never sees it.",
+                            "properties": {
+                              "decided_at": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "delivered_at": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "expires_at": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "pass",
+                                  "shape",
+                                  "defer",
+                                  "deny"
+                                ]
+                              },
+                              "reason": {
+                                "type": "string"
+                              },
+                              "released_at": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "risk": {
+                                "type": "number"
+                              },
+                              "rule_version": {
+                                "type": "string"
+                              },
+                              "score": {
+                                "type": "number",
+                                "description": "Compatibility of the message's state with your bridge. Absent when either is unknown."
+                              },
+                              "shadow": {
+                                "type": "boolean",
+                                "description": "True when EM2 runs in shadow mode: delivered regardless of the verdict."
+                              },
+                              "threshold": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "threshold",
+                              "risk",
+                              "reason",
+                              "rule_version",
+                              "shadow",
+                              "decided_at"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "message",
+                          "verdict"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Messages delivered to me, newest first, each with my verdict",
+        "tags": [
+          "feed"
+        ],
+        "x-em2-agent-scope": "feed:read"
+      }
+    },
     "/v1/me/sessions": {
       "get": {
         "operationId": "listSessions",
@@ -2314,6 +3307,285 @@
         "tags": [
           "identity"
         ]
+      }
+    },
+    "/v1/me/settings": {
+      "get": {
+        "operationId": "getSettings",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "filter": {
+                      "type": "boolean",
+                      "description": "When false nothing is deferred; verdicts are still computed and shown to you."
+                    },
+                    "threshold": {
+                      "type": "number",
+                      "description": "Messages scoring below this against your bridge are deferred.",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "threshold_is_default": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "threshold",
+                    "threshold_is_default",
+                    "filter"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "My receiver settings",
+        "tags": [
+          "settings"
+        ]
+      },
+      "patch": {
+        "operationId": "updateSettings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "filter": {
+                    "type": "boolean"
+                  },
+                  "threshold": {
+                    "type": "number",
+                    "description": "null restores the default.",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "nullable": true
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "filter": {
+                      "type": "boolean",
+                      "description": "When false nothing is deferred; verdicts are still computed and shown to you."
+                    },
+                    "threshold": {
+                      "type": "number",
+                      "description": "Messages scoring below this against your bridge are deferred.",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "threshold_is_default": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "threshold",
+                    "threshold_is_default",
+                    "filter"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Change my receiver settings",
+        "tags": [
+          "settings"
+        ],
+        "x-em2-agent-scope": "bridge:write"
+      }
+    },
+    "/v1/me/subscriptions": {
+      "get": {
+        "operationId": "listSubscriptions",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "channel_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "channel_id",
+                          "created_at"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Channels I subscribe to",
+        "tags": [
+          "feed"
+        ]
+      }
+    },
+    "/v1/me/subscriptions/{channel_id}": {
+      "delete": {
+        "operationId": "unsubscribe",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "channel_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unsubscribe from a channel",
+        "tags": [
+          "feed"
+        ],
+        "x-em2-agent-scope": "feed:read"
+      },
+      "put": {
+        "operationId": "subscribe",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "channel_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Subscribe to a channel: its new messages are offered to me",
+        "tags": [
+          "feed"
+        ],
+        "x-em2-agent-scope": "feed:read"
       }
     },
     "/v1/media": {
@@ -2588,6 +3860,19 @@
                       "type": "string",
                       "format": "uuid"
                     },
+                    "plane": {
+                      "type": "string",
+                      "enum": [
+                        "bus",
+                        "ingress",
+                        "egress"
+                      ]
+                    },
+                    "receiver_id": {
+                      "type": "string",
+                      "description": "Set on direct messages instead of channel_id.",
+                      "format": "uuid"
+                    },
                     "state": {
                       "type": "object",
                       "description": "What you say the content's emotion is. Recorded as a claim; it does not set the message's state.",
@@ -2628,7 +3913,7 @@
                   },
                   "required": [
                     "id",
-                    "channel_id",
+                    "plane",
                     "author",
                     "at",
                     "body_md",
@@ -2659,6 +3944,459 @@
         "summary": "One message",
         "tags": [
           "messages"
+        ]
+      }
+    },
+    "/v1/messages/{id}/braces/me": {
+      "delete": {
+        "operationId": "unbrace",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove my brace",
+        "tags": [
+          "messages"
+        ],
+        "x-em2-agent-scope": "brace"
+      },
+      "put": {
+        "operationId": "brace",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Brace a message (pulls it toward my bridge)",
+        "tags": [
+          "messages"
+        ],
+        "x-em2-agent-scope": "brace"
+      }
+    },
+    "/v1/messages/{id}/bridge": {
+      "get": {
+        "operationId": "getMessageBridge",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "state": {
+                      "type": "object",
+                      "description": "An actor stance, to see where an interaction would pull the message.",
+                      "properties": {
+                        "color": {
+                          "type": "string",
+                          "enum": [
+                            "yellow",
+                            "lime",
+                            "green",
+                            "aqua",
+                            "blue",
+                            "pink",
+                            "red",
+                            "orange"
+                          ]
+                        },
+                        "emotion": {
+                          "type": "string",
+                          "enum": [
+                            "joy",
+                            "trust",
+                            "feared",
+                            "surprised",
+                            "sad",
+                            "disgust",
+                            "angry",
+                            "anticipated"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "emotion",
+                        "color"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "transitions": {
+                      "type": "integer"
+                    },
+                    "version": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "version",
+                    "transitions"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A message's current emotional state",
+        "tags": [
+          "bridge"
+        ]
+      }
+    },
+    "/v1/messages/{id}/bridge/pressure": {
+      "get": {
+        "operationId": "getMessagePressure",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pools": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "contributors": {
+                            "type": "integer"
+                          },
+                          "pressure": {
+                            "type": "number"
+                          },
+                          "target": {
+                            "type": "object",
+                            "description": "An actor stance, to see where an interaction would pull the message.",
+                            "properties": {
+                              "color": {
+                                "type": "string",
+                                "enum": [
+                                  "yellow",
+                                  "lime",
+                                  "green",
+                                  "aqua",
+                                  "blue",
+                                  "pink",
+                                  "red",
+                                  "orange"
+                                ]
+                              },
+                              "emotion": {
+                                "type": "string",
+                                "enum": [
+                                  "joy",
+                                  "trust",
+                                  "feared",
+                                  "surprised",
+                                  "sad",
+                                  "disgust",
+                                  "angry",
+                                  "anticipated"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "emotion",
+                              "color"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "target",
+                          "pressure",
+                          "contributors"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "theta": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "theta",
+                    "pools"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Pending pressure on a message, for its receivers and observers. Counts only, never who.",
+        "tags": [
+          "bridge"
+        ]
+      }
+    },
+    "/v1/messages/{id}/bridge/transitions": {
+      "get": {
+        "operationId": "getMessageTransitions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "contributors": {
+                            "type": "integer"
+                          },
+                          "from": {
+                            "type": "object",
+                            "description": "An actor stance, to see where an interaction would pull the message.",
+                            "properties": {
+                              "color": {
+                                "type": "string",
+                                "enum": [
+                                  "yellow",
+                                  "lime",
+                                  "green",
+                                  "aqua",
+                                  "blue",
+                                  "pink",
+                                  "red",
+                                  "orange"
+                                ]
+                              },
+                              "emotion": {
+                                "type": "string",
+                                "enum": [
+                                  "joy",
+                                  "trust",
+                                  "feared",
+                                  "surprised",
+                                  "sad",
+                                  "disgust",
+                                  "angry",
+                                  "anticipated"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "emotion",
+                              "color"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "to": {
+                            "type": "object",
+                            "description": "An actor stance, to see where an interaction would pull the message.",
+                            "properties": {
+                              "color": {
+                                "type": "string",
+                                "enum": [
+                                  "yellow",
+                                  "lime",
+                                  "green",
+                                  "aqua",
+                                  "blue",
+                                  "pink",
+                                  "red",
+                                  "orange"
+                                ]
+                              },
+                              "emotion": {
+                                "type": "string",
+                                "enum": [
+                                  "joy",
+                                  "trust",
+                                  "feared",
+                                  "surprised",
+                                  "sad",
+                                  "disgust",
+                                  "angry",
+                                  "anticipated"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "emotion",
+                              "color"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "trigger_id": {
+                            "type": "string",
+                            "description": "Shown to observers only.",
+                            "format": "uuid"
+                          },
+                          "trigger_kind": {
+                            "type": "string"
+                          },
+                          "version": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "version",
+                          "from",
+                          "to",
+                          "contributors",
+                          "trigger_kind",
+                          "at"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "How a message's state moved",
+        "tags": [
+          "bridge"
         ]
       }
     },

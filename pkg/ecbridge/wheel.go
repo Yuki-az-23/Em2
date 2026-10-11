@@ -1,5 +1,7 @@
-// Package ecbridge is the pure ECBridge engine (BLUEPRINT B7). M2 ships the
-// wheel geometry the dossier needs; score, target and pressure follow in M3.
+// Package ecbridge is the pure ECBridge engine (BLUEPRINT B6, B7): wheel
+// geometry, the compatibility score, interaction targets, pressure and
+// transitions, the verdict decision table and the explanations. It has no
+// I/O; the verdict module feeds it and stores the results.
 package ecbridge
 
 import "em2.social/em2/core"
