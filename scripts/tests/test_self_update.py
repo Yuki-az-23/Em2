@@ -33,17 +33,16 @@ class SelfUpdatePlannerTests(unittest.TestCase):
             summary = SelfUpdatePlanner(root).build_plan()
             self.assertEqual(summary["status"], "pass")
             self.assertEqual(summary["missing"], [])
-            self.assertEqual(summary["warnings"], [])
+            self.assertEqual(summary["legacy_present"], [])
             self.assertIn("M0-seed-alignment", summary["milestones"])
 
-    def test_legacy_tree_is_a_warning_not_a_failure(self):
+    def test_legacy_tree_coming_back_fails(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             make_tree(root, spec.REQUIRED_FILES + ["src/main.jsx"])
             summary = SelfUpdatePlanner(root).build_plan()
-            self.assertEqual(summary["status"], "pass")
+            self.assertEqual(summary["status"], "fail")
             self.assertEqual(summary["legacy_present"], ["src"])
-            self.assertTrue(summary["warnings"])
 
     def test_repair_creates_missing_files_and_manifest(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -63,6 +62,15 @@ class ValidatorTests(unittest.TestCase):
             self.assertEqual(result["status"], "fail")
             self.assertTrue(any("stale" in p for p in result["problems"]))
             self.assertTrue(any("agent definition missing" in p for p in result["problems"]))
+
+    def test_fails_when_legacy_path_returns(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            make_tree(root, spec.REQUIRED_FILES + [f".claude/agents/{a}.md" for a in spec.AGENT_REGISTRY] + ["package.json"])
+            (root / ".project-manifest.json").write_text(json.dumps(build_manifest(root)), encoding="utf-8")
+            result = validate(root)
+            self.assertEqual(result["status"], "fail")
+            self.assertTrue(any("package.json" in p for p in result["problems"]))
 
     def test_passes_on_complete_tree(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -1,7 +1,7 @@
 # Project startup checklist
 
 Use this checklist when starting a new project from this architecture shell.
-For EM2 it was completed in M0; see `docs/milestones/M0.md`. The one open item is below.
+For EM2 it was completed in M0; see `docs/milestones/M0.md`.
 
 ## 1. Architecture initialization
 
@@ -55,4 +55,4 @@ For EM2 it was completed in M0; see `docs/milestones/M0.md`. The one open item i
 - [x] Run project validation.
 - [x] Run manifest generation.
 - [x] Ensure all required docs exist.
-- [ ] Confirm a new repo can start from this shell. (Open: the legacy tree must be removed first; it needs the owner's approval.)
+- [x] Confirm a new repo can start from this shell.

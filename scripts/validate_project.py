@@ -34,12 +34,13 @@ def validate(root: Path = ROOT) -> dict:
         if not (agents_dir / f"{name}.md").exists():
             problems.append(f"agent definition missing: .claude/agents/{name}.md")
     legacy = [rel for rel in spec.LEGACY_PATHS if (root / rel).exists()]
+    for rel in legacy:
+        problems.append(f"legacy path {rel} is back; it was removed in M0 (see docs/legacy/README.md)")
     return {
         "project": spec.PROJECT,
         "status": "pass" if not (missing or problems) else "fail",
         "missing": missing,
         "problems": problems,
-        "warnings": ["legacy tree present; removal pending owner approval (M0)"] if legacy else [],
         "legacy_present": legacy,
         "required_files": spec.REQUIRED_FILES,
     }

@@ -153,8 +153,8 @@ AGENT_REGISTRY = [
     "observatory-engineer",
 ]
 
-# The pre-proxy tree (Supabase/React app and old docs). Its removal is an M0
-# task that needs the owner's approval, so its presence is a warning, not a failure.
+# The pre-proxy tree (Supabase/React app and old docs), removed in M0. Any of
+# these paths reappearing fails validation, so the old tree cannot creep back.
 LEGACY_PATHS = [
     "src",
     "supabase",

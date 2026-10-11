@@ -42,14 +42,16 @@ class SelfUpdatePlanner:
             }
             for name in REQUIRED_SKILLS
         ]
-        warnings = []
-        if legacy:
-            warnings.append("legacy tree present; removal pending owner approval (M0)")
+        if missing:
+            status = "repair-needed"
+        elif legacy:
+            status = "fail"  # removed in M0; must not come back, and is never auto-repaired
+        else:
+            status = "pass"
         return {
             "project": spec.PROJECT,
-            "status": "pass" if not missing else "repair-needed",
+            "status": status,
             "missing": missing,
-            "warnings": warnings,
             "legacy_present": legacy,
             "required_files": REQUIRED_FILES,
             "skills": skills,

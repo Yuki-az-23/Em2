@@ -14,8 +14,8 @@ the sender, control over what reaches them.
 
 | Milestone | Scope | State |
 |---|---|---|
-| M0 | Seed alignment: contract, roles, skills, docs, scripts, CI, AGPL | see `docs/milestones/M0.md` |
-| M1 | Kernel and runtime shell: core contract, kernel, identity, `em2` binary, deploy files | see `docs/milestones/M1.md` |
+| M0 | Seed alignment: contract, roles, skills, docs, scripts, CI, AGPL; legacy tree removed | complete, `docs/milestones/M0.md` |
+| M1 | Kernel and runtime shell: core contract, kernel, identity, `em2` binary, deploy files | gate green, `docs/milestones/M1.md` |
 | M2–M7 | Data engine, execution engine, ledger, runtime parity, journal and observatory, hardening | planned in `docs/BLUEPRINT.md` |
 
 ## Quick start

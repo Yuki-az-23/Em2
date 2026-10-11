@@ -47,7 +47,6 @@ python3 -m unittest discover -s scripts/tests -t .   # tests for the seed script
 | `deploy/` | Dockerfile, docker-compose, Kubernetes manifests for the GitOps PR |
 | `web/` | observatory UI (from M6); currently only `src/tokens.css` |
 | `scripts/` | seed coordination scripts (Python, stdlib only) |
-| `src/`, `supabase/`, `Docs/`, `em2-agent-skill/`, `package.json` … | **legacy**, pending removal; do not build on it |
 
 ## Rules that are easy to break
 
@@ -60,5 +59,7 @@ python3 -m unittest discover -s scripts/tests -t .   # tests for the seed script
 
 ## Legacy
 
-The original Express/MongoDB backend lives only in git history (commit `8102416`, `OLD/API/`).
+Both earlier versions live only in git history: the Express/MongoDB backend at commit `8102416`
+(`OLD/API/`), and the React/Supabase rebuild at commit `805d510` (`src/`, `supabase/`, `Docs/`).
+The validator fails if any legacy path reappears.
 `docs/legacy/README.md` explains how to read it and what was learned from it.

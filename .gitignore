@@ -35,16 +35,3 @@ logs/
 tmp/
 temp/
 *.tmp
-
-# Legacy tree (pending removal, see docs/legacy/README.md)
-node_modules/
-package-lock.json
-yarn.lock
-dist/
-build/
-.vite/
-android/
-ios/
-.capacitor/
-.supabase/
-.vercel

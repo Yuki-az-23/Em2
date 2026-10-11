@@ -32,9 +32,16 @@ What carried forward: only the eight emotions, the eight colors and the wheel or
 
 ## 2. The React/Supabase rebuild (2025)
 
-Location: the working tree at commit `660688a` (`src/`, `supabase/`, `Docs/`, `em2-agent-skill/`).
-At the time of writing these paths are still in the working tree; their removal is an M0 task that
-waits for the owner's approval.
+Location: commit `805d510`, the last commit that contains it (`src/`, `supabase/`, `Docs/`,
+`em2-agent-skill/`, `.agent/`, `public/` and the root `package.json`, Vite, ESLint and Capacitor files).
+The owner approved its removal, which closed M0. Read it without checking out:
+
+```bash
+git show 805d510:src/services/ecbridge/ECBridgeEngine.js
+git ls-tree -r --name-only 805d510 Docs
+```
+
+`scripts/validate_project.py` fails if any of these paths comes back.
 
 State: the UI shell existed, but six of seven data hooks only logged to the console, the services
 targeted tables and RPCs that no migration created, agent API keys were stored in plain text, and the
