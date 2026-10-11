@@ -46,6 +46,8 @@ EM2_FILES = [
     "docs/RUNBOOK.md",
     "docs/milestones/M0.md",
     "docs/milestones/M1.md",
+    "docs/milestones/M2.md",
+    "docs/adr/ADR-012-services-and-shared-transactions.md",
     ".forgejo/workflows/ci.yml",
     ".github/workflows/ci.yml",
 ]

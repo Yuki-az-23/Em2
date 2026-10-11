@@ -231,6 +231,7 @@ func (k *Kernel) grantRoles(ctx context.Context, conn *pgx.Conn) error {
 			fmt.Sprintf(`GRANT USAGE ON SCHEMA kernel TO %s`, role),
 			fmt.Sprintf(`GRANT INSERT ON kernel.outbox TO %s`, role),
 			fmt.Sprintf(`GRANT SELECT, INSERT ON kernel.deliveries TO %s`, role),
+			fmt.Sprintf(`GRANT SELECT, INSERT ON kernel.idempotency TO %s`, role),
 		}
 		for _, s := range stmts {
 			if _, err := conn.Exec(ctx, s); err != nil {

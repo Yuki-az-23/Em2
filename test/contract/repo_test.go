@@ -96,14 +96,44 @@ func TestModulesReferenceOnlyTheirOwnSchema(t *testing.T) {
 				if !strings.ContainsAny(line, "`'\"") && !strings.HasSuffix(path, ".sql") {
 					continue // only look inside SQL text
 				}
-				for _, m := range schemaRef.FindAllStringSubmatch(line, -1) {
-					if m[1] != own && !isGoSelector(line, m[0]) {
-						t.Errorf("%s references schema %q: %s", path, m[1], strings.TrimSpace(line))
+				for _, idx := range schemaRef.FindAllStringSubmatchIndex(line, -1) {
+					match, schema := line[idx[0]:idx[1]], line[idx[2]:idx[3]]
+					// Event names ("identity.principal.deleted") have a third
+					// segment; table references ("identity.principals") do not.
+					if idx[1] < len(line) && line[idx[1]] == '.' {
+						continue
+					}
+					if schema != own && !isGoSelector(line, match) {
+						t.Errorf("%s references schema %q: %s", path, schema, strings.TrimSpace(line))
 					}
 				}
 			}
 			return nil
 		})
+	}
+}
+
+// ADR-001: modules talk only through the kernel and internal/services; a
+// module never imports another module's package.
+func TestModulesDoNotImportEachOther(t *testing.T) {
+	out, err := exec.Command("go", "list", "-f", `{{.ImportPath}} {{join .Imports " "}}`, "em2.social/em2/internal/modules/...").CombinedOutput()
+	if err != nil {
+		t.Fatalf("go list: %v\n%s", err, out)
+	}
+	const prefix = "em2.social/em2/internal/modules/"
+	owner := func(pkg string) string {
+		rest := strings.TrimPrefix(pkg, prefix)
+		name, _, _ := strings.Cut(rest, "/")
+		return name
+	}
+	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		fields := strings.Fields(line)
+		self := owner(fields[0])
+		for _, imp := range fields[1:] {
+			if strings.HasPrefix(imp, prefix) && owner(imp) != self {
+				t.Errorf("module %s imports %s; use internal/services and kernel.Resolve", self, imp)
+			}
+		}
 	}
 }
 

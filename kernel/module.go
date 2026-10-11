@@ -128,6 +128,36 @@ func (r *Registry) Job(name string, every time.Duration, fn JobFunc) {
 	r.k.jobs = append(r.k.jobs, job{module: r.manifest.Name, name: name, every: every, fn: fn})
 }
 
+// Scope runs work inside the registering module's own transaction scope. A
+// module that provides a service to others calls Scope.Tx inside the service
+// methods, so the queries run under the provider's schema and role and never
+// under the caller's (ADR-003). The work runs in a separate transaction from
+// the caller's: use it for reads and for self-contained writes.
+type Scope struct {
+	k      *Kernel
+	module string
+}
+
+// Scope returns the module's scope runner.
+func (r *Registry) Scope() *Scope { return &Scope{k: r.k, module: r.manifest.Name} }
+
+// Tx runs fn scoped to the module. When the caller already has an open
+// transaction, fn runs inside it: the transaction switches to the module's
+// role and search_path for the duration of fn and then switches back, so no
+// second connection is taken (two-connection requests could exhaust the pool
+// and deadlock). Otherwise fn gets its own transaction, committed on success.
+func (s *Scope) Tx(ctx context.Context, fn func(c Ctx) error) error {
+	if caller, ok := ctx.(*execCtx); ok && caller.tx.tx != nil {
+		return s.k.nested(caller, s.module, fn)
+	}
+	var actor *core.Principal
+	rid := "scope:" + s.module
+	if c, ok := ctx.(Ctx); ok {
+		actor, rid = c.Principal(), c.RequestID()
+	}
+	return s.k.runInTx(ctx, s.module, actor, rid, func(c *execCtx) error { return fn(c) })
+}
+
 // Authenticator registers the function that resolves bearer credentials.
 // Exactly one module may register it.
 func (r *Registry) Authenticator(fn AuthenticateFunc) {

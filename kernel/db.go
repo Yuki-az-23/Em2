@@ -33,11 +33,24 @@ func (k *Kernel) beginScoped(ctx context.Context, pool *pgxpool.Pool, module str
 	if err != nil {
 		return nil, err
 	}
+	if err := k.enterScope(ctx, tx, module); err != nil {
+		_ = tx.Rollback(ctx)
+		return nil, err
+	}
+	return tx, nil
+}
+
+// enterScope switches an open transaction to a module's role and search_path.
+// SET LOCAL lasts until the next switch or the end of the transaction.
+func (k *Kernel) enterScope(ctx context.Context, tx pgx.Tx, module string) error {
 	schema := k.schemaOf(module)
-	if k.cfg.RoleIsolation && schema != "" {
-		if _, err := tx.Exec(ctx, "SET LOCAL ROLE "+pgx.Identifier{k.roleName(schema)}.Sanitize()); err != nil {
-			_ = tx.Rollback(ctx)
-			return nil, fmt.Errorf("set role for %s: %w", module, err)
+	if k.cfg.RoleIsolation {
+		role := "NONE"
+		if schema != "" {
+			role = pgx.Identifier{k.roleName(schema)}.Sanitize()
+		}
+		if _, err := tx.Exec(ctx, "SET LOCAL ROLE "+role); err != nil {
+			return fmt.Errorf("set role for %s: %w", module, err)
 		}
 	}
 	path := "pg_catalog"
@@ -45,10 +58,9 @@ func (k *Kernel) beginScoped(ctx context.Context, pool *pgxpool.Pool, module str
 		path = pgx.Identifier{schema}.Sanitize()
 	}
 	if _, err := tx.Exec(ctx, "SET LOCAL search_path TO "+path); err != nil {
-		_ = tx.Rollback(ctx)
-		return nil, fmt.Errorf("set search_path for %s: %w", module, err)
+		return fmt.Errorf("set search_path for %s: %w", module, err)
 	}
-	return tx, nil
+	return nil
 }
 
 func (k *Kernel) roleName(schema string) string { return k.cfg.RolePrefix + schema }

@@ -15,6 +15,7 @@ deploy/.env
 *.test
 *.out
 coverage/
+/data/
 
 # Python
 __pycache__/

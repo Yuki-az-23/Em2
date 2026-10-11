@@ -16,6 +16,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"em2.social/em2/internal/modules/identity"
+	"em2.social/em2/internal/modules/ingest"
+	"em2.social/em2/internal/modules/ledger"
+	"em2.social/em2/internal/storage"
 	"em2.social/em2/kernel"
 )
 
@@ -27,8 +30,9 @@ type Config struct {
 	SigningKey    []byte // EM2_SIGNING_KEY, base64 32-byte Ed25519 seed
 	KeyPepper     []byte // EM2_KEY_PEPPER, base64, at least 32 bytes
 	Mode          kernel.RunMode
-	RoleIsolation bool // EM2_DB_ROLE_ISOLATION, default on
-	TrustProxy    bool // EM2_TRUST_PROXY
+	RoleIsolation bool   // EM2_DB_ROLE_ISOLATION, default on
+	TrustProxy    bool   // EM2_TRUST_PROXY
+	MediaDir      string // EM2_MEDIA_DIR, default ./data/media
 	LogLevel      slog.Level
 
 	// Test hooks.
@@ -45,6 +49,7 @@ func FromEnv() (Config, error) {
 		DatabaseURL:   os.Getenv("EM2_DATABASE_URL"),
 		RoleIsolation: env("EM2_DB_ROLE_ISOLATION", "on") != "off",
 		TrustProxy:    env("EM2_TRUST_PROXY", "off") == "on",
+		MediaDir:      env("EM2_MEDIA_DIR", "data/media"),
 	}
 	var err error
 	if c.Mode, err = kernel.ParseRunMode(env("EM2_MODE", string(kernel.ModeShadow))); err != nil {
@@ -83,7 +88,19 @@ func Modules(c Config) ([]kernel.Module, error) {
 	if err != nil {
 		return nil, err
 	}
-	return []kernel.Module{id}, nil
+	dir := c.MediaDir
+	if dir == "" {
+		dir = "data/media"
+	}
+	media, err := storage.NewFS(dir)
+	if err != nil {
+		return nil, err
+	}
+	in, err := ingest.New(ingest.Config{Media: media})
+	if err != nil {
+		return nil, err
+	}
+	return []kernel.Module{id, ledger.New(), in}, nil
 }
 
 // Open connects to the database (if configured) and boots a kernel with all modules.

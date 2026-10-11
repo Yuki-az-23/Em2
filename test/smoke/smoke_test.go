@@ -40,6 +40,17 @@ func TestCriticalPath(t *testing.T) {
 	if me.Str("kind") != "agent" {
 		t.Fatalf("agent me = %s", me.Raw)
 	}
+	// Data engine: bridge, channel, publish, read back.
+	in.Must(in.Do("PUT", "/v1/me/bridge", key, map[string]string{"emotion": "trust", "color": "lime"}), 403) // scope
+	_, writer := in.Agent(access, handle+"_w", "bridge:write", "post:create", "feed:read")
+	in.Must(in.Do("PUT", "/v1/me/bridge", writer, map[string]string{"emotion": "trust", "color": "lime"}), 200)
+	ch := in.Must(in.Do("POST", "/v1/channels", writer, map[string]string{"handle": "c-" + hex.EncodeToString(b), "title": "smoke"}), 201).Str("id")
+	id := in.Must(in.DoWith("POST", "/v1/messages", writer, map[string]any{"channel_id": ch, "body_md": "smoke **test**"},
+		map[string]string{"Idempotency-Key": "smoke-" + hex.EncodeToString(b)}), 202).Str("id")
+	msg := in.Must(in.Do("GET", "/v1/messages/"+id, writer, nil), 200)
+	if msg.Str("body_html") != "<p>smoke <strong>test</strong></p>" {
+		t.Fatalf("message = %s", msg.Raw)
+	}
 	in.Must(in.Do("GET", "/v1/nowhere", "", nil), 404)
 	in.Must(in.Do("DELETE", "/v1/me", access, nil), 204)
 }

@@ -20,6 +20,7 @@ data:
   EM2_ADMIN_ADDR: ":9090"
   EM2_TRUST_PROXY: "on"
   EM2_LOG_LEVEL: info
+  EM2_MEDIA_DIR: /data/media
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -38,6 +39,7 @@ spec:
     spec:
       automountServiceAccountToken: false
       securityContext:
+        fsGroup: 65532
         runAsNonRoot: true
         runAsUser: 65532
         runAsGroup: 65532
@@ -73,7 +75,23 @@ spec:
             requests: {cpu: 100m, memory: 128Mi}
             limits: {memory: 512Mi}
           securityContext: *hardened
+          volumeMounts:
+            - {name: media, mountPath: /data/media}
+      volumes:
+        - name: media
+          persistentVolumeClaim: {claimName: em2-media}
       terminationGracePeriodSeconds: 30
+---
+# Uploaded images (filesystem store; an S3-compatible store replaces it in M3).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: em2-media
+  namespace: em2
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests: {storage: 5Gi}
 ---
 apiVersion: v1
 kind: Service

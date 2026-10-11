@@ -44,6 +44,9 @@ services:
     environment:
       <<: *em2env
       EM2_ADMIN_ADDR: ":9090"
+      EM2_MEDIA_DIR: /data/media
+    volumes:
+      - media:/data/media
     ports:
       - "8080:8080"
       - "127.0.0.1:9090:9090" # metrics stay on the host's loopback
@@ -57,3 +60,4 @@ services:
 
 volumes:
   pgdata:
+  media:

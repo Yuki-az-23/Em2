@@ -231,8 +231,9 @@ func (k *Kernel) Ready() bool { return k.ready.Load() && !k.draining.Load() }
 func (k *Kernel) Run(ctx context.Context) {
 	var wg sync.WaitGroup
 	if k.cfg.Pool != nil {
-		wg.Add(1)
+		wg.Add(2)
 		go func() { defer wg.Done(); k.dispatchLoop(ctx) }()
+		go func() { defer wg.Done(); k.idemCleanupLoop(ctx) }()
 		for _, j := range k.jobs {
 			wg.Add(1)
 			go func(j job) { defer wg.Done(); k.jobLoop(ctx, j) }(j)
@@ -286,6 +287,22 @@ func (k *Kernel) runInTx(ctx context.Context, module string, actor *core.Princip
 		k.nudge()
 	}
 	return nil
+}
+
+// nested runs fn as module inside the caller's open transaction.
+func (k *Kernel) nested(caller *execCtx, module string, fn func(c Ctx) error) error {
+	tx := caller.tx.tx
+	if err := k.enterScope(caller, tx, module); err != nil {
+		return err
+	}
+	inner := k.newCtx(caller.Context, module, caller.principal, caller.requestID)
+	inner.tx = &lazyTx{k: k, ctx: caller.Context, module: module, tx: tx}
+	err := fn(inner)
+	caller.published = append(caller.published, inner.published...)
+	if rerr := k.enterScope(caller, tx, caller.module); rerr != nil && err == nil {
+		err = rerr
+	}
+	return err
 }
 
 func (k *Kernel) nudge() {

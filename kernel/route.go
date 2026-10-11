@@ -45,6 +45,7 @@ type Route struct {
 	Responses   map[int]*schema.Schema    // documented success responses; nil schema means no body
 	RateLimit   *RateLimit                // per principal (or per IP when unauthenticated)
 	MinDuration time.Duration             // pad the response to at least this long (ADR-011)
+	Idempotent  bool                      // require an Idempotency-Key header and replay the first result on retry
 	Handler     HandlerFunc
 
 	module string
@@ -74,6 +75,10 @@ type Response struct {
 	Location string
 	ETag     string // without quotes; the kernel adds them and handles If-None-Match
 	Headers  map[string]string
+	// Raw, when non-nil, is written as the body with ContentType instead of
+	// encoding Body as JSON (binary downloads).
+	Raw         []byte
+	ContentType string
 }
 
 // JSON builds a response with a JSON body.

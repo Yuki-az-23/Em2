@@ -39,8 +39,10 @@ python3 -m unittest discover -s scripts/tests -t .   # tests for the seed script
 |---|---|
 | `core/` | sealed contract: types only, no logic, stdlib only |
 | `kernel/` | registry, lifecycle, router, request pipeline, problem+json, rate limit, outbox, metrics, OpenAPI |
-| `pkg/` | pure libraries: `schema` (validation), later `ecbridge`, `markdown` |
-| `internal/modules/` | one package per module, one Postgres schema per module |
+| `pkg/` | pure libraries: `schema` (validation), `markdown`, `dossier`, `ecbridge` (wheel; engine in M3) |
+| `internal/modules/` | one package per module, one Postgres schema per module: `identity`, `ledger`, `ingest` |
+| `internal/services/` | interfaces modules provide to each other (ADR-012); modules never import each other |
+| `internal/storage/` | media store (filesystem) |
 | `internal/adapters/`, `internal/plugins/` | protocol edges and policy plugins (from M2/M3) |
 | `cmd/em2/` | the single binary |
 | `test/` | `contract`, `smoke`, `integration` (and later `regression`, `security`) |
@@ -56,6 +58,8 @@ python3 -m unittest discover -s scripts/tests -t .   # tests for the seed script
 - A module's SQL touches only its own schema. Cross-module data goes through registered services or events.
 - No new Go dependency without an ADR. No third-party code in `web/`.
 - Changes to `core/` need a matching change in `test/contract/` and an ADR.
+- A service a module provides runs its queries through `Registry.Scope().Tx`, never with the caller's DB handle.
+- Sender-facing paths (publish) return the same response for every accepted input and use `MinDuration`.
 
 ## Legacy
 

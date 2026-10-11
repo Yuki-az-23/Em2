@@ -68,6 +68,7 @@ type Options struct {
 	Extra      []kernel.Module // registered next to the real modules
 	NoMigrate  bool
 	LogHandler slog.Handler
+	MaxConns   int32 // database pool size; 0 keeps the pgx default
 }
 
 // Instance is a running EM2.
@@ -96,8 +97,16 @@ func TestConfig(dbURL string) app.Config {
 func Start(t testing.TB, opt Options) *Instance {
 	t.Helper()
 	cfg := TestConfig(NewDatabase(t))
+	cfg.MediaDir = t.TempDir()
 	ctx := context.Background()
-	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	pcfg, err := pgxpool.ParseConfig(cfg.DatabaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if opt.MaxConns > 0 {
+		pcfg.MaxConns = opt.MaxConns
+	}
+	pool, err := pgxpool.NewWithConfig(ctx, pcfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,6 +158,18 @@ func (r *Response) Str(key string) string {
 // (sent as JSON).
 func (in *Instance) Do(method, path, token string, body any) *Response {
 	in.T.Helper()
+	return in.DoWith(method, path, token, body, nil)
+}
+
+// DoRaw sends a raw body with the given content type.
+func (in *Instance) DoRaw(method, path, token, contentType string, body []byte) *Response {
+	in.T.Helper()
+	return in.send(method, path, token, bytes.NewReader(body), map[string]string{"Content-Type": contentType})
+}
+
+// DoWith is Do with extra request headers.
+func (in *Instance) DoWith(method, path, token string, body any, headers map[string]string) *Response {
+	in.T.Helper()
 	var rd io.Reader
 	switch b := body.(type) {
 	case nil:
@@ -161,12 +182,24 @@ func (in *Instance) Do(method, path, token string, body any) *Response {
 		}
 		rd = bytes.NewReader(buf)
 	}
+	h := map[string]string{}
+	if rd != nil {
+		h["Content-Type"] = "application/json"
+	}
+	for k, v := range headers {
+		h[k] = v
+	}
+	return in.send(method, path, token, rd, h)
+}
+
+func (in *Instance) send(method, path, token string, rd io.Reader, headers map[string]string) *Response {
+	in.T.Helper()
 	req, err := http.NewRequest(method, in.URL+path, rd)
 	if err != nil {
 		in.T.Fatal(err)
 	}
-	if rd != nil {
-		req.Header.Set("Content-Type", "application/json")
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)

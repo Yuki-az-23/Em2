@@ -121,3 +121,42 @@ func TestKernelHasNoDefaultEmotion(t *testing.T) {
 		}
 	}
 }
+
+// ADR-011 and the legacy PUT /post/:postId: publishing answers the sender
+// with the message id only. No score, risk, dossier, state or claim may be
+// added to that response.
+func TestPublishAnswersOnlyWithAnID(t *testing.T) {
+	op := operations(openapi(t, false))["POST /v1/messages"]
+	if op == nil {
+		t.Fatal("POST /v1/messages missing")
+	}
+	resp := op["responses"].(map[string]any)
+	if _, ok := resp["202"]; !ok || len(resp) != 2 { // 202 plus the default problem
+		t.Fatalf("publish responses = %v", resp)
+	}
+	b, _ := json.Marshal(resp["202"])
+	var schema struct {
+		Content map[string]struct {
+			Schema struct {
+				Properties map[string]any `json:"properties"`
+			} `json:"schema"`
+		} `json:"content"`
+	}
+	_ = json.Unmarshal(b, &schema)
+	props := schema.Content["application/json"].Schema.Properties
+	if len(props) != 1 || props["id"] == nil {
+		t.Fatalf("publish 202 carries %v; senders learn only the id", props)
+	}
+}
+
+// Legacy: unknown emotions silently became Disgust/orange. Message claims and
+// bridges must use the exact wheel names or be refused.
+func TestEmotionInputsAreClosedEnums(t *testing.T) {
+	doc := openapi(t, false)
+	b, _ := json.Marshal(doc["paths"].(map[string]map[string]any)["/v1/me/bridge"]["put"])
+	for _, want := range []string{`"joy"`, `"anticipated"`, `"yellow"`, `"orange"`} {
+		if !strings.Contains(string(b), want) {
+			t.Fatalf("PUT /v1/me/bridge does not enumerate %s", want)
+		}
+	}
+}

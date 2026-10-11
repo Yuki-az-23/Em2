@@ -1,7 +1,8 @@
 # EM2 as an Emotion-Guided Communication Proxy: Understanding and Blueprint
 
 > Approved plan, kept as the master design. Implementation status per milestone is in `docs/milestones/`.
-> Where an implementation detail differs from this text, the milestone file records the difference.
+> Where an implementation detail differs from this text, the milestone file records the difference
+> (M1: `docs/milestones/M1.md`; M2: `docs/milestones/M2.md` and ADR-012).
 
 ## Context
 

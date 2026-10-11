@@ -55,6 +55,9 @@ func (k *Kernel) buildMux() (err error) {
 			return fmt.Errorf("%s: route %q needs a path, an operation id and a handler", rt.module, rt.Path)
 		}
 		key := rt.Method + " " + rt.Path
+		if rt.Idempotent && (rt.Auth == AuthNone || rt.Method != "POST") {
+			return fmt.Errorf("%s: idempotent route %s must be an authenticated POST", rt.module, key)
+		}
 		if seen[key] {
 			return fmt.Errorf("%s: duplicate route %s", rt.module, key)
 		}
@@ -255,6 +258,27 @@ func (k *Kernel) wrap(rt *Route) http.Handler {
 			}
 		}
 
+		var idem *idemRequest
+		if rt.Idempotent {
+			key := r.Header.Get("Idempotency-Key")
+			if !idemKeyRe.MatchString(key) {
+				fail(BadRequest("This operation needs an Idempotency-Key header: 1 to 128 letters, digits, '-' or '_'."))
+				return
+			}
+			idem = &idemRequest{principal: principal.ID, route: rt.OperationID, key: key, hash: requestHash(r, body)}
+			prev, err := k.idemLookup(r.Context(), idem)
+			if err != nil {
+				k.log.Error("idempotency lookup failed", "request_id", id, "error", err)
+				fail(ErrInternal.WithDetail(""))
+				return
+			}
+			if prev != nil {
+				k.pad(r.Context(), start, rt.MinDuration)
+				k.writeStored(rec, prev, idem)
+				return
+			}
+		}
+
 		req := &Request{Params: params, Query: query, Body: body, Header: r.Header, IP: ip, RequestID: id, Raw: r}
 		c := k.newCtx(r.Context(), rt.module, principal, id)
 		resp, err := rt.Handler(c, req)
@@ -280,6 +304,31 @@ func (k *Kernel) wrap(rt *Route) http.Handler {
 			fail(p)
 			return
 		}
+		if resp == nil {
+			resp = NoContent()
+		}
+		if idem != nil {
+			stored, err := k.idemRecord(c, idem, resp)
+			if err != nil {
+				_, _ = c.tx.finish(false)
+				k.log.Error("idempotency record failed", "request_id", id, "error", err)
+				fail(ErrInternal.WithDetail(""))
+				return
+			}
+			if !stored {
+				// A concurrent request with the same key finished first: drop
+				// ours and replay theirs.
+				_, _ = c.tx.finish(false)
+				prev, err := k.idemLookup(r.Context(), idem)
+				if err != nil || prev == nil {
+					fail(ErrConflict.WithDetail("A request with this Idempotency-Key is in progress."))
+					return
+				}
+				k.pad(r.Context(), start, rt.MinDuration)
+				k.writeStored(rec, prev, idem)
+				return
+			}
+		}
 		committed, err := c.tx.finish(true)
 		if err != nil {
 			k.log.Error("commit failed", "request_id", id, "route", rt.OperationID, "error", err)
@@ -289,9 +338,6 @@ func (k *Kernel) wrap(rt *Route) http.Handler {
 		if committed && len(c.published) > 0 {
 			k.metrics.published.Add(uint64(len(c.published)))
 			k.nudge()
-		}
-		if resp == nil {
-			resp = NoContent()
 		}
 		k.pad(r.Context(), start, rt.MinDuration)
 		k.writeResponse(rec, r, resp)
@@ -333,6 +379,12 @@ func (k *Kernel) writeResponse(w http.ResponseWriter, r *http.Request, resp *Res
 			w.WriteHeader(http.StatusNotModified)
 			return
 		}
+	}
+	if resp.Raw != nil {
+		h.Set("Content-Type", resp.ContentType)
+		w.WriteHeader(status)
+		_, _ = w.Write(resp.Raw)
+		return
 	}
 	if resp.Body == nil || status == http.StatusNoContent {
 		w.WriteHeader(status)

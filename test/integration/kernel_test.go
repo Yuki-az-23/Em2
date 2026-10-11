@@ -183,3 +183,25 @@ func TestReadinessFollowsMigrations(t *testing.T) {
 		t.Fatal("not ready after migrating")
 	}
 }
+
+// A module that calls another module's service while its own transaction is
+// open must not need a second connection: with a pool of one, a second
+// connection would wait forever. Listing messages calls identity's directory
+// inside ingest's transaction.
+func TestCrossModuleCallsShareTheOpenTransaction(t *testing.T) {
+	in := testenv.Start(t, testenv.Options{MaxConns: 1})
+	tok, _, _ := in.Human("una")
+	in.Must(in.Do("PUT", "/v1/me/bridge", tok, map[string]string{"emotion": "joy", "color": "yellow"}), 200)
+	ch := in.Must(in.Do("POST", "/v1/channels", tok, map[string]string{"handle": "onepool", "title": "x"}), 201).Str("id")
+	in.Must(in.DoWith("POST", "/v1/messages", tok, map[string]any{"channel_id": ch, "body_md": "hello"}, map[string]string{"Idempotency-Key": "one"}), 202)
+	done := make(chan *testenv.Response, 1)
+	go func() { done <- in.Do("GET", "/v1/channels/"+ch+"/messages", tok, nil) }()
+	select {
+	case r := <-done:
+		if r.Status != 200 || !strings.Contains(string(r.Raw), `"handle":"una"`) {
+			t.Fatalf("list = %d %s", r.Status, r.Raw)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("request hung: the cross-module call waited for a second connection")
+	}
+}

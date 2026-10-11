@@ -14,6 +14,7 @@ How to run, operate and deploy EM2. Owner: `infra-release`.
 | `EM2_MODE` | `shadow` | `enforce`, `shadow` or `replay` (verdicts honour it from M3) |
 | `EM2_DB_ROLE_ISOLATION` | `on` | run each module's transactions as its own database role |
 | `EM2_TRUST_PROXY` | `off` | `on` behind exactly one reverse proxy: take the client IP from the last `X-Forwarded-For` entry |
+| `EM2_MEDIA_DIR` | `data/media` | where uploaded images are stored; must be writable and persistent |
 | `EM2_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 
 Generate the two secrets once and store them like any other secret:

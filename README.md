@@ -16,7 +16,8 @@ the sender, control over what reaches them.
 |---|---|---|
 | M0 | Seed alignment: contract, roles, skills, docs, scripts, CI, AGPL; legacy tree removed | complete, `docs/milestones/M0.md` |
 | M1 | Kernel and runtime shell: core contract, kernel, identity, `em2` binary, deploy files | gate green, `docs/milestones/M1.md` |
-| M2–M7 | Data engine, execution engine, ledger, runtime parity, journal and observatory, hardening | planned in `docs/BLUEPRINT.md` |
+| M2 | Data engine: Markdown, canonical messages, channels, media, dossiers, bridges | gate green, `docs/milestones/M2.md` |
+| M3–M7 | Execution engine, ledger, runtime parity, journal and observatory, hardening | planned in `docs/BLUEPRINT.md` |
 
 ## Quick start
 

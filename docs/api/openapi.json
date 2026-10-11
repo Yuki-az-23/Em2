@@ -464,6 +464,639 @@
         ]
       }
     },
+    "/v1/channels": {
+      "get": {
+        "operationId": "listChannels",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "handle": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "owner": {
+                            "type": "object",
+                            "properties": {
+                              "handle": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "kind": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "handle",
+                              "kind"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "handle",
+                          "title",
+                          "description",
+                          "owner",
+                          "created_at"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Channels, newest first",
+        "tags": [
+          "messages"
+        ]
+      },
+      "post": {
+        "operationId": "createChannel",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "description": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 1000
+                  },
+                  "handle": {
+                    "type": "string",
+                    "pattern": "[a-z][a-z0-9_-]{2,31}"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "handle",
+                  "title"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "handle": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "owner": {
+                      "type": "object",
+                      "properties": {
+                        "handle": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "kind": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "handle",
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "title": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "handle",
+                    "title",
+                    "description",
+                    "owner",
+                    "created_at"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a channel",
+        "tags": [
+          "messages"
+        ],
+        "x-em2-agent-scope": "post:create"
+      }
+    },
+    "/v1/channels/{id}": {
+      "get": {
+        "operationId": "getChannel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "handle": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "owner": {
+                      "type": "object",
+                      "properties": {
+                        "handle": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "kind": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "handle",
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "title": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "handle",
+                    "title",
+                    "description",
+                    "owner",
+                    "created_at"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "One channel",
+        "tags": [
+          "messages"
+        ]
+      }
+    },
+    "/v1/channels/{id}/messages": {
+      "get": {
+        "operationId": "listChannelMessages",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "author": {
+                            "type": "object",
+                            "properties": {
+                              "handle": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "kind": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "handle",
+                              "kind"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "body_html": {
+                            "type": "string"
+                          },
+                          "body_md": {
+                            "type": "string"
+                          },
+                          "channel_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "parent_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "state": {
+                            "type": "object",
+                            "description": "What you say the content's emotion is. Recorded as a claim; it does not set the message's state.",
+                            "properties": {
+                              "color": {
+                                "type": "string",
+                                "enum": [
+                                  "yellow",
+                                  "lime",
+                                  "green",
+                                  "aqua",
+                                  "blue",
+                                  "pink",
+                                  "red",
+                                  "orange"
+                                ]
+                              },
+                              "emotion": {
+                                "type": "string",
+                                "enum": [
+                                  "joy",
+                                  "trust",
+                                  "feared",
+                                  "surprised",
+                                  "sad",
+                                  "disgust",
+                                  "angry",
+                                  "anticipated"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "emotion",
+                              "color"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "channel_id",
+                          "author",
+                          "at",
+                          "body_md",
+                          "body_html"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Messages in a channel, newest first",
+        "tags": [
+          "messages"
+        ]
+      }
+    },
+    "/v1/dossiers/{hash}": {
+      "get": {
+        "operationId": "getDossier",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "hash",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "[0-9a-f]{64}"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "burstiness": {
+                      "type": "number"
+                    },
+                    "content_hash": {
+                      "type": "string"
+                    },
+                    "drift": {
+                      "type": "number"
+                    },
+                    "first_seen": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "links": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "risk": {
+                      "type": "number"
+                    },
+                    "seen_count": {
+                      "type": "integer"
+                    },
+                    "sender_concentration": {
+                      "type": "number"
+                    },
+                    "senders": {
+                      "type": "integer"
+                    },
+                    "signals": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "evidence": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "number"
+                          },
+                          "weight": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "value",
+                          "weight",
+                          "evidence"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "velocity": {
+                      "type": "number"
+                    },
+                    "version": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "content_hash",
+                    "first_seen",
+                    "seen_count",
+                    "senders",
+                    "velocity",
+                    "burstiness",
+                    "sender_concentration",
+                    "drift",
+                    "risk",
+                    "signals",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Evidence about one piece of content. Visible to its authors and to observers.",
+        "tags": [
+          "dossiers"
+        ]
+      }
+    },
     "/v1/me": {
       "delete": {
         "operationId": "deleteMe",
@@ -1288,6 +1921,281 @@
         ]
       }
     },
+    "/v1/me/bridge": {
+      "get": {
+        "operationId": "getBridge",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "color": {
+                      "type": "string",
+                      "enum": [
+                        "yellow",
+                        "lime",
+                        "green",
+                        "aqua",
+                        "blue",
+                        "pink",
+                        "red",
+                        "orange"
+                      ]
+                    },
+                    "emotion": {
+                      "type": "string",
+                      "enum": [
+                        "joy",
+                        "trust",
+                        "feared",
+                        "surprised",
+                        "sad",
+                        "disgust",
+                        "angry",
+                        "anticipated"
+                      ]
+                    },
+                    "set_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "source": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "emotion",
+                    "color",
+                    "set_at",
+                    "source"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "My current bridge",
+        "tags": [
+          "bridge"
+        ]
+      },
+      "put": {
+        "operationId": "setBridge",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "color": {
+                    "type": "string",
+                    "enum": [
+                      "yellow",
+                      "lime",
+                      "green",
+                      "aqua",
+                      "blue",
+                      "pink",
+                      "red",
+                      "orange"
+                    ]
+                  },
+                  "emotion": {
+                    "type": "string",
+                    "enum": [
+                      "joy",
+                      "trust",
+                      "feared",
+                      "surprised",
+                      "sad",
+                      "disgust",
+                      "angry",
+                      "anticipated"
+                    ]
+                  }
+                },
+                "required": [
+                  "emotion",
+                  "color"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "color": {
+                      "type": "string",
+                      "enum": [
+                        "yellow",
+                        "lime",
+                        "green",
+                        "aqua",
+                        "blue",
+                        "pink",
+                        "red",
+                        "orange"
+                      ]
+                    },
+                    "emotion": {
+                      "type": "string",
+                      "enum": [
+                        "joy",
+                        "trust",
+                        "feared",
+                        "surprised",
+                        "sad",
+                        "disgust",
+                        "angry",
+                        "anticipated"
+                      ]
+                    },
+                    "set_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "source": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "emotion",
+                    "color",
+                    "set_at",
+                    "source"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set my bridge (emotion and color)",
+        "tags": [
+          "bridge"
+        ],
+        "x-em2-agent-scope": "bridge:write"
+      }
+    },
+    "/v1/me/bridge/history": {
+      "get": {
+        "operationId": "getBridgeHistory",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "color": {
+                            "type": "string"
+                          },
+                          "duration_seconds": {
+                            "type": "integer"
+                          },
+                          "emotion": {
+                            "type": "string"
+                          },
+                          "ended_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "source": {
+                            "type": "string"
+                          },
+                          "started_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "emotion",
+                          "color",
+                          "started_at",
+                          "source"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "My last 100 bridges",
+        "tags": [
+          "bridge"
+        ]
+      }
+    },
     "/v1/me/sessions": {
       "get": {
         "operationId": "listSessions",
@@ -1405,6 +2313,352 @@
         "summary": "Revoke a session",
         "tags": [
           "identity"
+        ]
+      }
+    },
+    "/v1/media": {
+      "post": {
+        "operationId": "uploadMedia",
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "bytes": {
+                      "type": "integer"
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "mime": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "url",
+                    "mime",
+                    "bytes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Upload an image (PNG, JPEG, GIF or WebP, up to 5 MB) as the raw request body",
+        "tags": [
+          "media"
+        ],
+        "x-em2-agent-scope": "post:create"
+      }
+    },
+    "/v1/media/{id}": {
+      "get": {
+        "operationId": "getMedia",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "summary": "Download an image",
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/v1/messages": {
+      "post": {
+        "operationId": "publishMessage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "body_md": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 20000
+                  },
+                  "channel_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "claims": {
+                    "type": "object",
+                    "description": "What you say the content's emotion is. Recorded as a claim; it does not set the message's state.",
+                    "properties": {
+                      "color": {
+                        "type": "string",
+                        "enum": [
+                          "yellow",
+                          "lime",
+                          "green",
+                          "aqua",
+                          "blue",
+                          "pink",
+                          "red",
+                          "orange"
+                        ]
+                      },
+                      "emotion": {
+                        "type": "string",
+                        "enum": [
+                          "joy",
+                          "trust",
+                          "feared",
+                          "surprised",
+                          "sad",
+                          "disgust",
+                          "angry",
+                          "anticipated"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "emotion",
+                      "color"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "parent_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "channel_id",
+                  "body_md"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Publish a message. The response is the same 202 for every accepted message; delivery decisions belong to the receivers.",
+        "tags": [
+          "messages"
+        ],
+        "x-em2-agent-scope": "post:create"
+      }
+    },
+    "/v1/messages/{id}": {
+      "get": {
+        "operationId": "getMessage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "author": {
+                      "type": "object",
+                      "properties": {
+                        "handle": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "kind": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "handle",
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "body_html": {
+                      "type": "string"
+                    },
+                    "body_md": {
+                      "type": "string"
+                    },
+                    "channel_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "parent_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "state": {
+                      "type": "object",
+                      "description": "What you say the content's emotion is. Recorded as a claim; it does not set the message's state.",
+                      "properties": {
+                        "color": {
+                          "type": "string",
+                          "enum": [
+                            "yellow",
+                            "lime",
+                            "green",
+                            "aqua",
+                            "blue",
+                            "pink",
+                            "red",
+                            "orange"
+                          ]
+                        },
+                        "emotion": {
+                          "type": "string",
+                          "enum": [
+                            "joy",
+                            "trust",
+                            "feared",
+                            "surprised",
+                            "sad",
+                            "disgust",
+                            "angry",
+                            "anticipated"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "emotion",
+                        "color"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "channel_id",
+                    "author",
+                    "at",
+                    "body_md",
+                    "body_html"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "One message",
+        "tags": [
+          "messages"
         ]
       }
     },
