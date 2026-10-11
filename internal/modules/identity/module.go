@@ -84,6 +84,7 @@ const (
 func (m *Module) Register(r *kernel.Registry) error {
 	r.Authenticator(m.authenticate)
 	r.Provide(services.Directory(directory{scope: r.Scope()}))
+	r.Provide(services.Handles(directory{scope: r.Scope()}))
 	r.Emits(kernel.EventDef{Name: EventPrincipalRegistered, Version: 1, Schema: principalEvent, Summary: "A human or agent principal was created"})
 	r.Emits(kernel.EventDef{Name: EventPrincipalDeleted, Version: 1, Schema: principalEvent, Summary: "A principal was deleted and its credentials revoked"})
 	for _, rt := range m.routes() {

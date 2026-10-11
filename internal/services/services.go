@@ -73,6 +73,7 @@ type MessageView struct {
 // DirectMessage is a message addressed to one principal rather than a
 // channel: ingress requests, upstream replies and egress fetches.
 type DirectMessage struct {
+	ID         string // optional; generated when empty
 	Plane      core.Plane
 	Sender     core.Principal // authenticated sender; for egress, the fetching agent
 	External   string         // egress: the origin URL; the sender then has no stance
@@ -95,4 +96,10 @@ type Messages interface {
 // verdict.
 type Exchanges interface {
 	Responded(ctx context.Context, exchangeID string, upstreamStatus int, latency time.Duration) error
+}
+
+// Handles resolves a handle to an active principal. Provided by identity.
+// It returns nil when no active principal has the handle.
+type Handles interface {
+	ByHandle(ctx context.Context, handle string) (*PublicPrincipal, error)
 }

@@ -11,11 +11,12 @@ How to run, operate and deploy EM2. Owner: `infra-release`.
 | `EM2_KEY_PEPPER` | none (required) | base64, at least 32 bytes; mixed into every stored credential hash |
 | `EM2_ADDR` | `:8080` | public listener |
 | `EM2_ADMIN_ADDR` | `127.0.0.1:9090` | private listener for `/metrics`; never expose it publicly |
-| `EM2_MODE` | `shadow` | `enforce`, `shadow` or `replay` (verdicts honour it from M3) |
+| `EM2_MODE` | `shadow` | `enforce` applies verdicts; `shadow` decides and records them but delivers everything (start here); `replay` arrives in M5 |
 | `EM2_DB_ROLE_ISOLATION` | `on` | run each module's transactions as its own database role |
 | `EM2_TRUST_PROXY` | `off` | `on` behind exactly one reverse proxy: take the client IP from the last `X-Forwarded-For` entry |
 | `EM2_MEDIA_DIR` | `data/media` | where uploaded images are stored; must be writable and persistent |
 | `EM2_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+| `EM2_NET_ALLOW_PRIVATE` | `off` | `on` lets ingress and egress reach private, loopback and link-local addresses and any port. Development and tests only; the server logs a warning |
 
 Generate the two secrets once and store them like any other secret:
 
@@ -103,7 +104,9 @@ Long jobs (replay corpus from M5, load tests from M7) run as Argo Workflows `bat
 
 ## Known limits (tracked for M7)
 
-- Rate limits are per process. Run one replica until they are shared.
+- Rate limits and the ingress circuit breaker are per process. Run one replica until they are shared.
+- Ingress forwards run from a job every 500 ms, up to 16 at a time, 30 s timeout each, never retried.
+  A forward interrupted by a restart is marked failed (`ingress.forwards.error = 'interrupted'`).
 - Two parallel refreshes with the same refresh token count as reuse and revoke the session family.
   Clients must refresh one at a time.
 - Registration reveals that an email or handle is taken (with the same message for both). Email

@@ -56,7 +56,10 @@ func (m *Module) AcceptDirect(ctx context.Context, d services.DirectMessage) (st
 				return errors.New("ingest: the parent of a direct message must be a direct message")
 			}
 		}
-		msg, doc, err := normalize.Direct(normalize.DirectInput{ID: kernel.NewID(), At: c.Now(), Plane: d.Plane, Sender: d.Sender, Stance: stance,
+		if d.ID == "" {
+			d.ID = kernel.NewID()
+		}
+		msg, doc, err := normalize.Direct(normalize.DirectInput{ID: d.ID, At: c.Now(), Plane: d.Plane, Sender: d.Sender, Stance: stance,
 			External: d.External, ReceiverID: d.ReceiverID, ParentID: d.ParentID, BodyMD: d.BodyMD, Header: d.Header})
 		if err != nil {
 			return ErrBadBody

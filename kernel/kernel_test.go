@@ -194,6 +194,10 @@ func testKernel(t *testing.T, cfg Config) *Kernel {
 		r.Route(Route{Method: "GET", Path: "/v1/admin/thing", OperationID: "adminThing", Auth: AuthAdmin, Handler: ok})
 		r.Route(Route{Method: "GET", Path: "/v1/limited", OperationID: "limited", RateLimit: &RateLimit{Burst: 2, Per: time.Minute}, Handler: ok})
 		r.Route(Route{Method: "GET", Path: "/v1/slow", OperationID: "slow", MinDuration: 80 * time.Millisecond, Handler: ok})
+		r.Route(Route{Method: "POST", Path: "/v1/raw", OperationID: "raw", RawBody: []string{"text/plain"}, MaxBody: 16,
+			Handler: func(_ Ctx, req *Request) (*Response, error) {
+				return JSON(200, map[string]string{"got": string(req.Body)}), nil
+			}})
 		return nil
 	})
 	if err := k.Register(m); err != nil {
@@ -491,5 +495,21 @@ func TestConcurrentProblemsDoNotShareState(t *testing.T) {
 	}
 	if ErrUnauthenticated.Instance != "" || ErrNotFound.Instance != "" {
 		t.Fatal("a shared problem value was mutated")
+	}
+}
+
+func TestRawBodiesAreTypedAndBounded(t *testing.T) {
+	k := testKernel(t, Config{})
+	resp := do(t, k, "POST", "/v1/raw", "", "text/plain; charset=utf-8", "not json at all")
+	var got map[string]string
+	_ = json.NewDecoder(resp.Body).Decode(&got)
+	if resp.StatusCode != 200 || got["got"] != "not json at all" {
+		t.Fatalf("raw body: %d %v", resp.StatusCode, got)
+	}
+	if resp := do(t, k, "POST", "/v1/raw", "", "application/xml", "<x/>"); resp.StatusCode != 415 {
+		t.Fatalf("wrong type: %d", resp.StatusCode)
+	}
+	if resp := do(t, k, "POST", "/v1/raw", "", "text/plain", strings.Repeat("x", 17)); resp.StatusCode != 413 {
+		t.Fatalf("too large: %d", resp.StatusCode)
 	}
 }

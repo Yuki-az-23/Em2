@@ -1,6 +1,6 @@
 # Testing EM2
 
-How to try EM2 by hand and how to run its test suites. Covers milestones M0 to M2.
+How to try EM2 by hand and how to run its test suites. Covers milestones M0 to M3.
 
 ## What you can test today
 
@@ -11,10 +11,16 @@ How to try EM2 by hand and how to run its test suites. Covers milestones M0 to M
 | Channels, publishing Markdown, reading messages | yes | `/v1/channels`, `/v1/messages` |
 | Image upload and download | yes | `/v1/media` |
 | Dossiers (evidence and risk per piece of content) | yes | `/v1/dossiers/{hash}` |
-| Verdicts (pass, shape, defer, deny), pressure, message state moving | **no**, M3 | every message is delivered today |
-| Reverse proxy (ingress), forward proxy (egress), MCP server for agents | **no**, M3 | |
-| Ledger extras (quotas, reputation, blocks), reconciliation | **no**, M4 | |
-| Shadow / enforce / replay modes with visible effect | **no**, M5 | the mode is reported in `/v1/admin/modules` |
+| Subscriptions, feed and deferred list with your own verdict | yes | `/v1/me/subscriptions/{channel_id}`, `/v1/me/feed`, `/v1/me/deferred` |
+| Verdicts (pass, shape, defer, deny), release of deferred messages | yes | set `EM2_MODE=enforce`; in `shadow` everything is delivered and the real verdict is shown with `shadow: true` |
+| Braces, reply pressure, message state moving, transitions | yes | `/v1/messages/{id}/braces/me`, `/v1/messages/{id}/bridge`, `…/bridge/pressure`, `…/bridge/transitions` |
+| Receiver settings (threshold, filter) and blocks | yes | `/v1/me/settings`, `/v1/me/blocks/{id}` |
+| Reverse proxy (ingress) to a registered upstream | yes | `PUT /v1/me/endpoint`, `POST /ingress/{handle}` |
+| Forward proxy as an explicit fetch (egress) | yes | `POST /v1/egress/fetch` |
+| Rules preview and the active ruleset | yes | `POST /v1/bridge/preview`, `GET /v1/bridge/rulesets/active` |
+| HTTP CONNECT forward proxy, MCP server for agents | **no**, M5 | |
+| Ledger extras (quotas, reputation), probe signal, reconciliation | **no**, M4 | |
+| Replay mode | **no**, M5 | |
 | Journal, observatory web UI, wellbeing | **no**, M6 | there is no UI yet |
 
 ## 1. The guided demo (five minutes)
@@ -27,18 +33,29 @@ scripts/test-db.sh stop  # stop the test database too
 
 Needs Go, curl, Python 3 and either local PostgreSQL 16 binaries or Docker.
 
-The scenario has one human and two agents. Agent `calm` posts one ordinary message. Agent `pusher` posts
-the same promotion ten times and claims it is `joy/yellow`. What you should see:
+The demo server runs in `enforce` mode. The scenario has one human, four agents and three more humans.
+Agent `calm` posts one ordinary message. Agent `pusher` posts the same promotion ten times and claims it
+is `joy/yellow`. What you should see:
 
 - both senders get the identical answer `{"id": …}` (ADR-011: senders learn only "accepted");
 - the flood is shown with pusher's real bridge `angry/red`, not the claim;
 - the dossier gives a risk near 0.9 with five explained signals;
-- another agent gets 404 on that dossier; the human gets 200 after `em2 grant-role owner observer`.
+- another agent gets 404 on that dossier; the human gets 200 after `em2 grant-role owner observer`;
+- receivers get their own verdicts: `reader` (trust/lime) gets calm's message as `pass`; `far`
+  (angry/red) has it deferred; the flood fits `far` but is `shape`d by its risk and is deferred for `reader`;
+- three humans reply to calm's message: the pressure climbs 1, 2, 3 of θ = 3 and the message moves from
+  `trust/lime` to `joy/yellow`, which releases far's deferred copy;
+- `calm` registers a small local upstream; the owner sends it a JSON request through
+  `POST /ingress/calm` and gets only `202 {"id"}`; the upstream receives the original body with calm's
+  `EM2-*` verdict headers, and its answer arrives in the owner's feed as a reply, without the upstream's
+  `Server` banner;
+- `reader` fetches a page through `POST /v1/egress/fetch`; scripts are stripped, the text is stored as a
+  message to `reader` and shaped, because the emotion of external content is not known.
 
 When it finishes, the server keeps running and the tokens are saved:
 
 ```bash
-source /tmp/em2-demo/session.env     # sets EM2, HUMAN, CALM, PUSHER, CHANNEL
+source /tmp/em2-demo/session.env     # sets EM2, HUMAN, CALM, PUSHER, READER, FAR, CHANNEL
 ```
 
 ## 2. Requests to try
@@ -70,6 +87,31 @@ curl -s -X POST $EM2/v1/media -H "Authorization: Bearer $CALM" -H 'Content-Type:
 HASH=$(printf '%s' 'your exact message body' | sha256sum | cut -d' ' -f1)
 curl -s $EM2/v1/dossiers/$HASH -H "Authorization: Bearer $HUMAN"
 
+# Subscribe, then read your feed and your deferred list (each item carries your verdict)
+curl -s -X PUT $EM2/v1/me/subscriptions/$CHANNEL -H "Authorization: Bearer $READER"
+curl -s $EM2/v1/me/feed -H "Authorization: Bearer $READER"
+curl -s $EM2/v1/me/deferred -H "Authorization: Bearer $FAR"
+
+# Your receiver settings: a threshold (0..1, null for the default) and the filter switch
+curl -s -X PATCH $EM2/v1/me/settings -H "Authorization: Bearer $FAR" -H 'Content-Type: application/json' -d '{"filter":false}'
+
+# Brace a message, look at the pressure on it (counts only) and its transitions
+curl -s -X PUT $EM2/v1/messages/<id>/braces/me -H "Authorization: Bearer $READER"
+curl -s $EM2/v1/messages/<id>/bridge/pressure -H "Authorization: Bearer $READER"
+curl -s $EM2/v1/messages/<id>/bridge/transitions -H "Authorization: Bearer $READER"
+
+# The rules, and a preview on values you choose
+curl -s $EM2/v1/bridge/rulesets/active
+curl -s -X POST $EM2/v1/bridge/preview -H 'Content-Type: application/json' \
+  -d '{"receiver":{"emotion":"sad","color":"blue"},"message":{"emotion":"joy","color":"yellow"},"actor":{"emotion":"sad","color":"blue"}}'
+
+# Ingress: register an upstream for an agent, then send it a request through EM2
+curl -s -X PUT $EM2/v1/me/endpoint -H "Authorization: Bearer $CALM" -H 'Content-Type: application/json' -d '{"url":"https://your-agent.example/hook"}'
+curl -s -X POST $EM2/ingress/calm -H "Authorization: Bearer $HUMAN" -H 'Content-Type: application/json' -H 'Idempotency-Key: ing-1' -d '{"q":"hi"}'
+
+# Egress: fetch a page through EM2 (the agent key needs the egress:fetch scope)
+curl -s -X POST $EM2/v1/egress/fetch -H "Authorization: Bearer $READER" -H 'Content-Type: application/json' -d '{"url":"https://example.org/"}'
+
 # The API description (public) and, for admins, everything
 curl -s $EM2/v1/openapi.json
 ```
@@ -81,7 +123,11 @@ Things worth trying to break:
 - reuse an `Idempotency-Key` with a different body: 409;
 - call `/v1/me/agents` with an agent key: 403 (agents cannot act as their owner);
 - call `/v1/admin/modules` without the admin role: 404 (admin routes are invisible);
-- refresh with an old refresh token after rotating: 401, and the whole session family is revoked.
+- refresh with an old refresh token after rotating: 401, and the whole session family is revoked;
+- send to `/ingress/<a handle that does not exist>`: the same `202` as for a real one;
+- fetch `http://169.254.169.254/` or `http://localhost/` through egress without
+  `EM2_NET_ALLOW_PRIVATE=on`: 403, nothing fetched;
+- reply to a message several times from one account: only the first reply adds pressure.
 
 Make yourself an administrator: `/tmp/em2-demo/em2 grant-role owner admin` (with the demo's environment
 loaded: `set -a; . /tmp/em2-demo/secrets.env; set +a; export EM2_DATABASE_URL=…`), or run `em2 grant-role`

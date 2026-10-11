@@ -38,3 +38,22 @@ func (d directory) Public(ctx context.Context, ids []string) (map[string]service
 	})
 	return out, err
 }
+
+func (d directory) ByHandle(ctx context.Context, handle string) (*services.PublicPrincipal, error) {
+	var out *services.PublicPrincipal
+	err := d.scope.Tx(ctx, func(c kernel.Ctx) error {
+		var p services.PublicPrincipal
+		var kind string
+		err := c.DB().QueryRow(c, `SELECT id, handle, kind FROM principals WHERE lower(handle) = lower($1) AND status = 'active'`, handle).Scan(&p.ID, &p.Handle, &kind)
+		if kernel.IsNoRows(err) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		p.Kind = core.PrincipalKind(kind)
+		out = &p
+		return nil
+	})
+	return out, err
+}

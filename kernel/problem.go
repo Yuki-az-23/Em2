@@ -49,6 +49,7 @@ var (
 	ErrUnsupportedMedia   = newProblem(http.StatusUnsupportedMediaType, "unsupported-media-type", "Request body must be application/json")
 	ErrDenied             = newProblem(http.StatusForbidden, "denied", "Denied")
 	ErrUnavailable        = newProblem(http.StatusServiceUnavailable, "unavailable", "Service unavailable")
+	ErrUpstream           = newProblem(http.StatusBadGateway, "upstream-unavailable", "The remote server could not be reached")
 	ErrInternal           = newProblem(http.StatusInternalServerError, "internal", "An error occurred. Please try again.")
 )
 

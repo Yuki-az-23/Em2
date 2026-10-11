@@ -41,6 +41,7 @@ type Route struct {
 	Params      map[string]*schema.Schema // path parameters; a mismatch is a 404, never a 400
 	Query       *schema.Schema            // object schema of string/integer/boolean properties
 	Body        *schema.Schema            // JSON request body; nil means none accepted
+	RawBody     []string                  // with Body nil: accept these media types as an unparsed body of at most MaxBody bytes
 	MaxBody     int64                     // bytes; default 1 MiB
 	Responses   map[int]*schema.Schema    // documented success responses; nil schema means no body
 	RateLimit   *RateLimit                // per principal (or per IP when unauthenticated)

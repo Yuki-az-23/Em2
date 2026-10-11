@@ -15,10 +15,13 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"em2.social/em2/internal/adapters/egress"
+	"em2.social/em2/internal/adapters/ingress"
 	"em2.social/em2/internal/modules/identity"
 	"em2.social/em2/internal/modules/ingest"
 	"em2.social/em2/internal/modules/ledger"
 	"em2.social/em2/internal/modules/verdict"
+	"em2.social/em2/internal/netguard"
 	"em2.social/em2/internal/storage"
 	"em2.social/em2/kernel"
 	"em2.social/em2/pkg/ecbridge"
@@ -36,10 +39,14 @@ type Config struct {
 	TrustProxy    bool   // EM2_TRUST_PROXY
 	MediaDir      string // EM2_MEDIA_DIR, default ./data/media
 	LogLevel      slog.Level
+	// NetAllowPrivate lets ingress and egress reach private, loopback and
+	// link-local addresses (EM2_NET_ALLOW_PRIVATE=on). Development only.
+	NetAllowPrivate bool
 
 	// Test hooks.
 	FastHashing      bool
 	DispatchInterval time.Duration
+	ForwardEvery     time.Duration // ingress forwarding poll
 	Now              func() time.Time
 }
 
@@ -52,6 +59,8 @@ func FromEnv() (Config, error) {
 		RoleIsolation: env("EM2_DB_ROLE_ISOLATION", "on") != "off",
 		TrustProxy:    env("EM2_TRUST_PROXY", "off") == "on",
 		MediaDir:      env("EM2_MEDIA_DIR", "data/media"),
+
+		NetAllowPrivate: env("EM2_NET_ALLOW_PRIVATE", "off") == "on",
 	}
 	var err error
 	if c.Mode, err = kernel.ParseRunMode(env("EM2_MODE", string(kernel.ModeShadow))); err != nil {
@@ -110,7 +119,12 @@ func Modules(c Config) ([]kernel.Module, error) {
 	if err != nil {
 		return nil, err
 	}
-	return []kernel.Module{id, ledger.New(ledger.Config{DefaultThreshold: rules.Threshold}), in, vd}, nil
+	guard := &netguard.Guard{AllowPrivate: c.NetAllowPrivate}
+	if c.NetAllowPrivate {
+		guard.Ports = func(int) bool { return true }
+	}
+	return []kernel.Module{id, ledger.New(ledger.Config{DefaultThreshold: rules.Threshold}), in, vd,
+		ingress.New(ingress.Config{Guard: guard, ForwardEvery: c.ForwardEvery}), egress.New(egress.Config{Guard: guard})}, nil
 }
 
 // Open connects to the database (if configured) and boots a kernel with all modules.

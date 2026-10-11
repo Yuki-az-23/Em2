@@ -44,7 +44,7 @@ func Decide(state *core.EC, risk float64, rcv Receiver, r *Ruleset) Decision {
 	case score != nil && *score < rcv.Threshold && rcv.Filter:
 		return Decision{core.VerdictDefer, score, Explain(*rcv.Bridge, *state, rcv.Threshold, r.WEmotion)}
 	case state == nil:
-		return Decision{core.VerdictShape, score, "The content's emotion has not been assessed yet."}
+		return Decision{core.VerdictShape, score, "The content's emotion is not known (external content)."}
 	case risk >= r.RiskShape:
 		return Decision{core.VerdictShape, score, fmt.Sprintf("The content's risk %.2f is at or above the shaping limit %.2f.", risk, r.RiskShape)}
 	case rcv.Bridge == nil:

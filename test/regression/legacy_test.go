@@ -93,16 +93,27 @@ func TestTokensExpireAndLogoutExists(t *testing.T) {
 }
 
 // Legacy: validators ran after controllers, so input was never validated.
-// Every operation that takes a body must declare a closed schema for it.
+// Every operation that takes a JSON body must declare a closed schema for it.
+// Opaque bodies (media uploads, proxied ingress payloads) declare only their
+// media types; the kernel bounds their size and the handler checks content.
 func TestEveryBodyIsValidatedAgainstAClosedSchema(t *testing.T) {
 	for key, op := range operations(openapi(t, true)) {
 		rb, ok := op["requestBody"].(map[string]any)
 		if !ok {
 			continue
 		}
-		b, _ := json.Marshal(rb)
-		if !strings.Contains(string(b), `"additionalProperties":false`) {
-			t.Errorf("%s accepts unknown body properties", key)
+		for mt, c := range rb["content"].(map[string]any) {
+			sch, ok := c.(map[string]any)["schema"]
+			if !ok {
+				if key != "POST /ingress/{handle}" {
+					t.Errorf("%s takes an opaque %s body", key, mt)
+				}
+				continue
+			}
+			b, _ := json.Marshal(sch)
+			if !strings.Contains(string(b), `"additionalProperties":false`) {
+				t.Errorf("%s accepts unknown body properties", key)
+			}
 		}
 	}
 }

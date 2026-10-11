@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"regexp"
 	"runtime/debug"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -254,6 +255,22 @@ func (k *Kernel) wrap(rt *Route) http.Handler {
 			}
 			if errs := rt.Body.ValidateJSON(body); len(errs) > 0 {
 				fail(Validation(errs))
+				return
+			}
+		} else if len(rt.RawBody) > 0 {
+			mt, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+			if err != nil || !slices.Contains(rt.RawBody, mt) {
+				fail(ErrUnsupportedMedia.WithDetail("Send one of: " + strings.Join(rt.RawBody, ", ") + "."))
+				return
+			}
+			body, err = io.ReadAll(http.MaxBytesReader(rec, r.Body, maxBody))
+			if err != nil {
+				var mbe *http.MaxBytesError
+				if errors.As(err, &mbe) {
+					fail(ErrPayloadTooLarge)
+				} else {
+					fail(BadRequest("The request body could not be read."))
+				}
 				return
 			}
 		}

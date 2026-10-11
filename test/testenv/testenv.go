@@ -70,6 +70,9 @@ type Options struct {
 	LogHandler slog.Handler
 	MaxConns   int32          // database pool size; 0 keeps the pgx default
 	Mode       kernel.RunMode // default shadow, as in production
+	// StrictNet keeps the network guard's private-address block on. By
+	// default tests allow private addresses so fake upstreams on loopback work.
+	StrictNet bool
 }
 
 // Instance is a running EM2.
@@ -91,6 +94,7 @@ func TestConfig(dbURL string) app.Config {
 		RoleIsolation:    true,
 		FastHashing:      true,
 		DispatchInterval: 20 * time.Millisecond,
+		ForwardEvery:     50 * time.Millisecond,
 	}
 }
 
@@ -102,6 +106,7 @@ func Start(t testing.TB, opt Options) *Instance {
 	if opt.Mode != "" {
 		cfg.Mode = opt.Mode
 	}
+	cfg.NetAllowPrivate = !opt.StrictNet
 	ctx := context.Background()
 	pcfg, err := pgxpool.ParseConfig(cfg.DatabaseURL)
 	if err != nil {

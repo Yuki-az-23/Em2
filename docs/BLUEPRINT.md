@@ -2,7 +2,8 @@
 
 > Approved plan, kept as the master design. Implementation status per milestone is in `docs/milestones/`.
 > Where an implementation detail differs from this text, the milestone file records the difference
-> (M1: `docs/milestones/M1.md`; M2: `docs/milestones/M2.md` and ADR-012).
+> (M1: `docs/milestones/M1.md`; M2: `docs/milestones/M2.md` and ADR-012; M3: `docs/milestones/M3.md`
+> and ADR-013, which makes ingress asynchronous and answers every sender with the same `202`).
 
 ## Context
 

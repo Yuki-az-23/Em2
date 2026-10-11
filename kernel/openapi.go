@@ -65,6 +65,12 @@ func (k *Kernel) OpenAPI(admin bool) map[string]any {
 		}
 		if rt.Body != nil {
 			op["requestBody"] = map[string]any{"required": true, "content": map[string]any{"application/json": map[string]any{"schema": rt.Body}}}
+		} else if len(rt.RawBody) > 0 {
+			content := map[string]any{}
+			for _, t := range rt.RawBody {
+				content[t] = map[string]any{}
+			}
+			op["requestBody"] = map[string]any{"required": true, "content": content}
 		}
 		responses := map[string]any{"default": map[string]any{
 			"description": "Problem (RFC 9457)",

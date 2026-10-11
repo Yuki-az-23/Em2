@@ -123,6 +123,9 @@ func serve(ctx context.Context, cfg app.Config, log *slog.Logger) error {
 	go func() { errc <- srv.ListenAndServe() }()
 	go func() { errc <- admin.ListenAndServe() }()
 	log.Info("em2 serving", "addr", cfg.Addr, "admin_addr", cfg.AdminAddr, "mode", cfg.Mode)
+	if cfg.NetAllowPrivate {
+		log.Warn("EM2_NET_ALLOW_PRIVATE is on: ingress and egress may reach private and loopback addresses; never use this in production")
+	}
 
 	select {
 	case <-ctx.Done():

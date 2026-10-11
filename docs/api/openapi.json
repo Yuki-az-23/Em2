@@ -90,6 +90,72 @@
         ]
       }
     },
+    "/ingress/{handle}": {
+      "post": {
+        "operationId": "sendIngress",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "handle",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "[A-Za-z0-9_][A-Za-z0-9_-]{0,63}"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {},
+            "text/markdown": {},
+            "text/plain": {}
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send a request to a principal through EM2. The response is the same 202 for every accepted request; the receiver's verdict decides whether it is forwarded to their upstream, and an answer arrives in your feed as a reply.",
+        "tags": [
+          "ingress"
+        ],
+        "x-em2-agent-scope": "post:create"
+      }
+    },
     "/readyz": {
       "get": {
         "operationId": "ready",
@@ -1373,6 +1439,100 @@
         "tags": [
           "dossiers"
         ]
+      }
+    },
+    "/v1/egress/fetch": {
+      "post": {
+        "operationId": "egressFetch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 2048
+                  }
+                },
+                "required": [
+                  "url"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "body_md": {
+                      "type": "string"
+                    },
+                    "bytes": {
+                      "type": "integer"
+                    },
+                    "content_type": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string",
+                      "description": "The stored message. Its verdict arrives in your feed.",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "integer"
+                    },
+                    "truncated": {
+                      "type": "boolean"
+                    },
+                    "url": {
+                      "type": "string",
+                      "description": "The final URL after redirects."
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "url",
+                    "status",
+                    "content_type",
+                    "bytes",
+                    "truncated",
+                    "body_md"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Fetch a public http(s) URL through EM2. The content is kept as a message to you with an unknown emotional state.",
+        "tags": [
+          "egress"
+        ],
+        "x-em2-agent-scope": "egress:fetch"
       }
     },
     "/v1/me": {
