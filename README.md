@@ -19,6 +19,14 @@ the sender, control over what reaches them.
 | M2 | Data engine: Markdown, canonical messages, channels, media, dossiers, bridges | gate green, `docs/milestones/M2.md` |
 | M3–M7 | Execution engine, ledger, runtime parity, journal and observatory, hardening | planned in `docs/BLUEPRINT.md` |
 
+## Try it
+
+```bash
+scripts/demo.sh          # a narrated five-minute scenario against the real server
+```
+
+See [docs/TESTING.md](docs/TESTING.md) for what can be tested today and requests to try.
+
 ## Quick start
 
 ```bash
@@ -38,6 +46,7 @@ Or with Docker: `docker compose -f deploy/docker-compose.yml up`.
 - [docs/contracts/](docs/contracts/) — the sealed core contract
 - [docs/adr/](docs/adr/) — architecture decisions
 - [docs/RUNBOOK.md](docs/RUNBOOK.md) — running and operating EM2
+- [docs/TESTING.md](docs/TESTING.md) — the demo, requests to try, and the test suites
 - [docs/task-taxonomy.md](docs/task-taxonomy.md), [docs/issue-template.md](docs/issue-template.md),
   [docs/milestone-checklist.md](docs/milestone-checklist.md) — how work is tracked
 

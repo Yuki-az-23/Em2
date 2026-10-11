@@ -44,6 +44,7 @@ EM2_FILES = [
     "docs/contracts/journal.md",
     "docs/adr/ADR-011-trust-boundary-and-disclosure.md",
     "docs/RUNBOOK.md",
+    "docs/TESTING.md",
     "docs/milestones/M0.md",
     "docs/milestones/M1.md",
     "docs/milestones/M2.md",

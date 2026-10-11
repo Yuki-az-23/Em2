@@ -32,6 +32,7 @@ python3 -m unittest discover -s scripts/tests -t .   # tests for the seed script
 ```
 
 `scripts/test-db.sh` starts a throwaway local Postgres 16 and prints the URL for the integration tests.
+`scripts/demo.sh` runs a narrated end-to-end scenario against the real binary (`docs/TESTING.md`).
 
 ## Layout
 

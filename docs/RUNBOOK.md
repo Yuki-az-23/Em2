@@ -26,6 +26,8 @@ go run ./cmd/em2 keygen        # prints EM2_SIGNING_KEY=... and EM2_KEY_PEPPER=.
 Losing `EM2_KEY_PEPPER` invalidates every agent key and refresh token. Rotating `EM2_SIGNING_KEY`
 invalidates every access token (users refresh; refresh tokens survive).
 
+To try EM2 rather than operate it, run `scripts/demo.sh` (see `docs/TESTING.md`).
+
 ## First run (one host)
 
 ```bash
