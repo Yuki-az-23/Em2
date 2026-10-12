@@ -124,3 +124,26 @@ func TestRulesValidation(t *testing.T) {
 		t.Fatal("unknown builtin accepted")
 	}
 }
+
+func TestBridgingVectorCountsFarDeliveries(t *testing.T) {
+	r, err := Builtin("dossier-2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	one := copies(1, func(int) string { return "a" }, time.Minute)
+	d := Build(Stats{Window: one, Now: now, Reach: Reach{Deliveries: 2, Far: 2}}, r)
+	if signal(d, "bridging_vector").Value != 0 || d.Bridging != 1 || len(d.Signals) != 6 {
+		t.Fatalf("below min deliveries: %+v", d)
+	}
+	d = Build(Stats{Window: one, Now: now, Reach: Reach{Deliveries: 10, Far: 8}}, r)
+	if v := signal(d, "bridging_vector").Value; v != 0.8 || d.Risk != 0.16 {
+		t.Fatalf("bridging %v risk %v", v, d.Risk)
+	}
+	// dossier-1 has no bridging_vector and ignores reach.
+	if d := Build(Stats{Window: one, Now: now, Reach: Reach{Deliveries: 10, Far: 10}}, rules(t)); d.Risk != 0 || len(d.Signals) != 5 {
+		t.Fatalf("dossier-1 with reach: %+v", d)
+	}
+	if _, err := Load([]byte(`{"version":"x","window_hours":1,"signals":{"repetition":{"weight":0.2},"burst":{"weight":0.2},"sender_concentration":{"weight":0.2},"link_fanout":{"weight":0.2},"claim_drift":{"weight":0.1},"mystery":{"weight":0.1}}}`)); err == nil {
+		t.Fatal("unknown signal accepted")
+	}
+}

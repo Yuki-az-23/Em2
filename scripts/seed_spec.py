@@ -49,8 +49,10 @@ EM2_FILES = [
     "docs/milestones/M1.md",
     "docs/milestones/M2.md",
     "docs/milestones/M3.md",
+    "docs/milestones/M4.md",
     "docs/adr/ADR-012-services-and-shared-transactions.md",
     "docs/adr/ADR-013-verdicts-after-assessment-and-asynchronous-ingress.md",
+    "docs/adr/ADR-014-quotas-reputation-and-probes.md",
     ".forgejo/workflows/ci.yml",
     ".github/workflows/ci.yml",
 ]

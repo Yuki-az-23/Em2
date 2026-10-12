@@ -16,6 +16,8 @@ How to run, operate and deploy EM2. Owner: `infra-release`.
 | `EM2_TRUST_PROXY` | `off` | `on` behind exactly one reverse proxy: take the client IP from the last `X-Forwarded-For` entry |
 | `EM2_MEDIA_DIR` | `data/media` | where uploaded images are stored; must be writable and persistent |
 | `EM2_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+| `EM2_QUOTA_MESSAGES_PER_HOUR` | `120` | base hourly message quota per principal (bus and ingress); reputation and penalties lower it in enforce mode |
+| `EM2_QUOTA_EGRESS_PER_DAY` | `200` | base daily egress fetch quota per principal |
 | `EM2_NET_ALLOW_PRIVATE` | `off` | `on` lets ingress and egress reach private, loopback and link-local addresses and any port. Development and tests only; the server logs a warning |
 
 Generate the two secrets once and store them like any other secret:
@@ -80,6 +82,12 @@ go run ./cmd/em2 grant-role <your-handle> admin
 | `/readyz` 503 after a deploy | migrations not applied | run `em2 migrate` (the Kubernetes init container does this) |
 | many `status="401"` on `login` | credential stuffing | rate limits apply per IP; check `EM2_TRUST_PROXY` is correct so the limit sees real client IPs |
 | `refresh token reuse detected` warning | a refresh token was copied | the family is already revoked; the user logs in again |
+
+
+Ledger reconciliation runs every 5 minutes and recomputes reputation from the outcomes it was built
+from. `em2_ledger_drift_total` on the private metrics listener counts repaired rows; anything above
+zero means an event was applied twice or a row was changed by hand, and `ledger.reconciliations`
+records each run.
 
 ## Database roles
 

@@ -73,6 +73,10 @@ type Options struct {
 	// StrictNet keeps the network guard's private-address block on. By
 	// default tests allow private addresses so fake upstreams on loopback work.
 	StrictNet bool
+	// Small quotas and fast jobs for ledger tests; zero keeps the defaults.
+	MessagesPerHour, EgressPerDay int
+	ExpireEvery, ReconcileEvery   time.Duration
+	SnapshotEvery                 time.Duration
 }
 
 // Instance is a running EM2.
@@ -107,6 +111,8 @@ func Start(t testing.TB, opt Options) *Instance {
 		cfg.Mode = opt.Mode
 	}
 	cfg.NetAllowPrivate = !opt.StrictNet
+	cfg.MessagesPerHour, cfg.EgressPerDay = opt.MessagesPerHour, opt.EgressPerDay
+	cfg.ExpireEvery, cfg.ReconcileEvery, cfg.SnapshotEvery = opt.ExpireEvery, opt.ReconcileEvery, opt.SnapshotEvery
 	ctx := context.Background()
 	pcfg, err := pgxpool.ParseConfig(cfg.DatabaseURL)
 	if err != nil {

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Hands-on demo of EM2 (M0-M3) against the real binary.
+# Hands-on demo of EM2 (M0-M4) against the real binary.
 #
 #   scripts/demo.sh          start Postgres + em2 on localhost:8080 and run the scenario
 #   scripts/demo.sh stop     stop the demo server (the test database keeps running;
@@ -14,6 +14,8 @@
 # move calm's message one wheel step, which releases the deferred copy. Finally
 # a request goes through the ingress proxy to a small local upstream and its
 # answer comes back as a reply, and an agent fetches a page through egress.
+# Last (M4), the ledger: quotas and what they used, the observer view of
+# pusher's reputation, and a prober who is denied and loses quota.
 # Needs: go, curl, python3 (for JSON and the fake upstream), psql (or Docker).
 set -euo pipefail
 
@@ -176,8 +178,10 @@ case "$R" in pass*) ok "calm's message passes for reader";; *) fail "reader: $R"
 F=$(wait_for feed_item "$FAR" deferred "$ORD_ID"); echo "   far (angry/red) deferred:   $F"
 case "$F" in defer*) ok "calm's message is deferred for far";; *) fail "far: $F";; esac
 [ "$(feed_item "$FAR" feed "$ORD_ID")" = none ] && ok "and is not in far's feed" || fail "deferred message in far's feed"
-S=$(wait_for feed_item "$FAR" feed "$FLOOD_ID"); echo "   far, last flood copy:       $S"
-case "$S" in shape*) ok "the flood fits far's bridge but is shaped by its risk";; *) fail "flood for far: $S";; esac
+SHAPED=$(api GET "/v1/me/feed?limit=50" "$FAR" | python3 -c 'import json,sys; print(sum(1 for i in json.load(sys.stdin)["items"] if i["verdict"]["kind"]=="shape"))')
+HELD=$(api GET "/v1/me/deferred?limit=50" "$FAR" | python3 -c 'import json,sys; print(sum(1 for i in json.load(sys.stdin)["items"] if "limited to one every" in i["verdict"]["reason"]))')
+echo "   far: $SHAPED shaped flood copy delivered, $HELD more waiting their turn"
+[ "$SHAPED" = 1 ] && [ "$HELD" -ge 1 ] && ok "the flood fits far's bridge but is shaped by its risk, one copy per minute" || fail "flood for far: $SHAPED shaped, $HELD held"
 S=$(wait_for feed_item "$READER" deferred "$FLOOD_ID"); echo "   reader, last flood copy:    $S"
 case "$S" in defer*) ok "the flood does not fit reader's bridge and is deferred";; *) fail "flood for reader: $S";; esac
 
@@ -249,6 +253,32 @@ echo "$EG" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("   as M
 EG_ID=$(echo "$EG" | jget id)
 E=$(wait_for feed_item "$READER" feed "$EG_ID"); echo "   reader's feed: $E"
 case "$E" in shape*) ok "fetched content is shaped: its emotion is not known";; *) fail "egress: $E";; esac
+
+say "11. The ledger: quotas, reputation, probing (M4)"
+api GET /v1/me/ledger "$PUSHER" | python3 -c 'import json,sys
+d=json.load(sys.stdin); q=d["quotas"]
+print("   pusher sees: messages %d of %d this hour, egress %d of %d today; no reputation (it would reveal receivers verdicts)" % (q["messages"]["used"], q["messages"]["limit"], q["egress"]["used"], q["egress"]["limit"]))'
+PUSHER_ID=$(api GET /v1/me "$PUSHER" | jget id)
+api GET "/v1/principals/$PUSHER_ID/ledger" "$HUMAN" | python3 -c 'import json,sys
+r=json.load(sys.stdin)["reputation"]
+print("   observer sees pusher: %d pass, %d shape, %d defer, %d deny; standing %.2f" % (r["passes"], r["shapes"], r["defers"], r["denies"], r["standing"]))'
+expect 200 "the observer reads pusher's reputation"
+PROBER=$(agent prober)
+api PUT /v1/me/bridge "$PROBER" '{"emotion":"surprised","color":"aqua"}' >/dev/null   # 0.50 against reader: right at the threshold
+for i in 1 2 3 4 5; do
+  api POST /v1/messages "$PROBER" "{\"channel_id\":\"$CH\",\"body_md\":\"Offer variant $i, just for you.\"}" "Idempotency-Key: probe-$i" >/dev/null
+  sleep 0.3
+done
+expect 202 "prober sends five near-threshold variants; every answer is the same 202"
+PROBER_ID=$(api GET /v1/me "$PROBER" | jget id)
+for _ in $(seq 1 50); do
+  P=$(api GET "/v1/principals/$PROBER_ID/ledger" "$HUMAN" | python3 -c 'import json,sys; print(json.load(sys.stdin)["reputation"]["probes"])')
+  [ "$P" = 1 ] && break; sleep 0.2
+done
+[ "$P" = 1 ] && ok "the fifth variant was denied as a probe of reader's threshold" || fail "no probe recorded"
+LIM=$(api GET /v1/me/ledger "$PROBER" | python3 -c 'import json,sys; print(json.load(sys.stdin)["quotas"]["messages"]["limit"])')
+echo "   prober's hourly message quota is now $LIM"
+[ "$LIM" = 30 ] && ok "probing cut the prober's quota to a quarter" || fail "quota $LIM"
 
 say "Your turn"
 cat > "$STATE/session.env" <<ENV

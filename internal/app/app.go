@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -42,11 +43,17 @@ type Config struct {
 	// NetAllowPrivate lets ingress and egress reach private, loopback and
 	// link-local addresses (EM2_NET_ALLOW_PRIVATE=on). Development only.
 	NetAllowPrivate bool
+	// Base quotas (EM2_QUOTA_MESSAGES_PER_HOUR, EM2_QUOTA_EGRESS_PER_DAY).
+	MessagesPerHour int
+	EgressPerDay    int
 
 	// Test hooks.
 	FastHashing      bool
 	DispatchInterval time.Duration
 	ForwardEvery     time.Duration // ingress forwarding poll
+	ExpireEvery      time.Duration // verdict expiry and shape-hold release
+	ReconcileEvery   time.Duration // ledger reconciliation
+	SnapshotEvery    time.Duration // ledger snapshots
 	Now              func() time.Time
 }
 
@@ -61,6 +68,15 @@ func FromEnv() (Config, error) {
 		MediaDir:      env("EM2_MEDIA_DIR", "data/media"),
 
 		NetAllowPrivate: env("EM2_NET_ALLOW_PRIVATE", "off") == "on",
+	}
+	for name, dst := range map[string]*int{"EM2_QUOTA_MESSAGES_PER_HOUR": &c.MessagesPerHour, "EM2_QUOTA_EGRESS_PER_DAY": &c.EgressPerDay} {
+		if v := os.Getenv(name); v != "" {
+			n, err := strconv.Atoi(v)
+			if err != nil || n < 1 {
+				return c, fmt.Errorf("%s must be a positive integer", name)
+			}
+			*dst = n
+		}
 	}
 	var err error
 	if c.Mode, err = kernel.ParseRunMode(env("EM2_MODE", string(kernel.ModeShadow))); err != nil {
@@ -115,7 +131,7 @@ func Modules(c Config) ([]kernel.Module, error) {
 	if err != nil {
 		return nil, err
 	}
-	vd, err := verdict.New(verdict.Config{Rules: rules})
+	vd, err := verdict.New(verdict.Config{Rules: rules, ExpireEvery: c.ExpireEvery})
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +139,8 @@ func Modules(c Config) ([]kernel.Module, error) {
 	if c.NetAllowPrivate {
 		guard.Ports = func(int) bool { return true }
 	}
-	return []kernel.Module{id, ledger.New(ledger.Config{DefaultThreshold: rules.Threshold}), in, vd,
+	return []kernel.Module{id, ledger.New(ledger.Config{DefaultThreshold: rules.Threshold,
+		MessagesPerHour: c.MessagesPerHour, EgressPerDay: c.EgressPerDay, ReconcileEvery: c.ReconcileEvery, SnapshotEvery: c.SnapshotEvery}), in, vd,
 		ingress.New(ingress.Config{Guard: guard, ForwardEvery: c.ForwardEvery}), egress.New(egress.Config{Guard: guard})}, nil
 }
 

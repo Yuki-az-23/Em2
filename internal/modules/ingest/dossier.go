@@ -34,6 +34,10 @@ func (m *Module) rebuildDossier(c kernel.Ctx, e kernel.Envelope) error {
 	if err := c.DB().QueryRow(c, `SELECT links FROM messages WHERE id = $1`, ev.MessageID).Scan(&st.Links); err != nil {
 		return err
 	}
+	if err := c.DB().QueryRow(c, `SELECT count(*), count(*) FILTER (WHERE far) FROM reach WHERE content_hash = $1`, hash).
+		Scan(&st.Reach.Deliveries, &st.Reach.Far); err != nil {
+		return err
+	}
 	rows, err := c.DB().Query(c, `SELECT sender_id, at, stance_emotion, stance_color, claims->'ec' FROM messages
 		WHERE content_hash = $1 AND at > $2`, hash, since)
 	if err != nil {
@@ -104,6 +108,25 @@ func (m *Module) publishAssessed(c kernel.Ctx, id, hash string, risk float64) er
 	return c.Publish(EventMessageAssessed, ev)
 }
 
+// onDecided counts where a content was delivered, for bridging_vector. The
+// next copy's dossier uses it.
+func (m *Module) onDecided(c kernel.Ctx, e kernel.Envelope) error {
+	var ev struct {
+		ExchangeID  string `json:"exchange_id"`
+		ContentHash string `json:"content_hash"`
+		Far         bool   `json:"far"`
+	}
+	if err := json.Unmarshal(e.Payload, &ev); err != nil {
+		return err
+	}
+	hash, err := hex.DecodeString(ev.ContentHash)
+	if err != nil {
+		return err
+	}
+	_, err = c.DB().Exec(c, `INSERT INTO reach (exchange_id, content_hash, far) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, ev.ExchangeID, hash, ev.Far)
+	return err
+}
+
 // onTransitioned keeps the message's current state for readers.
 func (m *Module) onTransitioned(c kernel.Ctx, e kernel.Envelope) error {
 	var ev struct {
@@ -124,7 +147,7 @@ func dossierJSON(d core.Dossier) map[string]any {
 	out := map[string]any{
 		"content_hash": hex.EncodeToString(d.ContentHash), "first_seen": d.FirstSeen, "seen_count": d.SeenCount,
 		"senders": d.Senders, "velocity": d.Velocity, "burstiness": d.Burstiness, "sender_concentration": d.SenderConc,
-		"drift": d.Drift, "risk": d.Risk, "signals": d.Signals, "version": d.Version,
+		"drift": d.Drift, "bridging": d.Bridging, "risk": d.Risk, "signals": d.Signals, "version": d.Version,
 	}
 	if len(d.Links) > 0 {
 		out["links"] = d.Links

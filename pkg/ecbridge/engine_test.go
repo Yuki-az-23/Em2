@@ -245,3 +245,31 @@ func TestDecisionTable(t *testing.T) {
 		t.Fatalf("defer explanation: %+v", d)
 	}
 }
+
+func TestProbeVariantsAreDenied(t *testing.T) {
+	r := rules(t)
+	joy, near := ec(core.Joy, core.Yellow), ec(core.Trust, core.Lime)
+	rcv := Receiver{Bridge: &near, Threshold: 0.7, Filter: true}
+	for n := 1; n < r.ProbeVariants; n++ {
+		rcv.ProbeVariants = n
+		if d := Decide(&joy, 0, rcv, r); d.Kind != core.VerdictPass {
+			t.Fatalf("%d variants: %+v", n, d)
+		}
+	}
+	rcv.ProbeVariants = r.ProbeVariants
+	if d := Decide(&joy, 0, rcv, r); d.Kind != core.VerdictDeny || !strings.Contains(d.Reason, "probes your threshold") {
+		t.Fatalf("probe: %+v", d)
+	}
+	if !r.NearThreshold(0.75, 0.7) || r.NearThreshold(0.9, 0.7) {
+		t.Fatal("NearThreshold band")
+	}
+	// The previous ruleset has no probe detection and still loads.
+	old, err := BuiltinRuleset("em2-2.0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rcv.ProbeVariants = 50
+	if d := Decide(&joy, 0, rcv, old); d.Kind != core.VerdictPass || old.NearThreshold(0.7, 0.7) || old.ShapeInterval() != 0 {
+		t.Fatalf("em2-2.0 probe: %+v", d)
+	}
+}

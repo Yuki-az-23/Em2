@@ -15,7 +15,7 @@ Read these first:
 - `AGENTS.md` — the architecture contract and invariants. It overrides anything else here.
 - `docs/BLUEPRINT.md` — the full design (modules, schemas, REST, ECBridge v2, milestones).
 - `docs/contracts/` — the sealed core contract, one file per core type.
-- `docs/adr/` — decisions and their reasons. ADR-011 (trust boundary) matters for almost every change; ADR-013 explains when verdicts are decided and why ingress is asynchronous.
+- `docs/adr/` — decisions and their reasons. ADR-011 (trust boundary) matters for almost every change; ADR-013 explains when verdicts are decided and why ingress is asynchronous; ADR-014 why a principal never sees their own reputation.
 
 ## Commands
 
@@ -67,6 +67,7 @@ python3 -m unittest discover -s scripts/tests -t .   # tests for the seed script
 - Verdict fields (`score`, `threshold`, `rule_version`) may appear only on receiver-owned operations; the
   contract test lists them. Verdicts are decided after the dossier, never on the publish path (ADR-013).
 - Never dial out for a principal except through `internal/netguard`.
+- Never show a principal their own reputation or outcome counts; they would reveal receivers' verdicts (ADR-014).
 - After changing `pkg/ecbridge` scoring or targets, run `go run ./cmd/em2 golden` and review the diff.
 
 ## Legacy

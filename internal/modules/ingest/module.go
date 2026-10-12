@@ -31,12 +31,14 @@ const (
 	EventMessageAssessed = "ingest.message.assessed"
 	// eventTransitioned is consumed to keep messages' current state.
 	eventTransitioned = "verdict.message.transitioned"
+	// eventDecided is consumed to count each content's reach.
+	eventDecided = "verdict.exchange.decided"
 )
 
 // Config for the module.
 type Config struct {
 	Media    storage.Store
-	Rules    *dossier.Rules // nil means the builtin dossier-1
+	Rules    *dossier.Rules // nil means the builtin dossier-2
 	MaxMedia int64          // bytes; default 5 MiB
 	// PublishPad is the fixed response time of POST /v1/messages (ADR-011).
 	PublishPad time.Duration
@@ -47,6 +49,7 @@ type Module struct {
 	cfg     Config
 	dir     services.Directory
 	stances services.Stances
+	quotas  services.Quotas
 	scope   *kernel.Scope
 }
 
@@ -56,7 +59,7 @@ func New(cfg Config) (*Module, error) {
 		return nil, errors.New("ingest: a media store is required")
 	}
 	if cfg.Rules == nil {
-		r, err := dossier.Builtin("dossier-1")
+		r, err := dossier.Builtin("dossier-2")
 		if err != nil {
 			return nil, err
 		}
@@ -73,7 +76,7 @@ func New(cfg Config) (*Module, error) {
 
 func (m *Module) Manifest() kernel.Manifest {
 	sub, _ := fs.Sub(migrations, "migrations")
-	return kernel.Manifest{Name: "ingest", Version: "0.3.0", Kind: kernel.KindModule, Schema: "ingest",
+	return kernel.Manifest{Name: "ingest", Version: "0.4.0", Kind: kernel.KindModule, Schema: "ingest",
 		DependsOn: []string{"identity", "ledger"}, Migrations: sub}
 }
 
@@ -85,11 +88,15 @@ func (m *Module) Register(r *kernel.Registry) error {
 	if m.stances, err = kernel.Resolve[services.Stances](r); err != nil {
 		return err
 	}
+	if m.quotas, err = kernel.Resolve[services.Quotas](r); err != nil {
+		return err
+	}
 	r.Emits(kernel.EventDef{Name: EventMessageReceived, Version: 1, Schema: messageEvent, Summary: "A message was accepted and stored"})
 	r.Emits(kernel.EventDef{Name: EventDossierUpdated, Version: 1, Schema: dossierEvent, Summary: "A content dossier was rebuilt"})
 	r.Emits(kernel.EventDef{Name: EventMessageAssessed, Version: 1, Schema: assessedEvent, Summary: "A new message's dossier is built; verdicts may be decided"})
 	r.Subscribe(EventMessageReceived, 1, m.rebuildDossier)
 	r.Subscribe(eventTransitioned, 1, m.onTransitioned)
+	r.Subscribe(eventDecided, 1, m.onDecided)
 	m.scope = r.Scope()
 	r.Provide(services.Messages(m))
 	for _, rt := range m.routes() {

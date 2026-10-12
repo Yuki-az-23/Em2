@@ -2,9 +2,12 @@
 // (BLUEPRINT B5, docs/contracts/dossier.md). It is pure: callers gather the
 // statistics, this package turns them into named, weighted signals and a risk.
 //
-// v1 signals: repetition, burst, sender_concentration, link_fanout and
-// claim_drift. bridging_vector, probe and liberty_pressure need verdict and
-// ledger data and arrive in M3 and M4.
+// dossier-1 signals: repetition, burst, sender_concentration, link_fanout and
+// claim_drift. dossier-2 adds bridging_vector, which needs verdict outcomes
+// (the share of deliveries into bridges the content does not fit).
+// liberty_pressure needs exposure history and arrives with the journal (M6).
+// The probe of a receiver's threshold is a property of a sender and a
+// receiver, not of content; the verdict engine detects it.
 package dossier
 
 import (
@@ -13,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 	"sort"
 	"time"
 
@@ -36,7 +40,12 @@ type Rules struct {
 	Signals     map[string]signalRule `json:"signals"`
 }
 
-var signalNames = []string{"repetition", "burst", "sender_concentration", "link_fanout", "claim_drift"}
+// signalNames are the signals this package knows, in report order. A rules
+// file uses a subset; the weights of the signals it uses sum to 1.
+var signalNames = []string{"repetition", "burst", "sender_concentration", "link_fanout", "claim_drift", "bridging_vector"}
+
+// base signals every rules version must use.
+var baseSignals = signalNames[:5]
 
 // Load parses and checks a rules file.
 func Load(b []byte) (*Rules, error) {
@@ -48,10 +57,17 @@ func Load(b []byte) (*Rules, error) {
 		return nil, errors.New("dossier: rules need a version and a positive window")
 	}
 	total := 0.0
-	for _, n := range signalNames {
-		s, ok := r.Signals[n]
-		if !ok || s.Weight < 0 {
+	for _, n := range baseSignals {
+		if _, ok := r.Signals[n]; !ok {
 			return nil, fmt.Errorf("dossier: rules miss signal %s", n)
+		}
+	}
+	for n, s := range r.Signals {
+		if !slices.Contains(signalNames, n) {
+			return nil, fmt.Errorf("dossier: unknown signal %s", n)
+		}
+		if s.Weight < 0 {
+			return nil, fmt.Errorf("dossier: negative weight for %s", n)
 		}
 		total += s.Weight
 	}
@@ -86,6 +102,16 @@ type Stats struct {
 	Window      []Copy   // sightings within the rules window, any order
 	Links       []string // distinct external links in the content
 	Now         time.Time
+	// Reach is what the verdicts said about this content so far: how many
+	// exchanges were decided and how many went to a receiver whose bridge
+	// it did not fit (score below threshold).
+	Reach Reach
+}
+
+// Reach counts verdict outcomes for one piece of content.
+type Reach struct {
+	Deliveries int
+	Far        int
 }
 
 func clamp01(v float64) float64 { return math.Max(0, math.Min(1, v)) }
@@ -124,7 +150,10 @@ func Build(st Stats, r *Rules) core.Dossier {
 	}
 
 	add := func(name string, value float64, evidence string) {
-		rule := r.Signals[name]
+		rule, ok := r.Signals[name]
+		if !ok {
+			return
+		}
 		value = clamp01(value)
 		d.Signals = append(d.Signals, core.Signal{Name: name, Value: value, Weight: rule.Weight, Evidence: evidence})
 		d.Risk += rule.Weight * value
@@ -145,6 +174,17 @@ func Build(st Stats, r *Rules) core.Dossier {
 		fmt.Sprintf("%d distinct external links", len(st.Links)))
 	add("claim_drift", d.Drift,
 		fmt.Sprintf("claimed emotion/color is %.2f of the wheel from the senders' stance", d.Drift))
+	if rule, ok := r.Signals["bridging_vector"]; ok {
+		if st.Reach.Deliveries > 0 {
+			d.Bridging = float64(st.Reach.Far) / float64(st.Reach.Deliveries)
+		}
+		v := 0.0
+		if st.Reach.Deliveries >= rule.MinCopies {
+			v = d.Bridging
+		}
+		add("bridging_vector", v,
+			fmt.Sprintf("%d of %d deliveries went to receivers it does not fit", st.Reach.Far, st.Reach.Deliveries))
+	}
 	d.Risk = clamp01(math.Round(d.Risk*1000) / 1000)
 	return d
 }

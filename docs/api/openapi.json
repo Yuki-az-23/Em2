@@ -1335,6 +1335,10 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "bridging": {
+                      "type": "number",
+                      "description": "Share of deliveries to receivers whose bridge the content did not fit."
+                    },
                     "burstiness": {
                       "type": "number"
                     },
@@ -1409,6 +1413,7 @@
                     "burstiness",
                     "sender_concentration",
                     "drift",
+                    "bridging",
                     "risk",
                     "signals",
                     "version"
@@ -3349,6 +3354,195 @@
         "x-em2-agent-scope": "feed:read"
       }
     },
+    "/v1/me/ledger": {
+      "get": {
+        "operationId": "getMyLedger",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "bridge": {
+                      "type": "object",
+                      "properties": {
+                        "color": {
+                          "type": "string",
+                          "enum": [
+                            "yellow",
+                            "lime",
+                            "green",
+                            "aqua",
+                            "blue",
+                            "pink",
+                            "red",
+                            "orange"
+                          ]
+                        },
+                        "emotion": {
+                          "type": "string",
+                          "enum": [
+                            "joy",
+                            "trust",
+                            "feared",
+                            "surprised",
+                            "sad",
+                            "disgust",
+                            "angry",
+                            "anticipated"
+                          ]
+                        },
+                        "set_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "source": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "emotion",
+                        "color",
+                        "set_at",
+                        "source"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "principal_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "quotas": {
+                      "type": "object",
+                      "properties": {
+                        "egress": {
+                          "type": "object",
+                          "properties": {
+                            "limit": {
+                              "type": "integer"
+                            },
+                            "per": {
+                              "type": "string",
+                              "enum": [
+                                "hour",
+                                "day"
+                              ]
+                            },
+                            "used": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "per",
+                            "limit",
+                            "used"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "messages": {
+                          "type": "object",
+                          "properties": {
+                            "limit": {
+                              "type": "integer"
+                            },
+                            "per": {
+                              "type": "string",
+                              "enum": [
+                                "hour",
+                                "day"
+                              ]
+                            },
+                            "used": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "per",
+                            "limit",
+                            "used"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "messages",
+                        "egress"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "settings": {
+                      "type": "object",
+                      "properties": {
+                        "card": {
+                          "type": "string",
+                          "description": "Whether your public card shows your current emotion.",
+                          "enum": [
+                            "emotion",
+                            "hidden"
+                          ]
+                        },
+                        "filter": {
+                          "type": "boolean",
+                          "description": "When false nothing is deferred; verdicts are still computed and shown to you."
+                        },
+                        "threshold": {
+                          "type": "number",
+                          "description": "Messages scoring below this against your bridge are deferred.",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "threshold_is_default": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "threshold",
+                        "threshold_is_default",
+                        "filter",
+                        "card"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "principal_id",
+                    "at",
+                    "settings",
+                    "quotas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "My ledger snapshot: bridge, settings and quotas with what I used",
+        "tags": [
+          "ledger"
+        ]
+      }
+    },
     "/v1/me/sessions": {
       "get": {
         "operationId": "listSessions",
@@ -3479,6 +3673,14 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "card": {
+                      "type": "string",
+                      "description": "Whether your public card shows your current emotion.",
+                      "enum": [
+                        "emotion",
+                        "hidden"
+                      ]
+                    },
                     "filter": {
                       "type": "boolean",
                       "description": "When false nothing is deferred; verdicts are still computed and shown to you."
@@ -3496,7 +3698,8 @@
                   "required": [
                     "threshold",
                     "threshold_is_default",
-                    "filter"
+                    "filter",
+                    "card"
                   ],
                   "additionalProperties": false
                 }
@@ -3533,6 +3736,13 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "card": {
+                    "type": "string",
+                    "enum": [
+                      "emotion",
+                      "hidden"
+                    ]
+                  },
                   "filter": {
                     "type": "boolean"
                   },
@@ -3557,6 +3767,14 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "card": {
+                      "type": "string",
+                      "description": "Whether your public card shows your current emotion.",
+                      "enum": [
+                        "emotion",
+                        "hidden"
+                      ]
+                    },
                     "filter": {
                       "type": "boolean",
                       "description": "When false nothing is deferred; verdicts are still computed and shown to you."
@@ -3574,7 +3792,8 @@
                   "required": [
                     "threshold",
                     "threshold_is_default",
-                    "filter"
+                    "filter",
+                    "card"
                   ],
                   "additionalProperties": false
                 }
@@ -4581,6 +4800,352 @@
         "summary": "Public API description",
         "tags": [
           "meta"
+        ]
+      }
+    },
+    "/v1/principals/{id}": {
+      "get": {
+        "operationId": "getPrincipalCard",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "emotion": {
+                      "type": "string",
+                      "description": "The principal's current emotion, unless they hide it. Never the color or the threshold.",
+                      "enum": [
+                        "joy",
+                        "trust",
+                        "feared",
+                        "surprised",
+                        "sad",
+                        "disgust",
+                        "angry",
+                        "anticipated"
+                      ]
+                    },
+                    "handle": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "kind": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "handle",
+                    "kind"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A principal's public card",
+        "tags": [
+          "principals"
+        ]
+      }
+    },
+    "/v1/principals/{id}/ledger": {
+      "get": {
+        "operationId": "getPrincipalLedger",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "bridge": {
+                      "type": "object",
+                      "properties": {
+                        "color": {
+                          "type": "string",
+                          "enum": [
+                            "yellow",
+                            "lime",
+                            "green",
+                            "aqua",
+                            "blue",
+                            "pink",
+                            "red",
+                            "orange"
+                          ]
+                        },
+                        "emotion": {
+                          "type": "string",
+                          "enum": [
+                            "joy",
+                            "trust",
+                            "feared",
+                            "surprised",
+                            "sad",
+                            "disgust",
+                            "angry",
+                            "anticipated"
+                          ]
+                        },
+                        "set_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "source": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "emotion",
+                        "color",
+                        "set_at",
+                        "source"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "penalties": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "factor": {
+                            "type": "number"
+                          },
+                          "reason": {
+                            "type": "string"
+                          },
+                          "until": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "reason",
+                          "factor",
+                          "until"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "principal_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "quotas": {
+                      "type": "object",
+                      "properties": {
+                        "egress": {
+                          "type": "object",
+                          "properties": {
+                            "limit": {
+                              "type": "integer"
+                            },
+                            "per": {
+                              "type": "string",
+                              "enum": [
+                                "hour",
+                                "day"
+                              ]
+                            },
+                            "used": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "per",
+                            "limit",
+                            "used"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "messages": {
+                          "type": "object",
+                          "properties": {
+                            "limit": {
+                              "type": "integer"
+                            },
+                            "per": {
+                              "type": "string",
+                              "enum": [
+                                "hour",
+                                "day"
+                              ]
+                            },
+                            "used": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "per",
+                            "limit",
+                            "used"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "messages",
+                        "egress"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "reputation": {
+                      "type": "object",
+                      "properties": {
+                        "defers": {
+                          "type": "integer"
+                        },
+                        "denies": {
+                          "type": "integer"
+                        },
+                        "passes": {
+                          "type": "integer"
+                        },
+                        "probes": {
+                          "type": "integer"
+                        },
+                        "quota_factor": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "shapes": {
+                          "type": "integer"
+                        },
+                        "standing": {
+                          "type": "number",
+                          "description": "Reputation: passes and half the shapes against denies, from 0 to 1.",
+                          "minimum": 0,
+                          "maximum": 1
+                        }
+                      },
+                      "required": [
+                        "passes",
+                        "shapes",
+                        "defers",
+                        "denies",
+                        "probes",
+                        "standing",
+                        "quota_factor"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "settings": {
+                      "type": "object",
+                      "properties": {
+                        "card": {
+                          "type": "string",
+                          "description": "Whether your public card shows your current emotion.",
+                          "enum": [
+                            "emotion",
+                            "hidden"
+                          ]
+                        },
+                        "filter": {
+                          "type": "boolean",
+                          "description": "When false nothing is deferred; verdicts are still computed and shown to you."
+                        },
+                        "threshold": {
+                          "type": "number",
+                          "description": "Messages scoring below this against your bridge are deferred.",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "threshold_is_default": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "threshold",
+                        "threshold_is_default",
+                        "filter",
+                        "card"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "principal_id",
+                    "at",
+                    "settings",
+                    "quotas",
+                    "reputation",
+                    "penalties"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A principal's full ledger snapshot, with reputation. Observers only.",
+        "tags": [
+          "ledger"
         ]
       }
     }

@@ -18,10 +18,12 @@ var (
 	settingsView = schema.Object(
 		schema.Req("threshold", schema.Number().Range(0, 1).Doc("Messages scoring below this against your bridge are deferred.")),
 		schema.Req("threshold_is_default", schema.Boolean()),
-		schema.Req("filter", schema.Boolean().Doc("When false nothing is deferred; verdicts are still computed and shown to you.")))
+		schema.Req("filter", schema.Boolean().Doc("When false nothing is deferred; verdicts are still computed and shown to you.")),
+		schema.Req("card", schema.Enum("emotion", "hidden").Doc("Whether your public card shows your current emotion.")))
 	settingsBody = schema.Object(
 		schema.Opt("threshold", schema.Number().Range(0, 1).OrNull().Doc("null restores the default.")),
-		schema.Opt("filter", schema.Boolean()))
+		schema.Opt("filter", schema.Boolean()),
+		schema.Opt("card", schema.Enum("emotion", "hidden")))
 	endpointView = schema.Object(schema.Req("url", schema.String()), schema.Req("updated_at", schema.DateTime()))
 	endpointBody = schema.Object(schema.Req("url", schema.String().Len(8, 2048).Doc("http or https URL EM2 forwards your delivered ingress requests to.")))
 	idParam      = map[string]*schema.Schema{"id": schema.UUID()}
@@ -49,12 +51,13 @@ type settingsOut struct {
 	Threshold          float64 `json:"threshold"`
 	ThresholdIsDefault bool    `json:"threshold_is_default"`
 	Filter             bool    `json:"filter"`
+	Card               string  `json:"card"`
 }
 
 func (m *Module) readSettings(c kernel.Ctx, id string) (settingsOut, error) {
-	out := settingsOut{Threshold: m.cfg.DefaultThreshold, ThresholdIsDefault: true, Filter: true}
+	out := settingsOut{Threshold: m.cfg.DefaultThreshold, ThresholdIsDefault: true, Filter: true, Card: "emotion"}
 	var th *float32
-	err := c.DB().QueryRow(c, `SELECT threshold, filter FROM settings WHERE principal_id = $1`, id).Scan(&th, &out.Filter)
+	err := c.DB().QueryRow(c, `SELECT threshold, filter, card FROM settings WHERE principal_id = $1`, id).Scan(&th, &out.Filter, &out.Card)
 	if kernel.IsNoRows(err) {
 		return out, nil
 	}
@@ -102,13 +105,17 @@ func (m *Module) patchSettings(c kernel.Ctx, req *kernel.Request) (*kernel.Respo
 			th = &v
 		}
 	}
-	filter := cur.Filter
+	filter, card := cur.Filter, cur.Card
 	if raw, ok := in["filter"]; ok {
 		_ = json.Unmarshal(raw, &filter)
 	}
-	if _, err := c.DB().Exec(c, `INSERT INTO settings (principal_id, threshold, filter, updated_at) VALUES ($1, $2, $3, $4)
-		ON CONFLICT (principal_id) DO UPDATE SET threshold = EXCLUDED.threshold, filter = EXCLUDED.filter, updated_at = EXCLUDED.updated_at`,
-		id, th, filter, c.Now()); err != nil {
+	if raw, ok := in["card"]; ok {
+		_ = json.Unmarshal(raw, &card)
+	}
+	if _, err := c.DB().Exec(c, `INSERT INTO settings (principal_id, threshold, filter, card, updated_at) VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT (principal_id) DO UPDATE SET threshold = EXCLUDED.threshold, filter = EXCLUDED.filter, card = EXCLUDED.card,
+			updated_at = EXCLUDED.updated_at`,
+		id, th, filter, card, c.Now()); err != nil {
 		return nil, err
 	}
 	if err := c.Publish(EventSettingsUpdated, map[string]string{"principal_id": id}); err != nil {

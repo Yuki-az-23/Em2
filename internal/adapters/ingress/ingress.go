@@ -57,6 +57,7 @@ type Adapter struct {
 	messages  services.Messages
 	endpoints services.Endpoints
 	exchanges services.Exchanges
+	quotas    services.Quotas
 
 	mu      sync.Mutex
 	breaker map[string]*breakerState
@@ -95,7 +96,7 @@ func New(cfg Config) *Adapter {
 
 func (a *Adapter) Manifest() kernel.Manifest {
 	sub, _ := fs.Sub(migrations, "migrations")
-	return kernel.Manifest{Name: "ingress", Version: "0.3.0", Kind: kernel.KindAdapter, Schema: "ingress",
+	return kernel.Manifest{Name: "ingress", Version: "0.4.0", Kind: kernel.KindAdapter, Schema: "ingress",
 		DependsOn: []string{"identity", "ledger", "ingest", "verdict"}, Migrations: sub}
 }
 
@@ -117,6 +118,9 @@ func (a *Adapter) Register(r *kernel.Registry) error {
 		return err
 	}
 	if a.exchanges, err = kernel.Resolve[services.Exchanges](r); err != nil {
+		return err
+	}
+	if a.quotas, err = kernel.Resolve[services.Quotas](r); err != nil {
 		return err
 	}
 	a.scope = r.Scope()
@@ -152,6 +156,13 @@ func (a *Adapter) send(c kernel.Ctx, req *kernel.Request) (*kernel.Response, err
 	}
 	if len(bytes.TrimSpace(req.Body)) == 0 {
 		return nil, kernel.BadRequest("The body is empty.")
+	}
+	// Counted before the handle is looked up, so an unknown handle costs the
+	// same as a real one.
+	if ok, err := a.quotas.Consume(c, p.ID, services.QuotaMessages); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, kernel.ErrRateLimited.WithDetail("Your hourly message quota is used up. See GET /v1/me/ledger.")
 	}
 	target, err := a.handles.ByHandle(c, req.Params["handle"])
 	if err != nil {

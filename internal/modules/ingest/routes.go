@@ -29,7 +29,8 @@ var (
 	dossierView = schema.Object(
 		schema.Req("content_hash", schema.String()), schema.Req("first_seen", schema.DateTime()), schema.Req("seen_count", schema.Integer()),
 		schema.Req("senders", schema.Integer()), schema.Req("velocity", schema.Number()), schema.Req("burstiness", schema.Number()),
-		schema.Req("sender_concentration", schema.Number()), schema.Req("drift", schema.Number()), schema.Req("risk", schema.Number()),
+		schema.Req("sender_concentration", schema.Number()), schema.Req("drift", schema.Number()),
+		schema.Req("bridging", schema.Number().Doc("Share of deliveries to receivers whose bridge the content did not fit.")), schema.Req("risk", schema.Number()),
 		schema.Req("signals", schema.Array(signalView)), schema.Req("version", schema.String()), schema.Opt("links", schema.Array(schema.String())))
 
 	messageEvent = schema.Object(schema.Req("message_id", schema.UUID()), schema.Req("content_hash", schema.String().Match(`[0-9a-f]{64}`)),

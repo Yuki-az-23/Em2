@@ -195,6 +195,9 @@ var receiverOwned = map[string]bool{
 	"POST /v1/bridge/preview":        true,
 	"GET /v1/bridge/rulesets/active": true,
 	"POST /v1/egress/fetch":          true,
+	"GET /v1/me/ledger":              true, // the caller's own threshold, inside their settings
+	// Observers only; everyone else gets the same 404 as for an unknown id.
+	"GET /v1/principals/{id}/ledger": true,
 }
 
 // ADR-011: the public API document carries no build version, no admin

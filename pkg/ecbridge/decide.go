@@ -12,6 +12,9 @@ type Receiver struct {
 	Threshold    float64  // τ
 	Filter       bool     // false: the receiver asked not to be filtered
 	BlocksSender bool
+	// ProbeVariants is how many distinct near-threshold contents this sender
+	// sent this receiver within the probe window, this one included.
+	ProbeVariants int
 }
 
 // Decision is a verdict before it is stored. Score is nil when it could not
@@ -27,6 +30,7 @@ type Decision struct {
 // receiver. Claims are never an input (ADR-011).
 //
 //	sender blocked, or risk ≥ risk_deny             → deny
+//	probe_variants near-threshold variants          → deny
 //	score < τ and the receiver filters              → defer
 //	risk ≥ risk_shape, or the state is unknown      → shape
 //	otherwise                                       → pass
@@ -41,6 +45,9 @@ func Decide(state *core.EC, risk float64, rcv Receiver, r *Ruleset) Decision {
 		return Decision{core.VerdictDeny, score, "You blocked the sender."}
 	case risk >= r.RiskDeny:
 		return Decision{core.VerdictDeny, score, fmt.Sprintf("The content's risk %.2f is at or above the deny limit %.2f.", risk, r.RiskDeny)}
+	case r.ProbeVariants > 0 && rcv.ProbeVariants >= r.ProbeVariants:
+		return Decision{core.VerdictDeny, score, fmt.Sprintf("This sender sent you %d different messages scoring near your threshold within %.0f minutes; that probes your threshold.",
+			rcv.ProbeVariants, r.ProbeWindowMinutes)}
 	case score != nil && *score < rcv.Threshold && rcv.Filter:
 		return Decision{core.VerdictDefer, score, Explain(*rcv.Bridge, *state, rcv.Threshold, r.WEmotion)}
 	case state == nil:

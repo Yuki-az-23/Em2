@@ -26,6 +26,8 @@ var migrations embed.FS
 const (
 	EventTransitioned = "verdict.message.transitioned"
 	EventDelivered    = "verdict.exchange.delivered"
+	EventDecided      = "verdict.exchange.decided"
+	EventProbe        = "verdict.probe.detected"
 )
 
 // Config for the module.
@@ -61,7 +63,7 @@ func New(cfg Config) (*Module, error) {
 
 func (m *Module) Manifest() kernel.Manifest {
 	sub, _ := fs.Sub(migrations, "migrations")
-	return kernel.Manifest{Name: "verdict", Version: "0.3.0", Kind: kernel.KindModule, Schema: "verdict",
+	return kernel.Manifest{Name: "verdict", Version: "0.4.0", Kind: kernel.KindModule, Schema: "verdict",
 		DependsOn: []string{"identity", "ledger", "ingest"}, Migrations: sub}
 }
 
@@ -73,6 +75,12 @@ var (
 		schema.Req("receiver_id", schema.UUID()), schema.Req("plane", schema.String()), schema.Req("kind", schema.String()),
 		schema.Opt("score", schema.Number()), schema.Req("risk", schema.Number()), schema.Req("reason", schema.String()),
 		schema.Req("rule_version", schema.String()), schema.Req("shadow", schema.Boolean()))
+	decidedEvent = schema.Object(schema.Req("exchange_id", schema.UUID()), schema.Req("message_id", schema.UUID()),
+		schema.Req("sender_id", schema.UUID()), schema.Req("receiver_id", schema.UUID()), schema.Req("content_hash", schema.String().Match(`[0-9a-f]{64}`)),
+		schema.Req("kind", schema.Enum("pass", "shape", "defer", "deny")), schema.Req("far", schema.Boolean()), schema.Req("shadow", schema.Boolean()),
+		schema.Req("at", schema.DateTime()))
+	probeEvent = schema.Object(schema.Req("sender_id", schema.UUID()), schema.Req("receiver_id", schema.UUID()),
+		schema.Req("variants", schema.Integer()), schema.Req("at", schema.DateTime()))
 )
 
 func (m *Module) Register(r *kernel.Registry) error {
@@ -89,6 +97,10 @@ func (m *Module) Register(r *kernel.Registry) error {
 	r.Provide(services.Exchanges(&exchanges{scope: r.Scope()}))
 	r.Emits(kernel.EventDef{Name: EventTransitioned, Version: 1, Schema: transitionedEvent, Summary: "Pressure moved a message's emotional state one step"})
 	r.Emits(kernel.EventDef{Name: EventDelivered, Version: 1, Schema: deliveredEvent, Summary: "A message was delivered to a receiver (internal; carries the receiver's verdict)"})
+	r.Emits(kernel.EventDef{Name: EventDecided, Version: 1, Schema: decidedEvent,
+		Summary: "An exchange was decided (internal; feeds the sender's reputation and the content's reach)"})
+	r.Emits(kernel.EventDef{Name: EventProbe, Version: 1, Schema: probeEvent,
+		Summary: "A sender sent one receiver enough near-threshold variants to count as probing (internal)"})
 	r.Subscribe("ingest.message.assessed", 1, m.onAssessed)
 	r.Subscribe("ledger.bridge.updated", 1, m.onReceiverChanged)
 	r.Subscribe("ledger.settings.updated", 1, m.onReceiverChanged)

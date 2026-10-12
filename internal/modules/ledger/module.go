@@ -32,12 +32,22 @@ const EventSettingsUpdated = "ledger.settings.updated"
 // Config for the module.
 type Config struct {
 	DefaultThreshold float64 // receiver threshold τ when the principal has not set one
+
+	MessagesPerHour    int           // base message quota; default 120
+	EgressPerDay       int           // base egress fetch quota; default 200
+	MinOutcomes        int           // outcomes before reputation changes quotas; default 10
+	ProbePenaltyFactor float64       // quota factor after probing a receiver; default 0.25
+	ProbePenaltyFor    time.Duration // default 24h
+	ReconcileEvery     time.Duration // default 5m
+	SnapshotEvery      time.Duration // default 24h
 }
 
 // Module is the ledger module.
 type Module struct {
 	cfg   Config
 	scope *kernel.Scope
+	dir   services.Directory
+	drift *kernel.Counter
 }
 
 // New builds the module.
@@ -45,12 +55,34 @@ func New(cfg Config) *Module {
 	if cfg.DefaultThreshold <= 0 {
 		cfg.DefaultThreshold = 0.5
 	}
+	if cfg.MessagesPerHour <= 0 {
+		cfg.MessagesPerHour = 120
+	}
+	if cfg.EgressPerDay <= 0 {
+		cfg.EgressPerDay = 200
+	}
+	if cfg.MinOutcomes <= 0 {
+		cfg.MinOutcomes = 10
+	}
+	if cfg.ProbePenaltyFactor <= 0 || cfg.ProbePenaltyFactor > 1 {
+		cfg.ProbePenaltyFactor = 0.25
+	}
+	if cfg.ProbePenaltyFor <= 0 {
+		cfg.ProbePenaltyFor = 24 * time.Hour
+	}
+	if cfg.ReconcileEvery <= 0 {
+		cfg.ReconcileEvery = 5 * time.Minute
+	}
+	if cfg.SnapshotEvery <= 0 {
+		cfg.SnapshotEvery = 24 * time.Hour
+	}
 	return &Module{cfg: cfg}
 }
 
 func (m *Module) Manifest() kernel.Manifest {
 	sub, _ := fs.Sub(migrations, "migrations")
-	return kernel.Manifest{Name: "ledger", Version: "0.3.0", Kind: kernel.KindModule, Schema: "ledger", Migrations: sub}
+	return kernel.Manifest{Name: "ledger", Version: "0.4.0", Kind: kernel.KindModule, Schema: "ledger",
+		DependsOn: []string{"identity"}, Migrations: sub}
 }
 
 var (
@@ -73,6 +105,17 @@ var (
 
 func (m *Module) Register(r *kernel.Registry) error {
 	m.scope = r.Scope()
+	var err error
+	if m.dir, err = kernel.Resolve[services.Directory](r); err != nil {
+		return err
+	}
+	m.drift = r.Counter("em2_ledger_drift_total", "Reputation rows the reconciliation job found wrong and repaired.")
+	r.Provide(services.Quotas(m))
+	r.Subscribe(eventDecided, 1, m.onDecided)
+	r.Subscribe(eventProbe, 1, m.onProbe)
+	r.Job("reconcile", m.cfg.ReconcileEvery, m.reconcile)
+	r.Job("snapshot", m.cfg.SnapshotEvery, m.snapshotAll)
+	m.accountabilityRoutes(r)
 	r.Provide(services.Stances(m))
 	r.Provide(services.Receivers(m))
 	r.Provide(services.Endpoints(m))
@@ -191,7 +234,9 @@ func (m *Module) onPrincipalDeleted(c kernel.Ctx, e kernel.Envelope) error {
 		return err
 	}
 	for _, q := range []string{`DELETE FROM bridge_history WHERE principal_id = $1`, `DELETE FROM settings WHERE principal_id = $1`,
-		`DELETE FROM blocks WHERE principal_id = $1 OR blocked_id = $1`, `DELETE FROM endpoints WHERE principal_id = $1`} {
+		`DELETE FROM blocks WHERE principal_id = $1 OR blocked_id = $1`, `DELETE FROM endpoints WHERE principal_id = $1`,
+		`DELETE FROM usage WHERE principal_id = $1`, `DELETE FROM outcomes WHERE sender_id = $1`, `DELETE FROM reputation WHERE principal_id = $1`,
+		`DELETE FROM penalties WHERE principal_id = $1`, `DELETE FROM snapshots WHERE principal_id = $1`} {
 		if _, err := c.DB().Exec(c, q, p.PrincipalID); err != nil {
 			return err
 		}

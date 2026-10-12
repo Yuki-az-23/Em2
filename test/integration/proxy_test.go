@@ -110,7 +110,7 @@ func TestIngressForwardsDeliveredRequestsAndRepliesAsMessages(t *testing.T) {
 		t.Fatalf("forwarded body/type: %q %q", got.body, got.header.Get("Content-Type"))
 	}
 	for k, want := range map[string]string{"EM2-Verdict": "pass", "EM2-Score": "0.7500", "EM2-Message-Id": id, "EM2-Sender": "caller",
-		"EM2-Rule-Version": "em2-2.0"} {
+		"EM2-Rule-Version": "em2-2.1"} {
 		if got.header.Get(k) != want {
 			t.Errorf("%s = %q, want %q", k, got.header.Get(k), want)
 		}

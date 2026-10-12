@@ -103,3 +103,19 @@ type Exchanges interface {
 type Handles interface {
 	ByHandle(ctx context.Context, handle string) (*PublicPrincipal, error)
 }
+
+// QuotaKind names a metered action.
+type QuotaKind string
+
+const (
+	QuotaMessages QuotaKind = "messages" // messages sent (bus, ingress), per hour
+	QuotaEgress   QuotaKind = "egress"   // egress fetches, per day
+)
+
+// Quotas meters a principal's own actions. Provided by ledger. Consume
+// records one action and reports false when the principal's quota for the
+// current window is used up; nothing is recorded then. Called inside the
+// caller's transaction, the use rolls back with it.
+type Quotas interface {
+	Consume(ctx context.Context, principalID string, kind QuotaKind) (bool, error)
+}

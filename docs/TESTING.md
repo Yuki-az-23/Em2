@@ -1,6 +1,6 @@
 # Testing EM2
 
-How to try EM2 by hand and how to run its test suites. Covers milestones M0 to M3.
+How to try EM2 by hand and how to run its test suites. Covers milestones M0 to M4.
 
 ## What you can test today
 
@@ -18,8 +18,11 @@ How to try EM2 by hand and how to run its test suites. Covers milestones M0 to M
 | Reverse proxy (ingress) to a registered upstream | yes | `PUT /v1/me/endpoint`, `POST /ingress/{handle}` |
 | Forward proxy as an explicit fetch (egress) | yes | `POST /v1/egress/fetch` |
 | Rules preview and the active ruleset | yes | `POST /v1/bridge/preview`, `GET /v1/bridge/rulesets/active` |
+| Quotas and your ledger snapshot | yes | `GET /v1/me/ledger`; set `EM2_QUOTA_MESSAGES_PER_HOUR` low to see a `429` |
+| Reputation, penalties, other principals' ledgers | yes, as an observer | `GET /v1/principals/{id}/ledger` after `em2 grant-role <handle> observer` |
+| Probe detection, shape limit, `bridging_vector` | yes | see the demo's steps 7 and 11 |
+| Public principal card | yes | `GET /v1/principals/{id}`; hide the emotion with `PATCH /v1/me/settings {"card":"hidden"}` |
 | HTTP CONNECT forward proxy, MCP server for agents | **no**, M5 | |
-| Ledger extras (quotas, reputation), probe signal, reconciliation | **no**, M4 | |
 | Replay mode | **no**, M5 | |
 | Journal, observatory web UI, wellbeing | **no**, M6 | there is no UI yet |
 
@@ -50,7 +53,11 @@ is `joy/yellow`. What you should see:
   `EM2-*` verdict headers, and its answer arrives in the owner's feed as a reply, without the upstream's
   `Server` banner;
 - `reader` fetches a page through `POST /v1/egress/fetch`; scripts are stripped, the text is stored as a
-  message to `reader` and shaped, because the emotion of external content is not known.
+  message to `reader` and shaped, because the emotion of external content is not known;
+- the flood reaches `far` shaped, one copy per minute, the rest waiting their turn;
+- the ledger: pusher sees its quotas but not its reputation; the owner, as observer, sees pusher's
+  outcomes; a `prober` agent sends five variants that score right at reader's threshold, the fifth is
+  denied as a probe, and the prober's hourly quota drops from 120 to 30.
 
 When it finishes, the server keeps running and the tokens are saved:
 
@@ -99,6 +106,11 @@ curl -s -X PATCH $EM2/v1/me/settings -H "Authorization: Bearer $FAR" -H 'Content
 curl -s -X PUT $EM2/v1/messages/<id>/braces/me -H "Authorization: Bearer $READER"
 curl -s $EM2/v1/messages/<id>/bridge/pressure -H "Authorization: Bearer $READER"
 curl -s $EM2/v1/messages/<id>/bridge/transitions -H "Authorization: Bearer $READER"
+
+# Your ledger (quotas and what you used), a public card, and, as an observer, someone's full ledger
+curl -s $EM2/v1/me/ledger -H "Authorization: Bearer $PUSHER"
+curl -s $EM2/v1/principals/<id> -H "Authorization: Bearer $READER"
+curl -s $EM2/v1/principals/<id>/ledger -H "Authorization: Bearer $HUMAN"
 
 # The rules, and a preview on values you choose
 curl -s $EM2/v1/bridge/rulesets/active

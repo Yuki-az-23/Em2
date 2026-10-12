@@ -212,6 +212,11 @@ func (m *Module) publish(c kernel.Ctx, req *kernel.Request) (*kernel.Response, e
 	if !exists {
 		return nil, kernel.ErrNotFound.WithDetail("No such channel.")
 	}
+	if ok, err := m.quotas.Consume(c, p.ID, services.QuotaMessages); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, ErrQuota
+	}
 	if in.ParentID != "" {
 		if err := c.DB().QueryRow(c, `SELECT EXISTS (SELECT 1 FROM messages WHERE id = $1 AND channel_id = $2)`, in.ParentID, in.ChannelID).Scan(&exists); err != nil {
 			return nil, err
@@ -275,6 +280,10 @@ func (m *Module) store(c kernel.Ctx, msg core.Message, doc *markdown.Doc, sender
 	}
 	return c.Publish(EventMessageReceived, ev)
 }
+
+// ErrQuota is the answer when a principal used up their hourly message quota.
+// It depends only on the caller's own volume, never on a receiver.
+var ErrQuota = kernel.ErrRateLimited.WithDetail("Your hourly message quota is used up. See GET /v1/me/ledger.")
 
 const messageCols = `id, plane, channel_id, receiver_id, parent_id, sender_id, at, COALESCE(state_emotion, stance_emotion), COALESCE(state_color, stance_color), body_md, body_ast`
 

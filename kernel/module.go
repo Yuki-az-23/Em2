@@ -128,6 +128,24 @@ func (r *Registry) Job(name string, every time.Duration, fn JobFunc) {
 	r.k.jobs = append(r.k.jobs, job{module: r.manifest.Name, name: name, every: every, fn: fn})
 }
 
+var counterRe = regexp.MustCompile(`^em2_[a-z][a-z0-9_]*_total$`)
+
+// Counter registers a module metric named em2_<something>_total. Registering
+// the same name twice fails at boot.
+func (r *Registry) Counter(name, help string) *Counter {
+	c := &Counter{name: name, help: help}
+	r.k.metrics.mu.Lock()
+	defer r.k.metrics.mu.Unlock()
+	if !counterRe.MatchString(name) {
+		r.k.bootErr(fmt.Errorf("%s: counter name %q must match em2_<name>_total", r.manifest.Name, name))
+	} else if _, dup := r.k.metrics.counters[name]; dup {
+		r.k.bootErr(fmt.Errorf("%s: counter %s registered twice", r.manifest.Name, name))
+	} else {
+		r.k.metrics.counters[name] = c
+	}
+	return c
+}
+
 // Scope runs work inside the registering module's own transaction scope. A
 // module that provides a service to others calls Scope.Tx inside the service
 // methods, so the queries run under the provider's schema and role and never

@@ -26,10 +26,24 @@ type metrics struct {
 	published   atomic.Uint64
 	delivered   atomic.Uint64
 	failed      atomic.Uint64
+	counters    map[string]*Counter // registered by modules
 }
 
+// Counter is a monotonically increasing metric a module registers with
+// Registry.Counter. It is exported on the private metrics listener.
+type Counter struct {
+	name, help string
+	v          atomic.Uint64
+}
+
+// Add increases the counter.
+func (c *Counter) Add(n uint64) { c.v.Add(n) }
+
+// Value returns the current count.
+func (c *Counter) Value() uint64 { return c.v.Load() }
+
 func newMetrics() *metrics {
-	return &metrics{requests: map[[3]string]uint64{}, durations: map[string]*histogram{}}
+	return &metrics{requests: map[[3]string]uint64{}, durations: map[string]*histogram{}, counters: map[string]*Counter{}}
 }
 
 func (m *metrics) observe(route, method string, status int, d time.Duration) {
@@ -86,4 +100,13 @@ func (m *metrics) write(w io.Writer) {
 	fmt.Fprintf(w, "em2_events_delivered_total %d\n", m.delivered.Load())
 	fmt.Fprintln(w, "# TYPE em2_events_failed_total counter")
 	fmt.Fprintf(w, "em2_events_failed_total %d\n", m.failed.Load())
+	names := make([]string, 0, len(m.counters))
+	for n := range m.counters {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	for _, n := range names {
+		c := m.counters[n]
+		fmt.Fprintf(w, "# HELP %s %s\n# TYPE %s counter\n%s %d\n", n, c.help, n, n, c.v.Load())
+	}
 }

@@ -36,6 +36,7 @@ type Adapter struct {
 	cfg      Config
 	client   *http.Client
 	messages services.Messages
+	quotas   services.Quotas
 }
 
 // New builds the adapter.
@@ -53,7 +54,7 @@ func New(cfg Config) *Adapter {
 }
 
 func (a *Adapter) Manifest() kernel.Manifest {
-	return kernel.Manifest{Name: "egress", Version: "0.3.0", Kind: kernel.KindAdapter, DependsOn: []string{"ingest"}}
+	return kernel.Manifest{Name: "egress", Version: "0.4.0", Kind: kernel.KindAdapter, DependsOn: []string{"ingest", "ledger"}}
 }
 
 var fetchOut = schema.Object(
@@ -65,6 +66,9 @@ var fetchOut = schema.Object(
 func (a *Adapter) Register(r *kernel.Registry) error {
 	var err error
 	if a.messages, err = kernel.Resolve[services.Messages](r); err != nil {
+		return err
+	}
+	if a.quotas, err = kernel.Resolve[services.Quotas](r); err != nil {
 		return err
 	}
 	r.Route(kernel.Route{Method: "POST", Path: "/v1/egress/fetch", OperationID: "egressFetch",
@@ -83,6 +87,11 @@ func (a *Adapter) fetch(c kernel.Ctx, req *kernel.Request) (*kernel.Response, er
 	u, err := url.Parse(in.URL)
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil {
 		return nil, kernel.BadRequest("The URL must be an absolute http or https URL without credentials.")
+	}
+	if ok, err := a.quotas.Consume(c, c.Principal().ID, services.QuotaEgress); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, kernel.ErrRateLimited.WithDetail("Your daily egress quota is used up. See GET /v1/me/ledger.")
 	}
 	hreq, err := http.NewRequestWithContext(c, http.MethodGet, u.String(), nil)
 	if err != nil {

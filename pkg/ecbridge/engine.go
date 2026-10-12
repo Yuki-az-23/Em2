@@ -16,7 +16,7 @@ import (
 var rulesets embed.FS
 
 // DefaultRuleset is the ruleset EM2 runs unless configured otherwise.
-const DefaultRuleset = "em2-2.0"
+const DefaultRuleset = "em2-2.1"
 
 // Ruleset holds every ECBridge and verdict tunable (BLUEPRINT B6, B7). It is
 // public: knowing the rules does not reveal any principal's bridge.
@@ -33,6 +33,16 @@ type Ruleset struct {
 	RiskShape     float64            `json:"risk_shape"`
 	RiskDeny      float64            `json:"risk_deny"`
 	DeferTTLHours float64            `json:"defer_ttl_hours"`
+	// Probe detection (from em2-2.1; zero disables it): ProbeVariants
+	// distinct contents from one sender to one receiver within
+	// ProbeWindowMinutes, each scoring within ProbeBand of the receiver's
+	// threshold, are a probe of that threshold and are denied.
+	ProbeVariants      int     `json:"probe_variants,omitempty"`
+	ProbeBand          float64 `json:"probe_band,omitempty"`
+	ProbeWindowMinutes float64 `json:"probe_window_minutes,omitempty"`
+	// ShapeIntervalSeconds limits shaped deliveries to one per interval per
+	// sender and receiver (from em2-2.1; zero disables it).
+	ShapeIntervalSeconds float64 `json:"shape_interval_seconds,omitempty"`
 }
 
 // Interaction kinds.
@@ -59,6 +69,10 @@ func LoadRuleset(b []byte) (*Ruleset, error) {
 		return nil, errors.New("ecbridge: risk_shape must not exceed risk_deny")
 	case r.Theta <= 0, r.HalfLifeHours <= 0, r.MaxPerActor <= 0, r.DeferTTLHours <= 0:
 		return nil, errors.New("ecbridge: theta, half_life_hours, max_per_actor and defer_ttl_hours must be positive")
+	case r.ProbeVariants < 0, r.ProbeBand < 0, r.ProbeWindowMinutes < 0, r.ShapeIntervalSeconds < 0:
+		return nil, errors.New("ecbridge: probe and shape settings must not be negative")
+	case r.ProbeVariants > 0 && (r.ProbeVariants < 2 || r.ProbeBand <= 0 || r.ProbeWindowMinutes <= 0):
+		return nil, errors.New("ecbridge: probe detection needs probe_variants ≥ 2, a positive probe_band and probe_window_minutes")
 	}
 	for _, k := range []string{KindReply, KindBrace, KindForward, KindUnbrace} {
 		if _, ok := r.Weights[k]; !ok {
@@ -78,6 +92,23 @@ func BuiltinRuleset(version string) (*Ruleset, error) {
 		return nil, fmt.Errorf("ecbridge: no builtin ruleset %s", version)
 	}
 	return LoadRuleset(b)
+}
+
+// ProbeWindow is how far back near-threshold variants are counted.
+func (r *Ruleset) ProbeWindow() time.Duration {
+	return time.Duration(r.ProbeWindowMinutes * float64(time.Minute))
+}
+
+// ShapeInterval is the minimum time between two shaped deliveries from one
+// sender to one receiver; zero means no limit.
+func (r *Ruleset) ShapeInterval() time.Duration {
+	return time.Duration(r.ShapeIntervalSeconds * float64(time.Second))
+}
+
+// NearThreshold reports whether a score is close enough to a threshold to
+// count as a probe variant.
+func (r *Ruleset) NearThreshold(score, threshold float64) bool {
+	return r.ProbeVariants > 0 && math.Abs(score-threshold) <= r.ProbeBand+1e-9
 }
 
 // DeferTTL is how long a deferred delivery waits before it expires.

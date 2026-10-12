@@ -513,3 +513,37 @@ func TestRawBodiesAreTypedAndBounded(t *testing.T) {
 		t.Fatalf("too large: %d", resp.StatusCode)
 	}
 }
+
+func TestModuleCountersAreExportedAndChecked(t *testing.T) {
+	k := New(Config{})
+	var c *Counter
+	err := k.Register(mod("counting", nil, func(r *Registry) error {
+		c = r.Counter("em2_things_total", "Things counted.")
+		return nil
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := k.Boot(); err != nil {
+		t.Fatal(err)
+	}
+	c.Add(3)
+	rec := httptest.NewRecorder()
+	k.AdminHandler().ServeHTTP(rec, httptest.NewRequest("GET", "/metrics", nil))
+	if !strings.Contains(rec.Body.String(), "\nem2_things_total 3\n") {
+		t.Fatalf("metrics:\n%s", rec.Body.String())
+	}
+	for _, bad := range [][]string{{"things", "em2_x_total"}, {"bad_name"}} {
+		k := New(Config{})
+		_ = k.Register(mod("counting", nil, func(r *Registry) error {
+			for _, n := range bad {
+				r.Counter(n, "")
+			}
+			r.Counter(bad[len(bad)-1], "")
+			return nil
+		}))
+		if err := k.Boot(); err == nil {
+			t.Fatalf("boot accepted counters %v", bad)
+		}
+	}
+}

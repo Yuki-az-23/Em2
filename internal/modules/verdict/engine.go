@@ -104,10 +104,25 @@ func (m *Module) onAssessed(c kernel.Ctx, e kernel.Envelope) error {
 	if err != nil {
 		return err
 	}
+	info := msgInfo{id: ev.MessageID, plane: ev.Plane, author: ev.SenderID, hash: hash, risk: ev.Risk}
 	for _, rid := range receivers {
 		rs := settings[rid]
-		d := ecbridge.Decide(ev.Stance, ev.Risk, ecbridge.Receiver{Bridge: rs.Bridge, Threshold: rs.Threshold, Filter: rs.Filter, BlocksSender: rs.BlocksSender}, m.rules)
-		if err := m.record(c, ev.MessageID, ev.Plane, rid, rs.Threshold, ev.Risk, d); err != nil {
+		rcv := ecbridge.Receiver{Bridge: rs.Bridge, Threshold: rs.Threshold, Filter: rs.Filter, BlocksSender: rs.BlocksSender}
+		if ev.Stance != nil && rs.Bridge != nil && m.rules.NearThreshold(ecbridge.Compat(*rs.Bridge, *ev.Stance, m.rules.WEmotion), rs.Threshold) {
+			prior, err := m.nearVariants(c, ev.SenderID, rid, hash)
+			if err != nil {
+				return err
+			}
+			rcv.ProbeVariants = prior + 1
+			if rcv.ProbeVariants == m.rules.ProbeVariants {
+				if err := c.Publish(EventProbe, map[string]any{"sender_id": ev.SenderID, "receiver_id": rid,
+					"variants": rcv.ProbeVariants, "at": c.Now().UTC().Format(time.RFC3339Nano)}); err != nil {
+					return err
+				}
+			}
+		}
+		d := ecbridge.Decide(ev.Stance, ev.Risk, rcv, m.rules)
+		if err := m.record(c, info, rid, rs.Threshold, d); err != nil {
 			return err
 		}
 	}
@@ -120,14 +135,69 @@ func (m *Module) onAssessed(c kernel.Ctx, e kernel.Envelope) error {
 	return nil
 }
 
+// msgInfo is what recording an exchange needs to know about its message.
+type msgInfo struct {
+	id, plane, author string
+	hash              []byte
+	risk              float64
+}
+
+// nearVariants counts the other contents this sender sent this receiver
+// within the probe window that scored within the probe band of the
+// receiver's threshold.
+func (m *Module) nearVariants(c kernel.Ctx, sender, receiver string, hash []byte) (int, error) {
+	var n int
+	err := c.DB().QueryRow(c, `SELECT count(DISTINCT g.content_hash) FROM exchanges x JOIN messages g ON g.message_id = x.message_id
+		WHERE x.receiver_id = $1 AND g.author_id = $2 AND g.content_hash <> $3 AND x.decided_at > $4
+		AND x.score IS NOT NULL AND abs(x.score - x.threshold) <= $5 + 1e-6`,
+		receiver, sender, hash, c.Now().Add(-m.rules.ProbeWindow()), m.rules.ProbeBand).Scan(&n)
+	return n, err
+}
+
+// shapeHold returns when a shaped delivery from sender to receiver may be
+// delivered, or the zero time when it may be delivered now: shaped messages
+// are limited to one per shape interval per sender and receiver.
+func (m *Module) shapeHold(c kernel.Ctx, sender, receiver string) (time.Time, error) {
+	iv := m.rules.ShapeInterval()
+	if iv <= 0 {
+		return time.Time{}, nil
+	}
+	var last *time.Time
+	if err := c.DB().QueryRow(c, `SELECT max(x.delivered_at) FROM exchanges x JOIN messages g ON g.message_id = x.message_id
+		WHERE x.receiver_id = $1 AND g.author_id = $2 AND x.kind = 'shape' AND NOT x.shadow AND x.delivered_at > $3`,
+		receiver, sender, c.Now().Add(-iv)).Scan(&last); err != nil {
+		return time.Time{}, err
+	}
+	if last == nil {
+		return time.Time{}, nil
+	}
+	return last.Add(iv), nil
+}
+
+func (m *Module) holdReason() string {
+	return fmt.Sprintf("Shaped messages from this sender are limited to one every %.0f seconds; this one waits its turn.", m.rules.ShapeIntervalSeconds)
+}
+
 // record stores a new exchange. In shadow mode every verdict is delivered and
-// the real one is kept for the receiver to see (BLUEPRINT B9).
-func (m *Module) record(c kernel.Ctx, messageID, plane, receiverID string, threshold, risk float64, d ecbridge.Decision) error {
+// the real one is kept for the receiver to see (BLUEPRINT B9). Every decision
+// is announced as verdict.exchange.decided for the sender's reputation and the
+// content's reach; delivered ones also as verdict.exchange.delivered.
+func (m *Module) record(c kernel.Ctx, msg msgInfo, receiverID string, threshold float64, d ecbridge.Decision) error {
 	now := c.Now()
 	shadow := c.Mode() != kernel.ModeEnforce
 	state := "forwarded"
-	var delivered, expires any = now, nil
+	var delivered, expires, hold any = now, nil, nil
 	if !shadow {
+		if d.Kind == core.VerdictShape {
+			until, err := m.shapeHold(c, msg.author, receiverID)
+			if err != nil {
+				return err
+			}
+			if !until.IsZero() {
+				d = ecbridge.Decision{Kind: core.VerdictDefer, Score: d.Score, Reason: m.holdReason()}
+				hold = until
+			}
+		}
 		switch d.Kind {
 		case core.VerdictDefer:
 			state, delivered, expires = "deferred", nil, now.Add(m.rules.DeferTTL())
@@ -137,13 +207,22 @@ func (m *Module) record(c kernel.Ctx, messageID, plane, receiverID string, thres
 	}
 	id := kernel.NewID()
 	tag, err := c.DB().Exec(c, `INSERT INTO exchanges (id, message_id, receiver_id, state, kind, score, threshold, risk, reason, rule_version,
-		shadow, decided_at, delivered_at, expires_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		shadow, decided_at, delivered_at, expires_at, hold_until) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 		ON CONFLICT (message_id, receiver_id) DO NOTHING`,
-		id, messageID, receiverID, state, string(d.Kind), d.Score, threshold, risk, d.Reason, m.rules.Version, shadow, now, delivered, expires)
-	if err != nil || tag.RowsAffected() == 0 || delivered == nil {
+		id, msg.id, receiverID, state, string(d.Kind), d.Score, threshold, msg.risk, d.Reason, m.rules.Version, shadow, now, delivered, expires, hold)
+	if err != nil || tag.RowsAffected() == 0 {
 		return err
 	}
-	return m.publishDelivered(c, id, messageID, plane, receiverID, risk, d, shadow)
+	far := d.Score != nil && *d.Score < threshold
+	if err := c.Publish(EventDecided, map[string]any{"exchange_id": id, "message_id": msg.id, "sender_id": msg.author, "receiver_id": receiverID,
+		"content_hash": hex.EncodeToString(msg.hash), "kind": string(d.Kind), "far": far, "shadow": shadow,
+		"at": now.UTC().Format(time.RFC3339Nano)}); err != nil {
+		return err
+	}
+	if delivered == nil {
+		return nil
+	}
+	return m.publishDelivered(c, id, msg.id, msg.plane, receiverID, msg.risk, d, shadow)
 }
 
 func (m *Module) publishDelivered(c kernel.Ctx, id, messageID, plane, receiverID string, risk float64, d ecbridge.Decision, shadow bool) error {
@@ -291,8 +370,21 @@ func (m *Module) reevaluate(c kernel.Ctx, list []pending) error {
 				return err
 			}
 		default:
+			if d.Kind == core.VerdictShape {
+				until, err := m.shapeHold(c, p.authorID, p.receiverID)
+				if err != nil {
+					return err
+				}
+				if !until.IsZero() {
+					if _, err := c.DB().Exec(c, `UPDATE exchanges SET score = $2, threshold = $3, reason = $4, hold_until = $5 WHERE id = $1`,
+						p.id, d.Score, rs.Threshold, m.holdReason(), until); err != nil {
+						return err
+					}
+					continue
+				}
+			}
 			if _, err := c.DB().Exec(c, `UPDATE exchanges SET state = 'forwarded', kind = $2, score = $3, threshold = $4, risk = $5, reason = $6,
-				rule_version = $7, released_at = $8, delivered_at = $8, expires_at = NULL WHERE id = $1`,
+				rule_version = $7, released_at = $8, delivered_at = $8, expires_at = NULL, hold_until = NULL WHERE id = $1`,
 				p.id, string(d.Kind), d.Score, rs.Threshold, p.risk, d.Reason, m.rules.Version, now); err != nil {
 				return err
 			}
@@ -332,9 +424,17 @@ func (m *Module) onTransitioned(c kernel.Ctx, e kernel.Envelope) error {
 	return m.reevaluate(c, list)
 }
 
+// expireDeferred expires deferred exchanges past their time to live and
+// decides again those whose shape hold is over.
 func (m *Module) expireDeferred(c kernel.Ctx) error {
-	_, err := c.DB().Exec(c, `UPDATE exchanges SET state = 'expired' WHERE state = 'deferred' AND expires_at <= $1`, c.Now())
-	return err
+	if _, err := c.DB().Exec(c, `UPDATE exchanges SET state = 'expired' WHERE state = 'deferred' AND expires_at <= $1`, c.Now()); err != nil {
+		return err
+	}
+	list, err := m.loadPending(c, `x.hold_until <= $1`, c.Now())
+	if err != nil {
+		return err
+	}
+	return m.reevaluate(c, list)
 }
 
 // onPrincipalDeleted erases what the deleted principal received and subscribed to.

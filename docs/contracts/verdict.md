@@ -17,7 +17,8 @@ receiver, because the receiver's bridge and threshold produced it.
 The decision table is in `docs/BLUEPRINT.md` section B6 and is implemented by `ecbridge.Decide`. Its
 inputs are the compatibility score between the message's current state (which starts at the sender's
 stance) and the receiver's bridge, the receiver's threshold and filter, the dossier risk and the
-receiver's block list (ADR-013). The probe signal joins in M4. Claims are not an input; a contract
+receiver's block list (ADR-013), and from M4 the number of near-threshold variants the same sender
+sent the same receiver (probe detection, ADR-014). Claims are not an input; a contract
 test checks that the verdict code never reads them.
 
 ## Disclosure (ADR-011)

@@ -246,7 +246,7 @@ func TestDossierBuiltFromOutboxAndVisibleOnlyToAuthorsAndObservers(t *testing.T)
 	}
 	risk := d.JSON["risk"].(float64)
 	drift := d.JSON["drift"].(float64)
-	if risk < 0.6 || drift != 1 || len(d.JSON["signals"].([]any)) != 5 {
+	if risk < 0.6 || drift != 1 || len(d.JSON["signals"].([]any)) != 6 || d.JSON["version"] != "dossier-2" {
 		t.Fatalf("dossier = %s", d.Raw)
 	}
 
