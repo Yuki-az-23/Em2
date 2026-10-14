@@ -98,6 +98,11 @@ func TestTokensExpireAndLogoutExists(t *testing.T) {
 // tool arguments are validated against schemas generated from the REST
 // routes) declare only their media types; the kernel bounds their size.
 func TestEveryBodyIsValidatedAgainstAClosedSchema(t *testing.T) {
+	opaqueBodies := map[string]bool{
+		"POST /ingress/{handle}": true,
+		"POST /mcp":             true,
+		"POST /v1/mcp":          true, // compatibility if MCP is versioned in OpenAPI paths
+	}
 	for key, op := range operations(openapi(t, true)) {
 		rb, ok := op["requestBody"].(map[string]any)
 		if !ok {
@@ -106,7 +111,7 @@ func TestEveryBodyIsValidatedAgainstAClosedSchema(t *testing.T) {
 		for mt, c := range rb["content"].(map[string]any) {
 			sch, ok := c.(map[string]any)["schema"]
 			if !ok {
-				if key != "POST /ingress/{handle}" && key != "POST /mcp" {
+				if !opaqueBodies[key] {
 					t.Errorf("%s takes an opaque %s body", key, mt)
 				}
 				continue
