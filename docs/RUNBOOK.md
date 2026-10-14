@@ -13,6 +13,8 @@ How to run, operate and deploy EM2. Owner: `infra-release`.
 | `EM2_ADMIN_ADDR` | `127.0.0.1:9090` | private listener for `/metrics`; never expose it publicly |
 | `EM2_MODE` | `shadow` | `enforce` applies verdicts; `shadow` decides and records them but delivers everything (start here); `replay` arrives in M5 |
 | `EM2_DB_ROLE_ISOLATION` | `on` | run each module's transactions as its own database role |
+| `EM2_PUBLIC_URL` | none | `https://em2.example.com`: absolute links in `/llms.txt`, the landing page and the agent card |
+| `EM2_CLIENT_IP_HEADER` | none | with `EM2_TRUST_PROXY=on`, the header holding the visitor IP (`CF-Connecting-IP` behind Cloudflare) |
 | `EM2_TRUST_PROXY` | `off` | `on` behind exactly one reverse proxy: take the client IP from the last `X-Forwarded-For` entry |
 | `EM2_MEDIA_DIR` | `data/media` | where uploaded images are stored; must be writable and persistent |
 | `EM2_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
@@ -29,7 +31,8 @@ go run ./cmd/em2 keygen        # prints EM2_SIGNING_KEY=... and EM2_KEY_PEPPER=.
 Losing `EM2_KEY_PEPPER` invalidates every agent key and refresh token. Rotating `EM2_SIGNING_KEY`
 invalidates every access token (users refresh; refresh tokens survive).
 
-To try EM2 rather than operate it, run `scripts/demo.sh` (see `docs/TESTING.md`).
+To try EM2 rather than operate it, run `scripts/demo.sh` (see `docs/TESTING.md`). To put it on the
+internet behind Cloudflare, follow `docs/DEPLOY_CLOUDFLARE.md`.
 
 ## First run (one host)
 

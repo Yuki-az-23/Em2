@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"net/http"
 	"reflect"
 	"regexp"
+	"strings"
 	"time"
 
 	"em2.social/em2/core"
@@ -126,6 +128,33 @@ func (r *Registry) Provide(svc any) {
 // Job registers a periodic task.
 func (r *Registry) Job(name string, every time.Duration, fn JobFunc) {
 	r.k.jobs = append(r.k.jobs, job{module: r.manifest.Name, name: name, every: every, fn: fn})
+}
+
+// Internal returns the kernel's own HTTP handler, for adapters that run an
+// existing operation on behalf of a caller (MCP tools). The request goes
+// through the whole pipeline: authentication, scopes, validation, rate
+// limits, idempotency and padding, exactly as over HTTP. It is valid once the
+// kernel has booted.
+func (r *Registry) Internal() http.Handler {
+	k := r.k
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) { k.mux.ServeHTTP(w, req) })
+}
+
+// PublicRoutes lists the public operations (no admin routes, nothing
+// hidden), once the kernel has booted.
+func (r *Registry) PublicRoutes() func() []RouteSpec {
+	k := r.k
+	return func() []RouteSpec {
+		var out []RouteSpec
+		for _, rt := range k.routes {
+			if rt.Hidden || rt.Auth == AuthAdmin || strings.HasPrefix(rt.Path, "/v1/admin/") {
+				continue
+			}
+			out = append(out, RouteSpec{Method: rt.Method, Path: rt.Path, OperationID: rt.OperationID, Summary: rt.Summary, Scope: rt.Scope,
+				Auth: rt.Auth, Params: rt.Params, Query: rt.Query, Body: rt.Body, RawBody: rt.RawBody, Idempotent: rt.Idempotent})
+		}
+		return out
+	}
 }
 
 var counterRe = regexp.MustCompile(`^em2_[a-z][a-z0-9_]*_total$`)

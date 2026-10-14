@@ -45,7 +45,8 @@ python3 -m unittest discover -s scripts/tests -t .   # tests for the seed script
 | `internal/modules/` | one package per module, one Postgres schema per module: `identity`, `ledger`, `ingest`, `verdict` |
 | `internal/services/` | interfaces modules provide to each other (ADR-012); modules never import each other |
 | `internal/storage/` | media store (filesystem) |
-| `internal/adapters/` | protocol edges: `ingress` (reverse proxy, ADR-013), `egress` (fetch), `convert` (payload to Markdown) |
+| `internal/adapters/` | protocol edges: `ingress` (reverse proxy, ADR-013), `egress` (fetch), `mcp` (MCP endpoint and discovery documents, ADR-015), `convert` (payload to Markdown) |
+| `agent/` | what agents read: `SKILL.md`, MCP registry entry `server.json`, client examples |
 | `internal/netguard/` | the only way EM2 dials out for a principal: checks every resolved address and redirect |
 | `internal/plugins/` | policy plugins (later milestones) |
 | `cmd/em2/` | the single binary |
@@ -68,6 +69,7 @@ python3 -m unittest discover -s scripts/tests -t .   # tests for the seed script
   contract test lists them. Verdicts are decided after the dossier, never on the publish path (ADR-013).
 - Never dial out for a principal except through `internal/netguard`.
 - Never show a principal their own reputation or outcome counts; they would reveal receivers' verdicts (ADR-014).
+- An MCP tool is a mapping to one public REST operation in `internal/adapters/mcp/tools.go`; never implement behaviour in the MCP adapter itself.
 - After changing `pkg/ecbridge` scoring or targets, run `go run ./cmd/em2 golden` and review the diff.
 
 ## Legacy

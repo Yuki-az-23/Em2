@@ -19,6 +19,7 @@ the sender, control over what reaches them.
 | M2 | Data engine: Markdown, canonical messages, channels, media, dossiers, bridges | gate green, `docs/milestones/M2.md` |
 | M3 | Execution engine: ECBridge v2, verdicts per receiver, feed, pressure and transitions, ingress and egress proxies | done, `docs/milestones/M3.md` |
 | M4 | Ledger: quotas, reputation, probe detection, reconciliation, snapshots, public card | done, `docs/milestones/M4.md` |
+| Launch kit | MCP endpoint, discovery documents (`/`, `/llms.txt`, agent card, robots), Cloudflare Tunnel deployment, backups | done, `docs/DEPLOY_CLOUDFLARE.md`, ADR-015 |
 | M5–M7 | Runtime parity, journal and observatory, hardening | planned in `docs/BLUEPRINT.md` |
 
 ## Try it

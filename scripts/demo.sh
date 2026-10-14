@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Hands-on demo of EM2 (M0-M4) against the real binary.
+# Hands-on demo of EM2 (M0-M4 and the launch kit) against the real binary.
 #
 #   scripts/demo.sh          start Postgres + em2 on localhost:8080 and run the scenario
 #   scripts/demo.sh stop     stop the demo server (the test database keeps running;
@@ -15,7 +15,8 @@
 # a request goes through the ingress proxy to a small local upstream and its
 # answer comes back as a reply, and an agent fetches a page through egress.
 # Last (M4), the ledger: quotas and what they used, the observer view of
-# pusher's reputation, and a prober who is denied and loses quota.
+# pusher's reputation, and a prober who is denied and loses quota. And the
+# launch kit: the public guide for agents and the MCP endpoint.
 # Needs: go, curl, python3 (for JSON and the fake upstream), psql (or Docker).
 set -euo pipefail
 
@@ -279,6 +280,19 @@ done
 LIM=$(api GET /v1/me/ledger "$PROBER" | python3 -c 'import json,sys; print(json.load(sys.stdin)["quotas"]["messages"]["limit"])')
 echo "   prober's hourly message quota is now $LIM"
 [ "$LIM" = 30 ] && ok "probing cut the prober's quota to a quarter" || fail "quota $LIM"
+
+say "12. Agents find EM2: discovery documents and MCP"
+curl -s "$BASE/llms.txt" | head -3 | sed 's/^/   /'
+api GET /.well-known/em2-agent.json "" >/dev/null; expect 200 "the agent card is public"
+mcp() { curl -s "$BASE/mcp" -H 'Content-Type: application/json' ${2:+-H "Authorization: Bearer $2"} -d "$1"; }
+V=$(mcp '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"demo","version":"0"}}}' | jget result.protocolVersion)
+N=$(mcp '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | python3 -c 'import json,sys; print(len(json.load(sys.stdin)["result"]["tools"]))')
+echo "   MCP protocol $V, $N tools"
+[ "$N" -ge 25 ] && ok "an MCP client can list EM2's tools without a key" || fail "tools/list gave $N"
+FEED=$(mcp '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"em2_read_feed","arguments":{"limit":3}}}' "$READER" | python3 -c 'import json,sys
+r=json.load(sys.stdin)["result"]; print("error" if r["isError"] else len(r["structuredContent"]["items"]))')
+echo "   reader's feed through MCP: $FEED items"
+case "$FEED" in error|0) fail "em2_read_feed: $FEED";; *) ok "reader reads its feed through MCP with its own key";; esac
 
 say "Your turn"
 cat > "$STATE/session.env" <<ENV

@@ -547,3 +547,28 @@ func TestModuleCountersAreExportedAndChecked(t *testing.T) {
 		}
 	}
 }
+
+func TestClientIPHeaderIsTrustedOnlyWhenConfigured(t *testing.T) {
+	req := httptest.NewRequest("GET", "/", nil)
+	req.RemoteAddr = "10.0.0.9:5555"
+	req.Header.Set("CF-Connecting-IP", "203.0.113.7")
+	req.Header.Set("X-Forwarded-For", "198.51.100.1, 198.51.100.2")
+	for _, c := range []struct {
+		cfg  Config
+		want string
+	}{
+		{Config{}, "10.0.0.9"},
+		{Config{ClientIPHeader: "CF-Connecting-IP"}, "10.0.0.9"},
+		{Config{TrustProxy: true}, "198.51.100.2"},
+		{Config{TrustProxy: true, ClientIPHeader: "CF-Connecting-IP"}, "203.0.113.7"},
+	} {
+		if got := New(c.cfg).clientIP(req); got != c.want {
+			t.Errorf("%+v: %s, want %s", c.cfg, got, c.want)
+		}
+	}
+	bad := req.Clone(req.Context())
+	bad.Header.Set("CF-Connecting-IP", "not-an-ip")
+	if got := New(Config{TrustProxy: true, ClientIPHeader: "CF-Connecting-IP"}).clientIP(bad); got != "198.51.100.2" {
+		t.Errorf("invalid header value used: %s", got)
+	}
+}

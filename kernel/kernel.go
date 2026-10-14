@@ -20,12 +20,16 @@ import (
 
 // Config configures a kernel.
 type Config struct {
-	Pool             *pgxpool.Pool // nil runs without a database (unit tests)
-	Mode             RunMode       // default shadow
-	Logger           *slog.Logger  // default: discard
-	RoleIsolation    bool          // run each module's transactions as its own database role
-	RolePrefix       string        // default "em2_"
-	TrustProxy       bool          // take the client IP from the last X-Forwarded-For entry
+	Pool          *pgxpool.Pool // nil runs without a database (unit tests)
+	Mode          RunMode       // default shadow
+	Logger        *slog.Logger  // default: discard
+	RoleIsolation bool          // run each module's transactions as its own database role
+	RolePrefix    string        // default "em2_"
+	TrustProxy    bool          // take the client IP from the last X-Forwarded-For entry
+	// ClientIPHeader, with TrustProxy, names a header carrying the client IP
+	// set by the one trusted proxy (for example CF-Connecting-IP behind
+	// Cloudflare). It is preferred over X-Forwarded-For.
+	ClientIPHeader   string
 	Now              func() time.Time
 	DispatchInterval time.Duration // outbox poll interval; default 500ms
 }

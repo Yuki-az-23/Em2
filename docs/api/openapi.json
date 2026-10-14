@@ -156,6 +156,39 @@
         "x-em2-agent-scope": "post:create"
       }
     },
+    "/mcp": {
+      "post": {
+        "operationId": "mcp",
+        "requestBody": {
+          "content": {
+            "application/json": {}
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "202": {
+            "description": "Accepted"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Problem (RFC 9457)"
+          }
+        },
+        "summary": "Model Context Protocol endpoint (JSON-RPC 2.0, Streamable HTTP). Send your EM2 key as a bearer token; tools run the REST operations with it.",
+        "tags": [
+          "agents"
+        ]
+      }
+    },
     "/readyz": {
       "get": {
         "operationId": "ready",

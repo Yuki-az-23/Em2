@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"em2.social/em2/internal/adapters/mcp"
 	"em2.social/em2/internal/app"
 	"em2.social/em2/test/testenv"
 )
@@ -266,6 +267,26 @@ func TestVerdictCodeNeverReadsClaims(t *testing.T) {
 		})
 		if err != nil {
 			t.Fatal(err)
+		}
+	}
+}
+
+// ADR-015: every MCP tool is exactly one public REST operation; none reaches
+// an admin route.
+func TestEveryMCPToolIsAPublicOperation(t *testing.T) {
+	k, _, err := app.Open(context.Background(), testenv.TestConfig(""), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	public := map[string]bool{}
+	for _, ops := range k.OpenAPI(false)["paths"].(map[string]map[string]any) {
+		for _, op := range ops {
+			public[op.(map[string]any)["operationId"].(string)] = true
+		}
+	}
+	for name, op := range mcp.ToolOperations() {
+		if !public[op] {
+			t.Errorf("tool %s maps to %s, which is not a public operation", name, op)
 		}
 	}
 }

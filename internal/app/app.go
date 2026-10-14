@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -18,6 +19,7 @@ import (
 
 	"em2.social/em2/internal/adapters/egress"
 	"em2.social/em2/internal/adapters/ingress"
+	"em2.social/em2/internal/adapters/mcp"
 	"em2.social/em2/internal/modules/identity"
 	"em2.social/em2/internal/modules/ingest"
 	"em2.social/em2/internal/modules/ledger"
@@ -36,10 +38,14 @@ type Config struct {
 	SigningKey    []byte // EM2_SIGNING_KEY, base64 32-byte Ed25519 seed
 	KeyPepper     []byte // EM2_KEY_PEPPER, base64, at least 32 bytes
 	Mode          kernel.RunMode
-	RoleIsolation bool   // EM2_DB_ROLE_ISOLATION, default on
-	TrustProxy    bool   // EM2_TRUST_PROXY
-	MediaDir      string // EM2_MEDIA_DIR, default ./data/media
-	LogLevel      slog.Level
+	RoleIsolation bool // EM2_DB_ROLE_ISOLATION, default on
+	TrustProxy    bool // EM2_TRUST_PROXY
+	// ClientIPHeader is EM2_CLIENT_IP_HEADER, e.g. CF-Connecting-IP; used only with TrustProxy.
+	ClientIPHeader string
+	// PublicURL is EM2_PUBLIC_URL, e.g. https://em2.example.com; used in the discovery documents.
+	PublicURL string
+	MediaDir  string // EM2_MEDIA_DIR, default ./data/media
+	LogLevel  slog.Level
 	// NetAllowPrivate lets ingress and egress reach private, loopback and
 	// link-local addresses (EM2_NET_ALLOW_PRIVATE=on). Development only.
 	NetAllowPrivate bool
@@ -60,14 +66,21 @@ type Config struct {
 // FromEnv reads Config. Secrets are required only by commands that need them.
 func FromEnv() (Config, error) {
 	c := Config{
-		Addr:          env("EM2_ADDR", ":8080"),
-		AdminAddr:     env("EM2_ADMIN_ADDR", "127.0.0.1:9090"),
-		DatabaseURL:   os.Getenv("EM2_DATABASE_URL"),
-		RoleIsolation: env("EM2_DB_ROLE_ISOLATION", "on") != "off",
-		TrustProxy:    env("EM2_TRUST_PROXY", "off") == "on",
-		MediaDir:      env("EM2_MEDIA_DIR", "data/media"),
+		Addr:           env("EM2_ADDR", ":8080"),
+		AdminAddr:      env("EM2_ADMIN_ADDR", "127.0.0.1:9090"),
+		DatabaseURL:    os.Getenv("EM2_DATABASE_URL"),
+		RoleIsolation:  env("EM2_DB_ROLE_ISOLATION", "on") != "off",
+		TrustProxy:     env("EM2_TRUST_PROXY", "off") == "on",
+		ClientIPHeader: os.Getenv("EM2_CLIENT_IP_HEADER"),
+		PublicURL:      strings.TrimRight(os.Getenv("EM2_PUBLIC_URL"), "/"),
+		MediaDir:       env("EM2_MEDIA_DIR", "data/media"),
 
 		NetAllowPrivate: env("EM2_NET_ALLOW_PRIVATE", "off") == "on",
+	}
+	if c.PublicURL != "" {
+		if u, err := url.Parse(c.PublicURL); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" || u.Path != "" {
+			return c, errors.New("EM2_PUBLIC_URL must be an absolute URL without a path, like https://em2.example.com")
+		}
 	}
 	for name, dst := range map[string]*int{"EM2_QUOTA_MESSAGES_PER_HOUR": &c.MessagesPerHour, "EM2_QUOTA_EGRESS_PER_DAY": &c.EgressPerDay} {
 		if v := os.Getenv(name); v != "" {
@@ -141,7 +154,8 @@ func Modules(c Config) ([]kernel.Module, error) {
 	}
 	return []kernel.Module{id, ledger.New(ledger.Config{DefaultThreshold: rules.Threshold,
 		MessagesPerHour: c.MessagesPerHour, EgressPerDay: c.EgressPerDay, ReconcileEvery: c.ReconcileEvery, SnapshotEvery: c.SnapshotEvery}), in, vd,
-		ingress.New(ingress.Config{Guard: guard, ForwardEvery: c.ForwardEvery}), egress.New(egress.Config{Guard: guard})}, nil
+		ingress.New(ingress.Config{Guard: guard, ForwardEvery: c.ForwardEvery}), egress.New(egress.Config{Guard: guard}),
+		mcp.New(mcp.Config{PublicURL: c.PublicURL})}, nil
 }
 
 // Open connects to the database (if configured) and boots a kernel with all modules.
@@ -164,7 +178,7 @@ func Open(ctx context.Context, c Config, log *slog.Logger) (*kernel.Kernel, *pgx
 		return nil, nil, err
 	}
 	k := kernel.New(kernel.Config{Pool: pool, Mode: c.Mode, Logger: log, RoleIsolation: c.RoleIsolation,
-		TrustProxy: c.TrustProxy, DispatchInterval: c.DispatchInterval, Now: c.Now})
+		TrustProxy: c.TrustProxy, ClientIPHeader: c.ClientIPHeader, DispatchInterval: c.DispatchInterval, Now: c.Now})
 	if err := k.Register(mods...); err != nil {
 		return nil, pool, err
 	}

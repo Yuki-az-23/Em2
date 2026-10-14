@@ -24,7 +24,7 @@ func (k *Kernel) OpenAPI(admin bool) map[string]any {
 	routes := append([]*Route(nil), k.routes...)
 	sort.Slice(routes, func(i, j int) bool { return routes[i].Path+routes[i].Method < routes[j].Path+routes[j].Method })
 	for _, rt := range routes {
-		if !admin && (rt.Auth == AuthAdmin || strings.HasPrefix(rt.Path, "/v1/admin/")) {
+		if rt.Hidden || (!admin && (rt.Auth == AuthAdmin || strings.HasPrefix(rt.Path, "/v1/admin/"))) {
 			continue
 		}
 		op := map[string]any{"operationId": rt.OperationID, "summary": rt.Summary}

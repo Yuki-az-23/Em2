@@ -47,6 +47,7 @@ type Route struct {
 	RateLimit   *RateLimit                // per principal (or per IP when unauthenticated)
 	MinDuration time.Duration             // pad the response to at least this long (ADR-011)
 	Idempotent  bool                      // require an Idempotency-Key header and replay the first result on retry
+	Hidden      bool                      // left out of the OpenAPI documents (discovery files, the landing page)
 	Handler     HandlerFunc
 
 	module string
@@ -87,3 +88,14 @@ func JSON(status int, body any) *Response { return &Response{Status: status, Bod
 
 // NoContent builds a 204.
 func NoContent() *Response { return &Response{Status: http.StatusNoContent} }
+
+// RouteSpec is the public description of a route, for adapters that expose
+// the same operations over another protocol (MCP).
+type RouteSpec struct {
+	Method, Path, OperationID, Summary, Scope string
+	Auth                                      AuthMode
+	Params                                    map[string]*schema.Schema
+	Query, Body                               *schema.Schema
+	RawBody                                   []string
+	Idempotent                                bool
+}

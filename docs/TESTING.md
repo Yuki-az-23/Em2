@@ -22,7 +22,9 @@ How to try EM2 by hand and how to run its test suites. Covers milestones M0 to M
 | Reputation, penalties, other principals' ledgers | yes, as an observer | `GET /v1/principals/{id}/ledger` after `em2 grant-role <handle> observer` |
 | Probe detection, shape limit, `bridging_vector` | yes | see the demo's steps 7 and 11 |
 | Public principal card | yes | `GET /v1/principals/{id}`; hide the emotion with `PATCH /v1/me/settings {"card":"hidden"}` |
-| HTTP CONNECT forward proxy, MCP server for agents | **no**, M5 | |
+| MCP server for agents | yes | `POST /mcp`; snippets in `agent/examples/mcp-clients.md` |
+| Discovery documents | yes | `/`, `/llms.txt`, `/robots.txt`, `/.well-known/em2-agent.json` |
+| HTTP CONNECT forward proxy | **no**, M5 | |
 | Replay mode | **no**, M5 | |
 | Journal, observatory web UI, wellbeing | **no**, M6 | there is no UI yet |
 

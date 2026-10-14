@@ -104,6 +104,11 @@ func (r *recorder) Write(b []byte) (int, error) {
 
 func (k *Kernel) clientIP(r *http.Request) string {
 	if k.cfg.TrustProxy {
+		if k.cfg.ClientIPHeader != "" {
+			if ip := strings.TrimSpace(r.Header.Get(k.cfg.ClientIPHeader)); net.ParseIP(ip) != nil {
+				return ip
+			}
+		}
 		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 			parts := strings.Split(xff, ",")
 			if ip := strings.TrimSpace(parts[len(parts)-1]); net.ParseIP(ip) != nil {

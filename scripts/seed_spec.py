@@ -53,6 +53,9 @@ EM2_FILES = [
     "docs/adr/ADR-012-services-and-shared-transactions.md",
     "docs/adr/ADR-013-verdicts-after-assessment-and-asynchronous-ingress.md",
     "docs/adr/ADR-014-quotas-reputation-and-probes.md",
+    "docs/adr/ADR-015-mcp-and-discovery.md",
+    "docs/DEPLOY_CLOUDFLARE.md",
+    "agent/SKILL.md",
     ".forgejo/workflows/ci.yml",
     ".github/workflows/ci.yml",
 ]
