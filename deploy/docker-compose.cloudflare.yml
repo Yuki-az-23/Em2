@@ -1,0 +1,37 @@
+# Public deployment through a Cloudflare Tunnel. Use on top of docker-compose.yml:
+#
+#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.cloudflare.yml --env-file deploy/.env up -d
+#
+# The server opens no inbound port. cloudflared dials out to Cloudflare and
+# forwards https://<your hostname> to http://em2:8080 on the compose network,
+# so only Cloudflare can reach EM2 and CF-Connecting-IP cannot be spoofed.
+# deploy/.env needs, besides the keygen output: EM2_DB_PASSWORD, EM2_PUBLIC_URL
+# (https://em2.example.com) and TUNNEL_TOKEN (from the Cloudflare dashboard).
+# See docs/DEPLOY_CLOUDFLARE.md.
+
+services:
+  em2:
+    ports: !override
+      - "127.0.0.1:9090:9090" # metrics on the host's loopback only; no public port
+    environment:
+      EM2_TRUST_PROXY: "on"
+      EM2_CLIENT_IP_HEADER: CF-Connecting-IP
+      EM2_PUBLIC_URL: ${EM2_PUBLIC_URL:?set EM2_PUBLIC_URL, e.g. https://em2.example.com}
+      EM2_MODE: ${EM2_MODE:-shadow}
+
+  migrate:
+    environment:
+      EM2_PUBLIC_URL: ${EM2_PUBLIC_URL}
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.9.0
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN from the Cloudflare tunnel you created}
+    depends_on:
+      em2:
+        condition: service_started
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped

@@ -1,0 +1,12 @@
+{
+  "version": "dossier-2",
+  "window_hours": 24,
+  "signals": {
+    "repetition":           {"weight": 0.25, "saturate_at": 10},
+    "burst":                {"weight": 0.20, "saturate_at": 8},
+    "sender_concentration": {"weight": 0.15, "min_copies": 3},
+    "link_fanout":          {"weight": 0.10, "saturate_at": 5},
+    "claim_drift":          {"weight": 0.10},
+    "bridging_vector":      {"weight": 0.20, "min_copies": 3}
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "version": "em2-2.0",
+  "w_emotion": 0.6,
+  "threshold": 0.5,
+  "theta": 3.0,
+  "half_life_hours": 24,
+  "weights": {"reply": 1.0, "brace": 0.5, "forward": 0.7, "unbrace": -0.5},
+  "agent_factor": 0.5,
+  "max_per_actor": 1.0,
+  "exclude_author": true,
+  "risk_shape": 0.60,
+  "risk_deny": 0.90,
+  "defer_ttl_hours": 24
+}

@@ -1,0 +1,63 @@
+# Small deployment: Postgres plus EM2 on one host.
+#
+#   go run ./cmd/em2 keygen > deploy/.env      # once; keep this file secret
+#   docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d
+#
+# EM2 starts in shadow mode (BLUEPRINT B9): everything is scored and journaled
+# but delivered as pass. Set EM2_MODE=enforce when the rules are tuned.
+name: em2
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: em2
+      POSTGRES_USER: em2
+      POSTGRES_PASSWORD: ${EM2_DB_PASSWORD:-change-me}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U em2 -d em2"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: em2:local
+    command: ["migrate"]
+    environment: &em2env
+      EM2_DATABASE_URL: postgres://em2:${EM2_DB_PASSWORD:-change-me}@postgres:5432/em2?sslmode=disable
+      EM2_SIGNING_KEY: ${EM2_SIGNING_KEY:?run 'em2 keygen' and pass the output with --env-file}
+      EM2_KEY_PEPPER: ${EM2_KEY_PEPPER:?run 'em2 keygen' and pass the output with --env-file}
+      EM2_MODE: ${EM2_MODE:-shadow}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  em2:
+    image: em2:local
+    command: ["serve"]
+    environment:
+      <<: *em2env
+      EM2_ADMIN_ADDR: ":9090"
+      EM2_MEDIA_DIR: /data/media
+    volumes:
+      - media:/data/media
+    ports:
+      - "8080:8080"
+      - "127.0.0.1:9090:9090" # metrics stay on the host's loopback
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  media:
