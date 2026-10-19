@@ -1,0 +1,88 @@
+/* Invite page: one column, the question is the page */
+
+.invite {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: var(--space-10) var(--space-4) var(--space-16);
+  background: var(--color-gray-900);
+  color: var(--color-gray-100);
+}
+
+.invite-inner {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.invite-eyebrow {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.08em;
+  color: var(--color-gray-400);
+}
+
+.invite-joining {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-gray-700);
+  border-radius: var(--radius-md);
+  background: var(--color-gray-800);
+}
+.invite-joining--missing { color: var(--color-gray-400); }
+
+.invite-question {
+  margin: 0;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  text-wrap: balance;
+}
+
+.invite-terms {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-right: 3px solid var(--emotion-disgust-pink);
+  background: var(--color-gray-800);
+  border-radius: var(--radius-md);
+}
+.invite-terms p { margin: 0; color: var(--color-gray-200); line-height: var(--line-height-relaxed); }
+
+.invite-form { display: flex; flex-direction: column; gap: var(--space-4); }
+.invite-form .input-label, .invite-form label { color: var(--color-gray-200); }
+.invite-hint { margin: 0; color: var(--color-gray-400); font-size: var(--font-size-sm); }
+
+.invite-answers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+@media (max-width: 480px) { .invite-answers { grid-template-columns: 1fr; } }
+
+.invite-result { display: flex; flex-direction: column; gap: var(--space-4); }
+.invite-recorded, .invite-renamed, .invite-expires, .invite-unsaved { margin: 0; line-height: var(--line-height-relaxed); }
+.invite-recorded { color: var(--color-gray-200); }
+.invite-renamed s { color: var(--color-gray-500); }
+.invite-pseudonym { color: var(--emotion-joy-yellow); font-size: var(--font-size-xl); }
+.invite-link-label { color: var(--color-gray-300); font-size: var(--font-size-sm); }
+
+.invite-link { display: flex; gap: var(--space-2); align-items: stretch; }
+.invite-url {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-3);
+  font-family: var(--font-family-monospace);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-100);
+  background: var(--color-gray-800);
+  border: 1px solid var(--color-gray-600);
+  border-radius: var(--radius-md);
+}
+.invite-url:focus { outline: 2px solid var(--emotion-joy-yellow); outline-offset: 1px; }
+
+.invite-unsaved { color: var(--emotion-anticipated-orange); font-size: var(--font-size-sm); }
+.invite-expires { color: var(--color-gray-400); font-size: var(--font-size-sm); }
