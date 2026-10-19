@@ -86,3 +86,18 @@
 
 .invite-unsaved { color: var(--emotion-anticipated-orange); font-size: var(--font-size-sm); }
 .invite-expires { color: var(--color-gray-400); font-size: var(--font-size-sm); }
+
+.invite-roles { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.invite-roles legend { color: var(--color-gray-300); font-size: var(--font-size-sm); margin-bottom: var(--space-2); }
+@media (max-width: 480px) { .invite-roles { grid-template-columns: 1fr; } }
+.invite-role {
+  display: flex; flex-direction: column; gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-gray-600); border-radius: var(--radius-md);
+  background: var(--color-gray-800); cursor: pointer;
+}
+.invite-role input { position: absolute; opacity: 0; width: 0; height: 0; }
+.invite-role--on { border-color: var(--emotion-joy-yellow); box-shadow: 0 0 0 1px var(--emotion-joy-yellow) inset; }
+.invite-role:focus-within { outline: 2px solid var(--emotion-joy-yellow); outline-offset: 2px; }
+.invite-role-title { font-weight: var(--font-weight-semibold); color: var(--color-gray-100); }
+.invite-role-hint { font-size: var(--font-size-sm); color: var(--color-gray-400); line-height: var(--line-height-normal); }

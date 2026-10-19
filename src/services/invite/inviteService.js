@@ -9,6 +9,7 @@
 
 import { supabase } from '../supabase/client.js';
 import { makePseudonym, makeCode } from '../../core/pseudonym.js';
+import { parseRpcError } from '../rpc/errors.js';
 
 export const INVITE_TTL_DAYS = 7;
 
@@ -21,30 +22,40 @@ export const ANSWERS = Object.freeze({
  * @param {{displayName:string, answer:'trust_signal'|'amplifier_shapes'}} input
  * @returns {Promise<{code:string, pseudonym:string, expiresAt:string, saved:boolean, error:null|{code:string,message:string}}>}
  */
-export async function createInvite({ displayName, answer }) {
+export const ROLES = Object.freeze({ PARTICIPANT: 'participant', INVESTOR: 'investor' });
+
+export async function createInvite({ displayName, answer, role = ROLES.PARTICIPANT }) {
   const name = (displayName || '').trim();
   if (name.length < 1 || name.length > 50) {
     return { code: null, pseudonym: null, expiresAt: null, saved: false,
       error: { code: 'INVALID_NAME', message: 'name must be 1 to 50 characters' } };
+  }
+  if (role !== ROLES.PARTICIPANT && role !== ROLES.INVESTOR) {
+    return { code: null, pseudonym: null, expiresAt: null, saved: false,
+      error: { code: 'INVALID_ROLE', message: 'role must be participant or investor' } };
   }
   if (answer !== ANSWERS.TRUST && answer !== ANSWERS.SHAPED) {
     return { code: null, pseudonym: null, expiresAt: null, saved: false,
       error: { code: 'INVALID_ANSWER', message: 'answer must be one of the two' } };
   }
 
-  const code = makeCode();
-  const pseudonym = makePseudonym();
-  const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 3600 * 1000).toISOString();
-
+  // The database generates code and pseudonym and enforces the rate limit
+  // (burst of 3, then cooldowns of 1, 2, 4 minutes). A client cannot pick its own.
   try {
-    const { error } = await supabase
-      .from('invites')
-      .insert({ code, display_name: name, pseudonym, answer, expires_at: expiresAt });
+    const { data, error } = await supabase.rpc('create_invite', { p_display_name: name, p_answer: answer, p_role: role });
     if (error) throw error;
-    return { code, pseudonym, expiresAt, saved: true, error: null };
+    return { code: data.code, pseudonym: data.pseudonym, expiresAt: data.expires_at, saved: true, error: null };
   } catch (err) {
-    return { code, pseudonym, expiresAt, saved: false,
-      error: { code: err?.code || 'STORAGE_UNAVAILABLE', message: err?.message || 'invite was not saved' } };
+    const e = parseRpcError(err);
+    if (e.code === 'RATE_LIMITED' || e.code === 'INVALID_NAME' || e.code === 'INVALID_ANSWER' || e.code === 'INVALID_ROLE') {
+      // A refusal is a refusal. No local link.
+      return { code: null, pseudonym: null, expiresAt: null, saved: false, error: e };
+    }
+    // Storage unreachable: produce a local link and say it was not saved.
+    const code = makeCode();
+    const pseudonym = makePseudonym();
+    const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 3600 * 1000).toISOString();
+    return { code, pseudonym, expiresAt, saved: false, error: e };
   }
 }
 

@@ -15,6 +15,16 @@ import './Invite.css';
 
 const QUESTION = 'האם אתה בוטח באות שלך לעולם, או שהמגביר של האות שלך משנן ומעצב אותך לדמות שהוא רוצה?';
 
+const ROLES = Object.freeze({ PARTICIPANT: 'participant', INVESTOR: 'investor' });
+const ROLE_LABEL = {
+  [ROLES.PARTICIPANT]: 'אני חלק מהמיצג',
+  [ROLES.INVESTOR]: 'אני משקיע במיצג'
+};
+const ROLE_HINT = {
+  [ROLES.PARTICIPANT]: 'השיחות שלי הן החומר. מה שאגיד יעבור את המגביר ויעלה על הקיר.',
+  [ROLES.INVESTOR]: 'אני מגיע לקיר כדי להזיז. בלי מי שדוחף ומחבק, הקיר מת.'
+};
+
 const ANSWER_LABEL = {
   [ANSWERS.TRUST]: 'אני בוטח באות שלי',
   [ANSWERS.SHAPED]: 'המגביר מעצב אותי'
@@ -23,6 +33,7 @@ const ANSWER_LABEL = {
 export const Invite = () => {
   const { code: joinCode } = useParams();
   const [name, setName] = useState('');
+  const [role, setRole] = useState(ROLES.PARTICIPANT);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
@@ -41,10 +52,17 @@ export const Invite = () => {
     setError('');
     if (!name.trim()) { setError('כדי לעבור את הדלת צריך שם. כל שם.'); return; }
     setBusy(true);
-    const r = await createInvite({ displayName: name, answer: choice });
+    const r = await createInvite({ displayName: name, answer: choice, role });
     setBusy(false);
-    if (r.error && !r.code) { setError(r.error.message); return; }
-    setResult({ ...r, answer: choice, typedName: name.trim() });
+    if (r.error && !r.code) {
+      if (r.error.code === 'RATE_LIMITED') {
+        setError(`הדלת סגורה לרגע. נסה שוב בעוד ${r.error.retryAfter ?? 60} שניות.`);
+      } else {
+        setError(r.error.message);
+      }
+      return;
+    }
+    setResult({ ...r, answer: choice, role, typedName: name.trim() });
   };
 
   const copy = async () => {
@@ -83,6 +101,16 @@ export const Invite = () => {
 
         {!result ? (
           <form className="invite-form" onSubmit={(e) => e.preventDefault()}>
+            <fieldset className="invite-roles">
+              <legend>מי אתה כאן</legend>
+              {Object.values(ROLES).map((r) => (
+                <label key={r} className={`invite-role${role === r ? ' invite-role--on' : ''}`}>
+                  <input type="radio" name="role" id={`role-${r}`} value={r} checked={role === r} onChange={() => setRole(r)} />
+                  <span className="invite-role-title">{ROLE_LABEL[r]}</span>
+                  <span className="invite-role-hint">{ROLE_HINT[r]}</span>
+                </label>
+              ))}
+            </fieldset>
             <Input
               id="invite-name"
               label="איך לקרוא לך"
@@ -106,7 +134,7 @@ export const Invite = () => {
         ) : (
           <section className="invite-result" aria-live="polite">
             <p className="invite-recorded">
-              רשמנו: <b>{ANSWER_LABEL[result.answer]}</b>. זה הדבר הראשון שהמערכת יודעת עליך.
+              רשמנו: <b>{ROLE_LABEL[result.role]}</b>, <b>{ANSWER_LABEL[result.answer]}</b>. אלה שני הדברים הראשונים שהמערכת יודעת עליך.
             </p>
             <p className="invite-renamed">
               קראת לעצמך <s>{result.typedName}</s>. מעכשיו קוראים לך <b className="invite-pseudonym">{result.pseudonym}</b>.
