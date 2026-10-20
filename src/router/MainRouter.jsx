@@ -19,6 +19,7 @@ const Profile = lazy(() => import('../pages/Profile/Profile'));
 const EditProfile = lazy(() => import('../pages/EditProfile/EditProfile'));
 const Login = lazy(() => import('../pages/Login/Login'));
 const Signup = lazy(() => import('../pages/Signup/Signup'));
+const Invite = lazy(() => import('../pages/Invite/Invite'));
 
 /**
  * MainRouter Component
@@ -28,18 +29,13 @@ export const MainRouter = () => {
     <Suspense fallback={<LoadingOverlay />}>
       <Routes>
         {/* Public Routes */}
+        {/* The home page is the door of the exhibit: one question, one name, one link */}
+        <Route path="/" element={<Invite />} />
+        <Route path="/join/:code" element={<Invite />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
         {/* Private Routes (require authentication) */}
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <Navigate to="/feed" replace />
-            </PrivateRoute>
-          }
-        />
 
         <Route
           path="/feed"
@@ -114,7 +110,7 @@ export const MainRouter = () => {
         />
 
         {/* 404 Not Found */}
-        <Route path="*" element={<Navigate to="/feed" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
   );
