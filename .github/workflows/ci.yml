@@ -1,0 +1,50 @@
+name: ci
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  web:
+    name: lint, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx eslint src/core src/pages/Invite src/services/invite src/services/wall src/services/rpc src/router src/main.jsx
+      - run: npx vitest run src/core src/services/rpc
+      - run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://example.invalid
+          VITE_SUPABASE_ANON_KEY: ci
+
+  schema:
+    name: schema on postgres 16
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hermes
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: apply schema.sql to an empty database
+        run: psql -h localhost -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+      - name: run smoke.sql
+        run: psql -h localhost -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f supabase/smoke.sql
+      - name: schema.sql is idempotent (applies twice)
+        run: psql -h localhost -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
