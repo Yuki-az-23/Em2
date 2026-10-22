@@ -8,7 +8,7 @@
  */
 
 import { supabase } from '../supabase/client.js';
-import { makePseudonym, makeCode } from '../../core/pseudonym.js';
+import { makePseudonym, makeCode } from '@hermes/core/pseudonym';
 import { parseRpcError } from '../rpc/errors.js';
 
 export const INVITE_TTL_DAYS = 7;

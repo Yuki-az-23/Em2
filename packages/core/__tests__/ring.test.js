@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   EMOTIONS, COLORS, d8, dir8, stepToward, relation, point, names,
   resonance, torusDistance, stepInteraction, emotionIndex, isEmotion
-} from '../ring.js';
+} from '../src/ring.js';
 
 describe('ring: distance and direction', () => {
   it('shortest arc wraps around', () => {

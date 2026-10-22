@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { makePseudonym, makeCode, PSEUDONYM_WORDS } from '../pseudonym.js';
+import { makePseudonym, makeCode, PSEUDONYM_WORDS } from '../src/pseudonym.js';
 
 describe('pseudonym', () => {
   it('is two words from the lists joined by a hyphen', () => {

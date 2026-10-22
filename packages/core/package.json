@@ -1,0 +1,17 @@
+{
+  "name": "@hermes/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure core of the Hermes exhibit: ring math, wall card, pseudonyms, assignment, feed score, telegram helpers. No I/O.",
+  "exports": {
+    ".": "./src/index.js",
+    "./ring": "./src/ring.js",
+    "./wallCard": "./src/wallCard.js",
+    "./pseudonym": "./src/pseudonym.js",
+    "./exchangeToAssigned": "./src/exchangeToAssigned.js",
+    "./feedScore": "./src/feedScore.js",
+    "./telegram": "./src/telegram.js"
+  },
+  "sideEffects": false
+}

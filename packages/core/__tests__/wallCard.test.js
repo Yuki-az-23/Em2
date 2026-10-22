@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { exchangeToWallCard, findLeak, ERR, CONSENT_VERSION } from '../wallCard.js';
+import { exchangeToWallCard, findLeak, ERR, CONSENT_VERSION } from '../src/wallCard.js';
 
 const consent = { version: CONSENT_VERSION, acceptedAt: '2026-10-19T20:00:00Z' };
 
