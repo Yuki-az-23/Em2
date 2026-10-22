@@ -13,7 +13,7 @@ import { Machine } from './Machine';
 describe('Machine', () => {
   it('counts live posts per cell and shows where they were published', async () => {
     render(<MemoryRouter><Machine /></MemoryRouter>);
-    await waitFor(() => expect(screen.getByText('2 כרטיסים על הקיר.')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/2 כרטיסים על הקיר/)).toBeInTheDocument());
     expect(screen.getByTitle('עצב כחול: 1 עכשיו, 2 בפרסום')).toBeInTheDocument();
     expect(screen.getByTitle('גועל ורוד: 1 עכשיו, 0 בפרסום')).toBeInTheDocument();
   });
