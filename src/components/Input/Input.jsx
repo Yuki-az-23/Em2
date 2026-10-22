@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import './Input.css';
 
 /**
@@ -32,6 +33,7 @@ import './Input.css';
  * />
  */
 export const Input = ({
+  id,
   type = 'text',
   label,
   placeholder,
@@ -58,6 +60,8 @@ export const Input = ({
     disabled && 'input__field--disabled'
   ].filter(Boolean).join(' ');
 
+  const autoId = useId();
+  const inputId = id || autoId;
   const containerClasses = [
     'input',
     className
@@ -66,7 +70,7 @@ export const Input = ({
   return (
     <div className={containerClasses}>
       {label && (
-        <label className="input__label">
+        <label className="input__label" htmlFor={inputId}>
           {label}
           {required && <span className="input__required">*</span>}
         </label>
@@ -76,6 +80,7 @@ export const Input = ({
         {icon && <span className="input__icon">{icon}</span>}
 
         <input
+          id={inputId}
           type={type}
           className={inputClasses}
           placeholder={placeholder}

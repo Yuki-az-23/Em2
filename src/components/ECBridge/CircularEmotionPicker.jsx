@@ -37,6 +37,7 @@ export const CircularEmotionPicker = ({
   onChange,
   selectedColor = 'yellow',
   className = '',
+  title = 'Your ECBridge',
 }) => {
   return (
     <div className={`circular-emotion-picker ${className}`}>
@@ -91,7 +92,7 @@ export const CircularEmotionPicker = ({
 
       {/* Center display */}
       <div className="circular-emotion-picker__center">
-        <div className="circular-emotion-picker__center-title">Your ECBridge</div>
+        <div className="circular-emotion-picker__center-title">{title}</div>
         <div className="circular-emotion-picker__center-value">
           <span className="circular-emotion-picker__center-emotion">
             {selected}
