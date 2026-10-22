@@ -1,0 +1,52 @@
+# Keep the job list in step with .github/workflows/ci.yml (ADR-010).
+# Runner label "docker" is the shared runner (see the forgejo-actions skill);
+# "ubuntu-latest" and "self-hosted" exist on no runner here and would queue forever.
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  seed:
+    name: seed gate
+    runs-on: docker
+    container: python:3.13-bookworm
+    steps:
+      # actions/checkout runs as node inside the job container.
+      - run: apt-get update -qq && apt-get install -y -qq nodejs >/dev/null
+      - uses: actions/checkout@v4
+      - name: Seed scripts tests
+        run: python3 -m unittest discover -s scripts/tests -t .
+      - name: Validate project contract
+        run: python3 scripts/validate_project.py
+
+  go:
+    name: go (vet, fmt, unit, contract, integration, smoke)
+    runs-on: docker
+    container: golang:1.24-bookworm
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: em2
+          POSTGRES_DB: em2_test
+    env:
+      EM2_TEST_DATABASE_URL: postgres://postgres:em2@postgres:5432/em2_test?sslmode=disable
+    steps:
+      - run: apt-get update -qq && apt-get install -y -qq nodejs postgresql-client >/dev/null
+      - uses: actions/checkout@v4
+      - name: Wait for Postgres
+        run: for i in $(seq 1 60); do pg_isready -h postgres -U postgres && exit 0; sleep 1; done; exit 1
+      - name: gofmt
+        run: test -z "$(gofmt -l core kernel pkg internal cmd test)"
+      - name: go vet
+        run: go vet ./...
+      - name: Tests (race)
+        run: go test -race -count=1 ./...
+      - name: Public OpenAPI snapshot is current
+        run: go run ./cmd/em2 openapi > /tmp/openapi.json && diff -u docs/api/openapi.json /tmp/openapi.json
+
+  # The container image is built on GitHub (Docker available there). On this
+  # estate the shared runner has no Docker daemon; image builds for the
+  # cluster go through the platform's build path (see docs/RUNBOOK.md).

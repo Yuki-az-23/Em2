@@ -1,0 +1,121 @@
+# EM2 on Kubernetes. Do not apply by hand: copy into the cluster manifests
+# repository as its own numbered file and open a pull request; the owner
+# syncs it in Argo CD (see the argocd skill and docs/RUNBOOK.md).
+#
+# Requires a Secret "em2-secrets" (SOPS-encrypted in the cluster repo) with
+# keys EM2_DATABASE_URL, EM2_SIGNING_KEY, EM2_KEY_PEPPER.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: em2
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: em2-config
+  namespace: em2
+data:
+  EM2_MODE: shadow
+  EM2_ADDR: ":8080"
+  EM2_ADMIN_ADDR: ":9090"
+  EM2_TRUST_PROXY: "on"
+  EM2_LOG_LEVEL: info
+  EM2_MEDIA_DIR: /data/media
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: em2
+  namespace: em2
+  labels: {app: em2}
+spec:
+  # One replica until rate limits are shared across replicas (RUNBOOK, M7).
+  replicas: 1
+  selector:
+    matchLabels: {app: em2}
+  template:
+    metadata:
+      labels: {app: em2}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 65532
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+        - name: migrate
+          image: em2 # pinned by digest through kustomization.yaml
+          args: ["migrate"]
+          envFrom:
+            - configMapRef: {name: em2-config}
+            - secretRef: {name: em2-secrets}
+          securityContext: &hardened
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+      containers:
+        - name: em2
+          image: em2
+          args: ["serve"]
+          envFrom:
+            - configMapRef: {name: em2-config}
+            - secretRef: {name: em2-secrets}
+          ports:
+            - {name: http, containerPort: 8080}
+            - {name: metrics, containerPort: 9090}
+          readinessProbe:
+            httpGet: {path: /readyz, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {memory: 512Mi}
+          securityContext: *hardened
+          volumeMounts:
+            - {name: media, mountPath: /data/media}
+      volumes:
+        - name: media
+          persistentVolumeClaim: {claimName: em2-media}
+      terminationGracePeriodSeconds: 30
+---
+# Uploaded images (filesystem store; an S3-compatible store replaces it in M3).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: em2-media
+  namespace: em2
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests: {storage: 5Gi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: em2
+  namespace: em2
+spec:
+  selector: {app: em2}
+  ports:
+    - {name: http, port: 80, targetPort: http}
+---
+# Metrics are reachable only from the monitoring namespace.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: em2
+  namespace: em2
+spec:
+  podSelector:
+    matchLabels: {app: em2}
+  policyTypes: [Ingress]
+  ingress:
+    - ports: [{port: 8080}]
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: monitoring}
+      ports: [{port: 9090}]

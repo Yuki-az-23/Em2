@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - em2.yaml
+images:
+  # Set to the image digest built by CI; never deploy a mutable tag.
+  - name: em2
+    newName: registry.sbx.local/em2
+    digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
