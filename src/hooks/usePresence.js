@@ -78,7 +78,7 @@ export const usePresence = ({
 
             setOnlineUsers(users);
           })
-          .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+          .on('presence', { event: 'join' }, ({ newPresences }) => {
             console.log('User joined:', newPresences);
 
             newPresences.forEach((presence) => {
@@ -100,7 +100,7 @@ export const usePresence = ({
               }
             });
           })
-          .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+          .on('presence', { event: 'leave' }, ({ leftPresences }) => {
             console.log('User left:', leftPresences);
 
             leftPresences.forEach((presence) => {

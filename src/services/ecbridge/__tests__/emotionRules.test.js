@@ -79,10 +79,7 @@ describe('emotionRules', () => {
     it('adjacent emotions should form a circular pattern', () => {
       const emotions = ['Joy', 'Trust', 'Feared', 'Surprised', 'Sad', 'Disgust', 'Angry', 'Anticipated'];
 
-      emotions.forEach((emotion, index) => {
-        const nextEmotion = emotions[(index + 1) % emotions.length];
-        const prevEmotion = emotions[(index - 1 + emotions.length) % emotions.length];
-
+      emotions.forEach((emotion) => {
         const adjacent = EMOTION_RELATIONSHIPS[emotion].adjacent;
         // Adjacent should include neighboring emotions
         expect(adjacent.length).toBe(2);

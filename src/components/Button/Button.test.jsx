@@ -22,19 +22,19 @@ describe('Button', () => {
 
   it('renders with primary variant', () => {
     render(<Button variant="primary">Primary</Button>);
-    const button = screen.getByText('Primary');
-    expect(button).toHaveClass('button--primary');
+    const button = screen.getByText('Primary').closest('button');
+    expect(button).toHaveClass('btn--primary');
   });
 
   it('renders with emotion', () => {
     render(<Button emotion="joy">Joyful</Button>);
-    const button = screen.getByText('Joyful');
-    expect(button).toHaveClass('button--emotion-joy');
+    const button = screen.getByText('Joyful').closest('button');
+    expect(button).toHaveClass('btn--emotion-joy');
   });
 
   it('is disabled when disabled prop is true', () => {
     render(<Button disabled>Disabled</Button>);
-    const button = screen.getByText('Disabled');
+    const button = screen.getByText('Disabled').closest('button');
     expect(button).toBeDisabled();
   });
 
@@ -42,20 +42,20 @@ describe('Button', () => {
     render(<Button loading>Loading</Button>);
     const button = screen.getByRole('button');
     expect(button).toBeDisabled();
-    expect(button).toHaveClass('button--loading');
+    expect(button).toHaveClass('btn--loading');
   });
 
   it('renders with different sizes', () => {
     const { rerender } = render(<Button size="sm">Small</Button>);
-    expect(screen.getByText('Small')).toHaveClass('button--sm');
+    expect(screen.getByText('Small').closest('button')).toHaveClass('btn--sm');
 
     rerender(<Button size="lg">Large</Button>);
-    expect(screen.getByText('Large')).toHaveClass('button--lg');
+    expect(screen.getByText('Large').closest('button')).toHaveClass('btn--lg');
   });
 
   it('renders as fullWidth', () => {
     render(<Button fullWidth>Full Width</Button>);
-    expect(screen.getByText('Full Width')).toHaveClass('button--full-width');
+    expect(screen.getByText('Full Width').closest('button')).toHaveClass('btn--full-width');
   });
 
   it('does not call onClick when disabled', () => {

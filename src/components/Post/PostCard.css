@@ -177,7 +177,7 @@
 }
 
 .post-card__emotion-indicator {
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 /* Emotion-specific border colors */

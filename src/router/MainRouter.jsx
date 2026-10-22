@@ -1,119 +1,38 @@
 /**
- * MainRouter Component
- *
- * Main routing configuration for the application.
- * Defines all routes and their associated components.
+ * Routes. The door is public. The wall is public. Only "me" and "agents" need a session.
  */
-
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { PrivateRoute } from './PrivateRoute';
 import { LoadingOverlay } from '../components';
 import { Navigation } from '../components/Navigation/Navigation';
 
-// Lazy load pages for code splitting
-const Feed = lazy(() => import('../pages/Feed/Feed'));
-const CreatePost = lazy(() => import('../pages/CreatePost/CreatePost'));
-const PostDetail = lazy(() => import('../pages/PostDetail/PostDetail'));
-const Profile = lazy(() => import('../pages/Profile/Profile'));
-const EditProfile = lazy(() => import('../pages/EditProfile/EditProfile'));
+const Invite = lazy(() => import('../pages/Invite/Invite'));
 const Login = lazy(() => import('../pages/Login/Login'));
 const Signup = lazy(() => import('../pages/Signup/Signup'));
-const Invite = lazy(() => import('../pages/Invite/Invite'));
+const Wall = lazy(() => import('../pages/Wall/Wall'));
+const Post = lazy(() => import('../pages/Post/Post'));
+const Machine = lazy(() => import('../pages/Machine/Machine'));
+const Me = lazy(() => import('../pages/Me/Me'));
+const Agents = lazy(() => import('../pages/Agents/Agents'));
 
-/**
- * MainRouter Component
- */
-export const MainRouter = () => {
-  return (
-    <Suspense fallback={<LoadingOverlay />}>
-      <Routes>
-        {/* Public Routes */}
-        {/* The home page is the door of the exhibit: one question, one name, one link */}
-        <Route path="/" element={<Invite />} />
-        <Route path="/join/:code" element={<Invite />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+const withNav = (el) => (<><Navigation />{el}</>);
 
-        {/* Private Routes (require authentication) */}
-
-        <Route
-          path="/feed"
-          element={
-            <PrivateRoute>
-              <>
-                <Navigation />
-                <Feed />
-              </>
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/post/create"
-          element={
-            <PrivateRoute>
-              <>
-                <Navigation />
-                <CreatePost />
-              </>
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/post/:postId"
-          element={
-            <PrivateRoute>
-              <>
-                <Navigation />
-                <PostDetail />
-              </>
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/profile"
-          element={
-            <PrivateRoute>
-              <>
-                <Navigation />
-                <Profile />
-              </>
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/user/:userId"
-          element={
-            <PrivateRoute>
-              <>
-                <Navigation />
-                <Profile />
-              </>
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/profile/edit"
-          element={
-            <PrivateRoute>
-              <>
-                <Navigation />
-                <EditProfile />
-              </>
-            </PrivateRoute>
-          }
-        />
-
-        {/* 404 Not Found */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Suspense>
-  );
-};
+export const MainRouter = () => (
+  <Suspense fallback={<LoadingOverlay />}>
+    <Routes>
+      <Route path="/" element={<Invite />} />
+      <Route path="/join/:code" element={<Invite />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/wall" element={withNav(<Wall />)} />
+      <Route path="/post/:postId" element={withNav(<Post />)} />
+      <Route path="/machine" element={withNav(<Machine />)} />
+      <Route path="/me" element={<PrivateRoute>{withNav(<Me />)}</PrivateRoute>} />
+      <Route path="/agents" element={<PrivateRoute>{withNav(<Agents />)}</PrivateRoute>} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  </Suspense>
+);
 
 export default MainRouter;

@@ -24,7 +24,6 @@ import './LazyImage.css';
 export const LazyImage = ({
   src,
   alt,
-  placeholder,
   className = '',
   onLoad,
   onError,

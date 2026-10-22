@@ -361,7 +361,7 @@ const EmotionBlockRenderer = ({ data }) => {
  * Unsupported Block
  */
 const UnsupportedBlock = ({ type }) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     return (
       <div className="content-block content-block--unsupported">
         <p>Unsupported block type: {type}</p>

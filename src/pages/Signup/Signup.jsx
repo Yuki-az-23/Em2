@@ -83,7 +83,7 @@ export const Signup = () => {
     }
 
     try {
-      const { user, error } = await signup({
+      const { error } = await signup({
         email: email.trim(),
         password,
         metadata: {
@@ -98,7 +98,7 @@ export const Signup = () => {
       }
 
       // Navigate to feed after successful signup
-      navigate('/feed');
+      navigate('/me');
     } catch (error) {
       console.error('Signup failed:', error);
       setErrors({ submit: error.message || 'Failed to create account' });

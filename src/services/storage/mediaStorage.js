@@ -226,11 +226,10 @@ const validateUrlPattern = (url) => {
 
     // Check if domain is whitelisted (optional, can be disabled)
     const hostname = urlObj.hostname.toLowerCase();
-    const isWhitelisted = STORAGE_CONFIG.URL_VALIDATION.WHITELISTED_DOMAINS.some(
-      domain => hostname.includes(domain)
-    );
-
-    // Allow all HTTPS URLs for now (can restrict to whitelist if needed)
+    // Allow all HTTPS URLs for now (can restrict to the whitelist if needed)
+    // const isWhitelisted = STORAGE_CONFIG.URL_VALIDATION.WHITELISTED_DOMAINS.some(
+    //   domain => hostname.includes(domain)
+    // );
     // if (!isWhitelisted) {
     //   return { valid: false, error: 'Domain not allowed' };
     // }
@@ -251,7 +250,7 @@ const validateUrlPattern = (url) => {
 
     return { valid: true };
 
-  } catch (error) {
+  } catch {
     return { valid: false, error: ERROR_MESSAGES.INVALID_URL };
   }
 };

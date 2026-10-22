@@ -52,7 +52,7 @@ export const Login = () => {
 
     try {
       await login({ email: email.trim(), password });
-      navigate('/feed');
+      navigate('/me');
     } catch (error) {
       console.error('Login failed:', error);
       setErrors({ submit: error.message || 'Invalid email or password' });

@@ -14,8 +14,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
+      - run: npm install --no-audit --no-fund
       - run: npx eslint packages/core src/pages/Invite src/services/invite src/services/wall src/services/rpc src/router src/main.jsx
       - run: npx vitest run packages/core src/services/rpc
       - run: npm run build

@@ -34,7 +34,6 @@ export const getEditorConfig = (options = {}) => {
     data = null,
     readOnly = false,
     minHeight = 300,
-    emotion = 'joy',
   } = options;
 
   return {
@@ -339,7 +338,7 @@ export const getEditorConfig = (options = {}) => {
      * Log level
      * Controls console output (ERROR, WARN, INFO, VERBOSE)
      */
-    logLevel: process.env.NODE_ENV === 'development' ? 'WARN' : 'ERROR',
+    logLevel: import.meta.env.DEV ? 'WARN' : 'ERROR',
   };
 };
 

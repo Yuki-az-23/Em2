@@ -15,7 +15,7 @@ export const isShareAvailable = async () => {
   try {
     const result = await Share.canShare();
     return result.value;
-  } catch (error) {
+  } catch {
     return false;
   }
 };

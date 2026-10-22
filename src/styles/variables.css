@@ -23,7 +23,7 @@
   --emotion-anticipated-orange-light: #FFB347;
 
   /* ===== Typography ===== */
-  --font-family-primary: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+  --font-family-primary: 'Heebo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
                          Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
                          'Helvetica Neue', sans-serif;
   --font-family-monospace: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono',
@@ -184,4 +184,59 @@
     --color-border-primary: var(--color-gray-700);
     --color-border-secondary: var(--color-gray-600);
   }
+}
+
+/* ===== Dark theme (default for the exhibit) =====
+   Tokens only. Components never name a literal color. Three states:
+   system dark, explicit data-theme="dark", explicit data-theme="light". */
+:root {
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-bg-primary: #111827;
+    --color-bg-secondary: #1F2937;
+    --color-bg-tertiary: #273244;
+    --color-text-primary: #F3F4F6;
+    --color-text-secondary: #B8C0CC;
+    --color-text-tertiary: #7C8796;
+    --color-text-inverse: #111827;
+    --color-border-primary: #374151;
+    --color-border-secondary: #4B5563;
+    --color-white: #111827;
+    --color-gray-50: #1F2937;
+    --color-gray-100: #273244;
+    --color-gray-200: #374151;
+    --color-gray-300: #4B5563;
+    --color-gray-400: #7C8796;
+    --color-gray-500: #9CA3AF;
+    --color-gray-600: #B8C0CC;
+    --color-gray-700: #D1D5DB;
+    --color-gray-800: #E5E7EB;
+    --color-gray-900: #F3F4F6;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg-primary: #111827;
+  --color-bg-secondary: #1F2937;
+  --color-bg-tertiary: #273244;
+  --color-text-primary: #F3F4F6;
+  --color-text-secondary: #B8C0CC;
+  --color-text-tertiary: #7C8796;
+  --color-text-inverse: #111827;
+  --color-border-primary: #374151;
+  --color-border-secondary: #4B5563;
+  --color-white: #111827;
+  --color-gray-50: #1F2937;
+  --color-gray-100: #273244;
+  --color-gray-200: #374151;
+  --color-gray-300: #4B5563;
+  --color-gray-400: #7C8796;
+  --color-gray-500: #9CA3AF;
+  --color-gray-600: #B8C0CC;
+  --color-gray-700: #D1D5DB;
+  --color-gray-800: #E5E7EB;
+  --color-gray-900: #F3F4F6;
 }

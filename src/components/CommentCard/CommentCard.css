@@ -7,7 +7,7 @@
 }
 
 .comment-card--reply {
-  padding-left: var(--spacing-xl);
+  padding-inline-start: var(--spacing-xl);
   margin-top: var(--spacing-sm);
 }
 
@@ -111,7 +111,7 @@
   }
 
   .comment-card--reply {
-    padding-left: var(--spacing-lg);
+    padding-inline-start: var(--spacing-lg);
   }
 
   .comment-card__text {

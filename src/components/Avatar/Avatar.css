@@ -179,29 +179,29 @@
 }
 
 .avatar-group .avatar {
-  margin-left: -8px;
+  margin-inline-start: -8px;
   border: 2px solid var(--color-surface);
   box-shadow: 0 0 0 2px var(--color-surface);
 }
 
 .avatar-group .avatar:first-child {
-  margin-left: 0;
+  margin-inline-start: 0;
 }
 
 .avatar-group--xs .avatar {
-  margin-left: -4px;
+  margin-inline-start: -4px;
 }
 
 .avatar-group--sm .avatar {
-  margin-left: -6px;
+  margin-inline-start: -6px;
 }
 
 .avatar-group--lg .avatar {
-  margin-left: -10px;
+  margin-inline-start: -10px;
 }
 
 .avatar-group--xl .avatar {
-  margin-left: -12px;
+  margin-inline-start: -12px;
 }
 
 /* Overflow avatar */

@@ -134,7 +134,6 @@ describe('ECBridge Performance Tests', () => {
 
     const avgTime = times.reduce((a, b) => a + b) / times.length;
     const maxTime = Math.max(...times);
-    const minTime = Math.min(...times);
 
     // Maximum time should not be more than 10x average (consistency check)
     expect(maxTime).toBeLessThan(avgTime * 10);

@@ -257,7 +257,7 @@
 
 /* Lists */
 .editor__holder .cdx-list {
-  padding-left: var(--space-6);
+  padding-inline-start: var(--space-6);
 }
 
 .editor__holder .cdx-list__item {
@@ -267,8 +267,8 @@
 
 /* Quote */
 .editor__holder .cdx-quote {
-  border-left: 4px solid var(--editor-theme-color, var(--emotion-joy-yellow));
-  padding-left: var(--space-4);
+  border-inline-start: 4px solid var(--editor-theme-color, var(--emotion-joy-yellow));
+  padding-inline-start: var(--space-4);
   margin: var(--space-4) 0;
   font-style: italic;
   color: var(--color-gray-700);

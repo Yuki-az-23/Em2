@@ -96,7 +96,7 @@ export const PostCard = ({
           ? 'transform 0.3s ease, opacity 0.3s ease'
           : 'none',
       }}
-      onClick={(e) => {
+      onClick={() => {
         // Only trigger onClick if not swiping
         if (Math.abs(swipeOffset) < 10 && onClick) {
           onClick(post);

@@ -72,7 +72,7 @@
 
 /* With icon */
 .input__field--with-icon {
-  padding-left: calc(var(--spacing-lg) + 24px);
+  padding-inline-start: calc(var(--spacing-lg) + 24px);
 }
 
 .input__icon {

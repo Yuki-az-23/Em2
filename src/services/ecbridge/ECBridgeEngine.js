@@ -17,8 +17,7 @@ import {
 import {
   COLOR_HARMONY,
   getColorHarmony,
-  getAllColors,
-  getColorTemperatureDifference
+  getAllColors
 } from './colorRules';
 
 /**
@@ -121,12 +120,13 @@ export class ECBridgeEngine {
     // === COLOR RULES ===
 
     switch (colorHarmony) {
-      case 'complementary':
+      case 'complementary': {
         // High contrast - shift to triadic color for balance
         const triadic = COLOR_HARMONY[userColor].triadic;
         resultColor = this.getCloserTriadicColor(triadic, postColor);
         intensity *= 1.1;
         break;
+      }
 
       case 'analogous':
         // Harmonious - keep post color or slightly adjust

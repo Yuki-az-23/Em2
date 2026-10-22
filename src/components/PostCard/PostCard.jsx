@@ -46,7 +46,6 @@ export const PostCard = ({
     author,
     title,
     emotion,
-    color,
     brace_count = 0,
     comment_count = 0,
     created_at,

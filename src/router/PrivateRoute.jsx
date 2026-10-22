@@ -18,7 +18,7 @@ import { LoadingOverlay } from '../components';
  * @returns {JSX.Element}
  */
 export const PrivateRoute = ({ children }) => {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { loading, isAuthenticated } = useAuth();
 
   // Show loading overlay while checking auth status
   if (loading) {

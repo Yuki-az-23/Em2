@@ -114,7 +114,6 @@ describe('ECBridgeEngine', () => {
         // yellow and blue are complementary
         expect(result.metadata.colorHarmony).toBe('complementary');
         // Result should be a triadic color
-        const triadicColors = ['red', 'blue', 'green', 'lime']; // Possible triadic
         expect(engine.colors).toContain(result.color);
       });
 

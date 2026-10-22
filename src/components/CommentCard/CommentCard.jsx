@@ -39,7 +39,6 @@ export const CommentCard = ({
     author,
     text,
     emotion,
-    color,
     created_at
   } = comment;
 
