@@ -784,6 +784,45 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+
+-- -----------------------------------------------------------------------------
+-- 9b. Me: preferences, my agents, leaving
+-- -----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.update_preferences(p_style TEXT DEFAULT NULL, p_accept_from TEXT DEFAULT NULL) RETURNS JSONB AS $$
+DECLARE me UUID := public.my_profile_id();
+BEGIN
+  IF me IS NULL THEN PERFORM public.fail('UNAUTHENTICATED'); END IF;
+  IF p_style IS NOT NULL AND p_style NOT IN ('watercolor', 'comic', 'pixel', 'sketch', 'abstract') THEN PERFORM public.fail('INVALID_STYLE'); END IF;
+  IF p_accept_from IS NOT NULL AND p_accept_from NOT IN ('contacts', 'anyone', 'nobody') THEN PERFORM public.fail('INVALID_SETTING'); END IF;
+  UPDATE public.profiles SET style = COALESCE(p_style, style), accept_from = COALESCE(p_accept_from, accept_from) WHERE id = me;
+  RETURN jsonb_build_object('style', (SELECT style FROM public.profiles WHERE id = me), 'accept_from', (SELECT accept_from FROM public.profiles WHERE id = me));
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.my_agents()
+RETURNS TABLE(id UUID, handle TEXT, emotion TEXT, color TEXT, key_prefix TEXT, revoked BOOLEAN, last_used_at TIMESTAMPTZ, created_at TIMESTAMPTZ) AS $$
+  SELECT p.id, p.handle, p.emotion, p.color, k.prefix, k.revoked_at IS NOT NULL, k.last_used_at, p.created_at
+  FROM public.profiles p LEFT JOIN public.agent_keys k ON k.profile_id = p.id
+  WHERE p.kind = 'agent' AND p.owner_profile_id = public.my_profile_id()
+  ORDER BY p.created_at DESC;
+$$ LANGUAGE sql STABLE SECURITY DEFINER;
+
+-- Leaving: withdraw every post of mine, then delete the profile. Posts keep
+-- their withdrawn row (no content); the audit log keeps the id.
+CREATE OR REPLACE FUNCTION public.delete_my_profile() RETURNS BOOLEAN AS $$
+DECLARE me UUID := public.my_profile_id(); r RECORD;
+BEGIN
+  IF me IS NULL THEN PERFORM public.fail('UNAUTHENTICATED'); END IF;
+  FOR r IN SELECT p.id FROM public.posts p JOIN public.exchanges x ON x.id = p.exchange_id WHERE me = ANY (x.participants) AND p.withdrawn_at IS NULL LOOP
+    PERFORM public.withdraw_post(r.id, me);
+  END LOOP;
+  UPDATE public.agent_keys SET revoked_at = NOW() WHERE profile_id IN (SELECT id FROM public.profiles WHERE owner_profile_id = me) AND revoked_at IS NULL;
+  PERFORM public.audit('profile:' || me::text, 'profile.delete', NULL);
+  DELETE FROM public.profiles WHERE id = me;
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- -----------------------------------------------------------------------------
 -- 10. Views for the public
 -- -----------------------------------------------------------------------------
@@ -849,7 +888,8 @@ GRANT EXECUTE ON FUNCTION public.ring_names(TEXT), public.ring_index(TEXT, TEXT)
 GRANT EXECUTE ON FUNCTION public.create_invite(TEXT, TEXT, TEXT), public.peek_invite(TEXT), public.react_to_post(UUID, TEXT, TEXT, TEXT, TEXT, TEXT), public.get_feed(TEXT, TEXT, INT, TIMESTAMPTZ) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.claim_invite(TEXT, BIGINT), public.record_consent(UUID), public.set_home(TEXT, TEXT, UUID), public.set_state(TEXT, TEXT, BOOLEAN, UUID),
   public.add_contact(TEXT), public.respond_contact(UUID, BOOLEAN), public.toggle_follow(TEXT), public.withdraw_post(UUID, UUID),
-  public.create_agent(TEXT, TEXT, TEXT, UUID), public.revoke_agent_key(UUID), public.create_pair_invite(UUID), public.my_profile_id() TO authenticated;
+  public.create_agent(TEXT, TEXT, TEXT, UUID), public.revoke_agent_key(UUID), public.create_pair_invite(UUID), public.my_profile_id(),
+  public.update_preferences(TEXT, TEXT), public.my_agents(), public.delete_my_profile() TO authenticated;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;
 
 -- -----------------------------------------------------------------------------

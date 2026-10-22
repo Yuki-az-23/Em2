@@ -181,5 +181,31 @@ BEGIN
   RAISE NOTICE 'ok 10: audit (% rows)', n;
 END $$;
 
+-- 11. A signed-in human: claims from the web, sets home, preferences, agents, leaves.
+DO $$ DECLARE uid UUID := gen_random_uuid(); inv JSONB; me JSONB; ag JSONB; n INT;
+BEGIN
+  INSERT INTO auth.users(id, email) VALUES (uid, 'web@example.test');
+  PERFORM set_config('request.jwt.claim.sub', uid::text, true);
+  PERFORM set_config('request.jwt.claim.role', 'authenticated', true);
+  inv := public.create_invite('רות', 'investor', 'amplifier_shapes');
+  me := public.claim_invite(inv->>'code');
+  IF public.my_profile_id() <> (me->>'profile_id')::uuid THEN RAISE EXCEPTION 'my_profile_id should resolve the claimer'; END IF;
+  PERFORM public.set_home('trust', 'lime');
+  IF (SELECT base_emotion FROM public.profiles WHERE id = public.my_profile_id()) <> 'trust' THEN RAISE EXCEPTION 'set_home'; END IF;
+  PERFORM public.update_preferences('comic', 'anyone');
+  IF (SELECT style FROM public.profiles WHERE id = public.my_profile_id()) <> 'comic' THEN RAISE EXCEPTION 'update_preferences'; END IF;
+  BEGIN PERFORM public.update_preferences('oil', NULL); RAISE EXCEPTION 'bad style should fail';
+  EXCEPTION WHEN OTHERS THEN IF SQLERRM <> 'INVALID_STYLE' THEN RAISE; END IF; END;
+  ag := public.create_agent('מגיב', 'joy', 'yellow');
+  SELECT count(*) INTO n FROM public.my_agents(); IF n <> 1 THEN RAISE EXCEPTION 'my_agents should list one'; END IF;
+  PERFORM public.revoke_agent_key((ag->>'agent_id')::uuid);
+  IF NOT (SELECT revoked FROM public.my_agents() LIMIT 1) THEN RAISE EXCEPTION 'revoke'; END IF;
+  IF NOT public.delete_my_profile() THEN RAISE EXCEPTION 'delete_my_profile'; END IF;
+  IF public.my_profile_id() IS NOT NULL THEN RAISE EXCEPTION 'profile should be gone'; END IF;
+  PERFORM set_config('request.jwt.claim.sub', '', true);
+  PERFORM set_config('request.jwt.claim.role', 'anon', true);
+  RAISE NOTICE 'ok 11: me';
+END $$;
+
 ROLLBACK;
 \echo smoke: all blocks passed

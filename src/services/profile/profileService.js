@@ -24,6 +24,12 @@ export const toggleFollow = (handle) => wrap(() => supabase.rpc('toggle_follow',
 export const withdrawPost = (postId) => wrap(() => supabase.rpc('withdraw_post', { p_post: postId }));
 export const createAgent = (name, emotion, color) => wrap(() => supabase.rpc('create_agent', { p_name: name, p_emotion: emotion, p_color: color }));
 export const revokeAgentKey = (agentId) => wrap(() => supabase.rpc('revoke_agent_key', { p_agent: agentId }));
+export const myAgents = () => wrap(() => supabase.rpc('my_agents'));
+export const updatePreferences = (style, acceptFrom) => wrap(() => supabase.rpc('update_preferences', { p_style: style ?? null, p_accept_from: acceptFrom ?? null }));
+export const deleteMyProfile = () => wrap(() => supabase.rpc('delete_my_profile'));
+
+export const STYLES = Object.freeze(['watercolor', 'comic', 'pixel', 'sketch', 'abstract']);
+export const STYLE_HE = Object.freeze({ watercolor: 'צבעי מים', comic: 'קומיקס', pixel: 'פיקסלים', sketch: 'סקיצה', abstract: 'מופשט' });
 
 export const getMyExchanges = () => wrap(() => supabase
   .from('exchanges')
