@@ -60,7 +60,9 @@ jobs:
 
   e2e:
     name: exhibit end to end (scenario and browser)
-    runs-on: ubuntu-latest
+    # Pinned: Playwright 1.56.1 (matching the Chromium build used in development)
+    # cannot install browser dependencies on ubuntu-latest, which is now 26.04.
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:16
@@ -79,9 +81,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: 22}
       - run: npm install --no-audit --no-fund
-      - run: npx playwright install --with-deps chromium
       - name: scenario (door, consent, relay, card, inertia, withdrawal, rate limit)
         run: npm run demo:check
+      - run: npx playwright install --with-deps chromium
       - name: browser (door, simulator, wall)
         run: npx playwright test
       - if: failure()
