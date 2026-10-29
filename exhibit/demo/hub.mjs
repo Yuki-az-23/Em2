@@ -34,7 +34,7 @@ function send(res, status, body, headers = {}) {
   res.end(isJson ? JSON.stringify(body) : body);
 }
 
-export function startHub({ port, postgrestUrl, workerEnv, log = console.log }) {
+export function startHub({ port, host = '127.0.0.1', postgrestUrl, workerEnv, log = console.log }) {
   /** chatId -> [{from:'me'|'bot', text, at}] */
   const chats = new Map();
   const pending = new Set();
@@ -123,6 +123,6 @@ export function startHub({ port, postgrestUrl, workerEnv, log = console.log }) {
 
   return new Promise((resolve, reject) => {
     server.once('error', reject);
-    server.listen(port, '127.0.0.1', () => resolve({ server, url: `http://127.0.0.1:${port}`, chats, idle: () => Promise.allSettled([...pending]) }));
+    server.listen(port, host, () => resolve({ server, url: `http://127.0.0.1:${port}`, chats, idle: () => Promise.allSettled([...pending]) }));
   });
 }

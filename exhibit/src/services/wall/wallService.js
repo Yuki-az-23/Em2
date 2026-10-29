@@ -60,10 +60,11 @@ export async function react({ postId, kind, emotion, color, text = null, apiKey 
 }
 
 /**
- * Realtime: calls onChange({type, post}) for inserts and updates on posts.
- * Returns an unsubscribe function. Silent when realtime is unavailable.
+ * Realtime: calls onChange({type, post}) for inserts and updates on posts, and
+ * onStatus('live' | 'down') when the channel connects or fails. Returns an
+ * unsubscribe function. Silent when realtime is unavailable.
  */
-export function subscribePosts(onChange) {
+export function subscribePosts(onChange, onStatus = () => {}) {
   let channel;
   try {
     channel = supabase
@@ -71,8 +72,12 @@ export function subscribePosts(onChange) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, (payload) => {
         onChange({ type: payload.eventType, post: payload.new || null, old: payload.old || null });
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') onStatus('live');
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') onStatus('down');
+      });
   } catch {
+    onStatus('down');
     return () => {};
   }
   return () => { try { supabase.removeChannel(channel); } catch { /* already gone */ } };

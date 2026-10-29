@@ -37,6 +37,29 @@ describe('Invite (the door)', () => {
     expect(screen.queryByTestId('wall-link')).toBeNull();
   });
 
+  it('without the demo hub there is no simulator link', async () => {
+    createInvite.mockResolvedValue({ code: 'c'.repeat(22), handle: 'נמל-שקט', telegramLink: 'https://t.me/HermesExhibitBot?start=' + 'c'.repeat(22), expiresAt: null, error: null });
+    renderAt();
+    fireEvent.change(screen.getByLabelText(/איך לקרוא לך/), { target: { value: 'דני' } });
+    fireEvent.click(screen.getByText('אני בוטח באות שלי').closest('button'));
+    await screen.findByTestId('telegram-link');
+    expect(screen.queryByTestId('simulator-link')).toBeNull();
+  });
+
+  it('in the local demo a participant can open the simulator with their code', async () => {
+    vi.stubEnv('VITE_DEMO_HUB', 'http://127.0.0.1:54321');
+    try {
+      createInvite.mockResolvedValue({ code: 'd'.repeat(22), handle: 'גשר-קר', telegramLink: 'https://t.me/HermesDemoBot?start=' + 'd'.repeat(22), expiresAt: null, error: null });
+      renderAt();
+      fireEvent.change(screen.getByLabelText(/איך לקרוא לך/), { target: { value: 'דני' } });
+      fireEvent.click(screen.getByText('אני בוטח באות שלי').closest('button'));
+      const sim = await screen.findByTestId('simulator-link');
+      expect(sim).toHaveAttribute('href', '/lab?start=' + 'd'.repeat(22));
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('an investor leaves for the wall, not Telegram', async () => {
     createInvite.mockResolvedValue({ code: 'c'.repeat(22), handle: 'גן-קר', telegramLink: 'https://t.me/x?start=y', expiresAt: null, error: null });
     renderAt();

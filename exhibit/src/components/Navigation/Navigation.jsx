@@ -4,6 +4,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks';
+import { isDemo } from '../../services/demo/simService';
 import './Navigation.css';
 
 const LINKS = [
@@ -11,6 +12,7 @@ const LINKS = [
   { to: '/machine', label: 'המכונה' },
   { to: '/me', label: 'אני' },
 ];
+if (isDemo()) LINKS.splice(1, 0, { to: '/lab', label: 'סימולטור' });
 
 export const Navigation = () => {
   const navigate = useNavigate();

@@ -1,6 +1,11 @@
 /**
  * Feed for a declared visitor state, with realtime updates folded in.
+ * When realtime does not connect within a few seconds (the light local demo
+ * has none), the feed is polled instead.
  */
+export const POLL_MS = 5000;
+const REALTIME_GRACE_MS = 4000;
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getFeed, react as sendReaction, subscribePosts } from '../services/wall/wallService';
 
@@ -25,7 +30,11 @@ export const useWall = (visitor) => {
 
   useEffect(() => {
     if (!visitor) return undefined;
-    return subscribePosts(({ type, post }) => {
+    let live = false;
+    let poll = null;
+    const startPolling = () => { if (!poll && !live) poll = setInterval(load, POLL_MS); };
+    const grace = setTimeout(startPolling, REALTIME_GRACE_MS);
+    const unsubscribe = subscribePosts(({ type, post }) => {
       if (!post) return;
       setPosts((cur) => {
         if (post.withdrawn_at) return cur.filter((p) => p.id !== post.id);
@@ -33,8 +42,12 @@ export const useWall = (visitor) => {
         if (i === -1) return type === 'INSERT' ? [post, ...cur] : cur;
         const next = cur.slice(); next[i] = { ...cur[i], ...post }; return next;
       });
+    }, (status) => {
+      if (status === 'live') { live = true; clearTimeout(grace); if (poll) { clearInterval(poll); poll = null; } }
+      else { live = false; startPolling(); }
     });
-  }, [visitor]);
+    return () => { clearTimeout(grace); if (poll) clearInterval(poll); unsubscribe(); };
+  }, [visitor, load]);
 
   const reactTo = useCallback(async (postId, kind, text) => {
     const v = visitorRef.current;

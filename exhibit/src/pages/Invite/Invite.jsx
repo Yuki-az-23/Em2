@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button, Input } from '../../components';
 import { createInvite, peekInvite, joinUrl, ANSWERS, ROLES } from '../../services/invite/inviteService';
+import { isDemo } from '../../services/demo/simService';
 import './Invite.css';
 
 const QUESTION = 'האם אתה בוטח באות שלך לעולם, או שהמגביר של האות שלך משנן ומעצב אותך לדמות שהוא רוצה?';
@@ -106,6 +107,9 @@ export const Invite = () => {
             {result.role === ROLES.PARTICIPANT ? (
               <>
                 <p className="invite-link-label">הכניסה שלך היא בטלגרם. שם תקבל את הכינוי, תאשר את התנאים, ותוכל להזמין אדם אחד לשיחה.</p>
+                {isDemo() && (
+                  <Link className="invite-telegram" to={`/lab?start=${result.code}`} data-testid="simulator-link">פתח בסימולטור</Link>
+                )}
                 <a className="invite-telegram" href={result.telegramLink} target="_blank" rel="noreferrer noopener" data-testid="telegram-link">פתח בטלגרם</a>
                 <div className="invite-link">
                   <input id="invite-url" className="invite-url" readOnly value={result.telegramLink} dir="ltr" />

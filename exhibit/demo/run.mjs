@@ -9,6 +9,11 @@
  * the schema and a seeded wall, PostgREST, the hub (Supabase gateway + the
  * Hermes worker in-process + a fake Telegram), and the site on Vite.
  * Writes .demo/env.json for the scenario and the browser test.
+ *
+ * For containers (demo/docker-compose.yml): DEMO_POSTGREST_URL uses a running
+ * PostgREST instead of starting one, DEMO_JWT_SECRET fixes the signing secret
+ * it shares, DEMO_BIND sets the listen address, DEMO_PUBLIC_HUB the address a
+ * browser uses to reach the hub.
  */
 import { spawn, execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -96,16 +101,28 @@ async function main() {
 
   say('PostgREST');
   const keysFile = join(STATE, 'keys.json');
-  const keys = existsSync(keysFile) ? JSON.parse(readFileSync(keysFile, 'utf8')) : makeKeys();
+  const keys = process.env.DEMO_JWT_SECRET ? makeKeys(process.env.DEMO_JWT_SECRET)
+    : existsSync(keysFile) ? JSON.parse(readFileSync(keysFile, 'utf8')) : makeKeys();
   writeFileSync(keysFile, JSON.stringify(keys, null, 2));
-  const bin = await findPostgrest(STATE);
-  const rest = await startPostgrest({ bin, dbUri: asAuthenticator(dbUrl), jwtSecret: keys.jwtSecret, port: PORTS.rest, log: (l) => l && console.log(`   [postgrest] ${l}`) });
-  children.push(rest.child);
+  let rest;
+  if (process.env.DEMO_POSTGREST_URL) {
+    rest = { url: process.env.DEMO_POSTGREST_URL.replace(/\/$/, '') };
+    for (let i = 0; i < 150; i++) {
+      try { if ((await fetch(`${rest.url}/`)).ok) break; } catch { /* not up yet */ }
+      await new Promise((r) => setTimeout(r, 200));
+    }
+  } else {
+    const bin = await findPostgrest(STATE);
+    rest = await startPostgrest({ bin, dbUri: asAuthenticator(dbUrl), jwtSecret: keys.jwtSecret, port: PORTS.rest, log: (l) => l && console.log(`   [postgrest] ${l}`) });
+    children.push(rest.child);
+  }
   ok(rest.url);
 
   say('hub: Supabase gateway, Hermes worker, fake Telegram');
   const webhookSecret = randomBytes(16).toString('hex');
+  const bind = process.env.DEMO_BIND || '127.0.0.1';
   const hubUrl = `http://127.0.0.1:${PORTS.hub}`;
+  const publicHub = (process.env.DEMO_PUBLIC_HUB || hubUrl).replace(/\/$/, '');
   const workerEnv = {
     SUPABASE_URL: hubUrl,
     SUPABASE_SERVICE_ROLE_KEY: keys.serviceKey,
@@ -115,17 +132,17 @@ async function main() {
     AI_MODE: 'fake',
     PIPELINE_MAX_ATTEMPTS: '3'
   };
-  await startHub({ port: PORTS.hub, postgrestUrl: rest.url, workerEnv, log: (...a) => console.log('  ', ...a) });
-  ok(hubUrl);
+  await startHub({ port: PORTS.hub, host: bind, postgrestUrl: rest.url, workerEnv, log: (...a) => console.log('  ', ...a) });
+  ok(publicHub);
 
-  const siteUrl = `http://127.0.0.1:${PORTS.site}`;
+  const siteUrl = process.env.DEMO_PUBLIC_SITE || `http://127.0.0.1:${PORTS.site}`;
   writeFileSync(join(STATE, 'env.json'), JSON.stringify({ hub: hubUrl, site: siteUrl, anonKey: keys.anonKey, bot: 'HermesDemoBot' }, null, 2));
 
   if (!args.has('--no-site')) {
     say('site');
-    const vite = spawn('npx', ['vite', '--host', '127.0.0.1', '--port', String(PORTS.site), '--strictPort'], {
+    const vite = spawn('npx', ['vite', '--host', bind, '--port', String(PORTS.site), '--strictPort'], {
       cwd: ROOT, stdio: 'inherit',
-      env: { ...process.env, VITE_SUPABASE_URL: hubUrl, VITE_SUPABASE_ANON_KEY: keys.anonKey, VITE_DEMO_HUB: hubUrl }
+      env: { ...process.env, VITE_SUPABASE_URL: publicHub, VITE_SUPABASE_ANON_KEY: keys.anonKey, VITE_DEMO_HUB: publicHub }
     });
     children.push(vite);
     vite.on('exit', (c) => { if (c) shutdown(c); });
