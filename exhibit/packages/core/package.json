@@ -11,7 +11,8 @@
     "./pseudonym": "./src/pseudonym.js",
     "./exchangeToAssigned": "./src/exchangeToAssigned.js",
     "./feedScore": "./src/feedScore.js",
-    "./telegram": "./src/telegram.js"
+    "./telegram": "./src/telegram.js",
+    "./hebrew": "./src/hebrew.js"
   },
   "sideEffects": false
 }

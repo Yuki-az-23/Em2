@@ -3,7 +3,27 @@
  * consent text. The Worker owns the HTTP side.
  */
 
+import { EMOTIONS, COLORS } from './ring.js';
+import { EMOTION_HE, COLOR_HE } from './hebrew.js';
+
 export const DEEP_LINK_CODE = /^[A-Za-z0-9_-]{1,64}$/;
+
+/**
+ * A Telegram reply keyboard with the eight Hebrew names in two rows of four.
+ * Tapping a button sends its text as an ordinary message.
+ * @param {'emotion'|'color'} kind
+ */
+export function stateKeyboard(kind) {
+  const names = kind === 'emotion' ? EMOTIONS.map((e) => EMOTION_HE[e]) : COLORS.map((c) => COLOR_HE[c]);
+  return {
+    keyboard: [names.slice(0, 4), names.slice(4)].map((row) => row.map((text) => ({ text }))),
+    resize_keyboard: true,
+    one_time_keyboard: true,
+    input_field_placeholder: kind === 'emotion' ? 'רגש' : 'צבע'
+  };
+}
+
+export const REMOVE_KEYBOARD = Object.freeze({ remove_keyboard: true });
 
 export function deepLink(botName, code) {
   if (!DEEP_LINK_CODE.test(code)) throw new Error('INVALID_CODE');

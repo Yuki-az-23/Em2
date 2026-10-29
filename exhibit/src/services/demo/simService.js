@@ -25,3 +25,14 @@ export function startCode(text) {
   const m = /t\.me\/[A-Za-z0-9_]+\?start=([A-Za-z0-9_-]{8,64})/.exec(String(text || ''));
   return m ? m[1] : null;
 }
+
+/** The reply keyboard Telegram would show now: the latest one the bot sent, unless removed since. */
+export function currentKeyboard(messages) {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m.from !== 'bot') continue;
+    if (m.removeKeyboard) return null;
+    if (m.keyboard) return m.keyboard;
+  }
+  return null;
+}

@@ -138,6 +138,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS profiles_handle_idx ON public.profiles(handle);
+-- When a participant told the bot which emotion and color they bring. Until both are
+-- set, the bot keeps asking and relays nothing.
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS emotion_declared_at TIMESTAMPTZ;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS color_declared_at TIMESTAMPTZ;
 
 CREATE TABLE IF NOT EXISTS public.invites (
   code TEXT PRIMARY KEY CHECK (char_length(code) = 22),
@@ -308,6 +312,30 @@ CREATE OR REPLACE FUNCTION public.my_profile_id() RETURNS UUID AS $$
   SELECT id FROM public.profiles WHERE auth_user_id = auth.uid() LIMIT 1;
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
 
+-- Who may name a profile other than their own: the service role (the Worker), or
+-- a direct database session with no API caller behind it (psql, the seed). Every
+-- request through the API carries JWT claims; only service_role among them is trusted.
+CREATE OR REPLACE FUNCTION public.trusted_caller() RETURNS BOOLEAN AS $$
+  SELECT CASE
+    WHEN NULLIF(current_setting('request.jwt.claims', true), '') IS NOT NULL
+      THEN COALESCE(current_setting('request.jwt.claims', true)::json->>'role', '') = 'service_role'
+    WHEN NULLIF(current_setting('request.jwt.claim.role', true), '') IS NOT NULL
+      THEN current_setting('request.jwt.claim.role', true) = 'service_role'
+    ELSE TRUE
+  END;
+$$ LANGUAGE sql STABLE;
+
+-- The profile a call acts for: the caller's own when none is named; a named one only
+-- for a trusted caller. A signed-in user naming any profile is refused, even their own,
+-- because the site never needs to.
+CREATE OR REPLACE FUNCTION public.acting_profile(p_profile UUID) RETURNS UUID AS $$
+BEGIN
+  IF p_profile IS NULL THEN RETURN public.my_profile_id(); END IF;
+  IF NOT public.trusted_caller() THEN PERFORM public.fail('FORBIDDEN', 'profile'); END IF;
+  RETURN p_profile;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
 CREATE OR REPLACE FUNCTION public.client_key() RETURNS TEXT AS $$
 DECLARE hdr JSON; ip TEXT;
 BEGIN
@@ -407,7 +435,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- on behalf of a Telegram user, or by a signed-in user.
 CREATE OR REPLACE FUNCTION public.create_pair_invite(p_from_profile UUID DEFAULT NULL)
 RETURNS JSONB AS $$
-DECLARE me UUID := COALESCE(p_from_profile, public.my_profile_id()); lim RECORD; v_code TEXT; v_exp TIMESTAMPTZ := NOW() + INTERVAL '7 days';
+DECLARE me UUID := public.acting_profile(p_from_profile); lim RECORD; v_code TEXT; v_exp TIMESTAMPTZ := NOW() + INTERVAL '7 days';
 BEGIN
   IF me IS NULL THEN PERFORM public.fail('UNAUTHENTICATED'); END IF;
   SELECT * INTO lim FROM public.rate_limit_check('invite', 3, p_key => 'profile:' || me::text);
@@ -439,7 +467,8 @@ BEGIN
   IF NOT FOUND OR inv.expires_at < NOW() THEN PERFORM public.fail('INVITE_EXPIRED'); END IF;
   IF inv.claimed_at IS NOT NULL THEN PERFORM public.fail('INVITE_EXPIRED'); END IF;
 
-  -- find the claimer
+  -- find the claimer; only the Worker may claim for a Telegram account
+  IF p_telegram_user_id IS NOT NULL AND NOT public.trusted_caller() THEN PERFORM public.fail('FORBIDDEN', 'telegram'); END IF;
   IF p_telegram_user_id IS NOT NULL THEN
     SELECT id INTO me FROM public.profiles WHERE telegram_user_id = p_telegram_user_id;
   ELSIF auth.uid() IS NOT NULL THEN
@@ -472,7 +501,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE OR REPLACE FUNCTION public.record_consent(p_profile UUID DEFAULT NULL) RETURNS JSONB AS $$
-DECLARE me UUID := COALESCE(p_profile, public.my_profile_id()); v TEXT := public.setting('consent_version');
+DECLARE me UUID := public.acting_profile(p_profile); v TEXT := public.setting('consent_version');
 BEGIN
   IF me IS NULL THEN PERFORM public.fail('UNAUTHENTICATED'); END IF;
   UPDATE public.profiles SET consent_version = v, consent_at = NOW() WHERE id = me;
@@ -485,7 +514,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- 6. Home, contacts, follows
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.set_home(p_emotion TEXT, p_color TEXT, p_profile UUID DEFAULT NULL) RETURNS JSONB AS $$
-DECLARE me UUID := COALESCE(p_profile, public.my_profile_id());
+DECLARE me UUID := public.acting_profile(p_profile);
 BEGIN
   IF me IS NULL THEN PERFORM public.fail('UNAUTHENTICATED'); END IF;
   IF public.ring_index('emotion', p_emotion) IS NULL OR public.ring_index('color', p_color) IS NULL THEN PERFORM public.fail('INVALID_STATE'); END IF;
@@ -496,13 +525,34 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE OR REPLACE FUNCTION public.set_state(p_emotion TEXT, p_color TEXT, p_felt BOOLEAN DEFAULT FALSE, p_profile UUID DEFAULT NULL) RETURNS JSONB AS $$
-DECLARE me UUID := COALESCE(p_profile, public.my_profile_id());
+DECLARE me UUID := public.acting_profile(p_profile);
 BEGIN
   IF me IS NULL THEN PERFORM public.fail('UNAUTHENTICATED'); END IF;
   IF public.ring_index('emotion', p_emotion) IS NULL OR public.ring_index('color', p_color) IS NULL THEN PERFORM public.fail('INVALID_STATE'); END IF;
   IF p_felt THEN UPDATE public.profiles SET felt_emotion = lower(p_emotion), felt_color = lower(p_color) WHERE id = me;
   ELSE UPDATE public.profiles SET emotion = lower(p_emotion), color = lower(p_color) WHERE id = me; END IF;
   RETURN jsonb_build_object('ok', true);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- A participant tells the bot the emotion and color they bring. Writes the expressed
+-- (public) state, one part at a time; p_reset clears both stamps so the bot asks again.
+-- Service role only: the Worker calls it for a Telegram user.
+CREATE OR REPLACE FUNCTION public.declare_state(p_profile UUID, p_emotion TEXT DEFAULT NULL, p_color TEXT DEFAULT NULL, p_reset BOOLEAN DEFAULT FALSE)
+RETURNS JSONB AS $$
+DECLARE me UUID := public.acting_profile(p_profile); r public.profiles%ROWTYPE;
+BEGIN
+  IF me IS NULL THEN PERFORM public.fail('UNAUTHENTICATED'); END IF;
+  IF p_emotion IS NOT NULL AND public.ring_index('emotion', p_emotion) IS NULL THEN PERFORM public.fail('INVALID_STATE', 'emotion'); END IF;
+  IF p_color IS NOT NULL AND public.ring_index('color', p_color) IS NULL THEN PERFORM public.fail('INVALID_STATE', 'color'); END IF;
+  IF p_reset THEN UPDATE public.profiles SET emotion_declared_at = NULL, color_declared_at = NULL WHERE id = me; END IF;
+  IF p_emotion IS NOT NULL THEN UPDATE public.profiles SET emotion = lower(p_emotion), emotion_declared_at = NOW() WHERE id = me; END IF;
+  IF p_color IS NOT NULL THEN UPDATE public.profiles SET color = lower(p_color), color_declared_at = NOW() WHERE id = me; END IF;
+  SELECT * INTO r FROM public.profiles WHERE id = me;
+  IF NOT FOUND THEN PERFORM public.fail('NOT_FOUND'); END IF;
+  PERFORM public.audit('profile:' || me::text, 'state.declare', r.emotion || '/' || r.color);
+  RETURN jsonb_build_object('emotion', r.emotion, 'color', r.color,
+    'emotionDeclared', r.emotion_declared_at IS NOT NULL, 'colorDeclared', r.color_declared_at IS NOT NULL);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -600,7 +650,7 @@ CREATE OR REPLACE FUNCTION public.exchange_bundle(p_exchange UUID) RETURNS JSONB
     'participants', (SELECT jsonb_agg(jsonb_build_object(
         'id', p.id, 'name', p.display_name, 'pseudonym', p.handle,
         'emotion', p.emotion, 'color', p.color, 'style', p.style,
-        'consent', x.consent -> p.id::text))
+        'consent', x.consent -> p.id::text) ORDER BY array_position(x.participants, p.id))
       FROM public.profiles p WHERE p.id = ANY (x.participants)),
     'messages', COALESCE((SELECT jsonb_agg(jsonb_build_object('from', m.from_profile, 'text', m.text, 'witness', m.witness, 'at', m.created_at) ORDER BY m.id)
       FROM public.messages m WHERE m.exchange_id = x.id), '[]'::jsonb))
@@ -613,10 +663,14 @@ CREATE OR REPLACE FUNCTION public.mark_exchange_failed(p_exchange UUID, p_code T
 $$ LANGUAGE sql SECURITY DEFINER;
 
 CREATE OR REPLACE FUNCTION public.stop_profile(p_profile UUID) RETURNS VOID AS $$
-  UPDATE public.profiles SET stopped_at = NOW() WHERE id = p_profile;
-  UPDATE public.exchanges SET status = 'closed', closed_at = NOW() WHERE status = 'open' AND p_profile = ANY (participants);
-  SELECT public.audit('profile:' || p_profile::text, 'stop', NULL);
-$$ LANGUAGE sql SECURITY DEFINER;
+DECLARE me UUID := public.acting_profile(p_profile);
+BEGIN
+  IF me IS NULL THEN PERFORM public.fail('UNAUTHENTICATED'); END IF;
+  UPDATE public.profiles SET stopped_at = NOW() WHERE id = me;
+  UPDATE public.exchanges SET status = 'closed', closed_at = NOW() WHERE status = 'open' AND me = ANY (participants);
+  PERFORM public.audit('profile:' || me::text, 'stop', NULL);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- -----------------------------------------------------------------------------
 -- 8. The wall
@@ -734,7 +788,7 @@ END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
 CREATE OR REPLACE FUNCTION public.withdraw_post(p_post UUID, p_profile UUID DEFAULT NULL) RETURNS BOOLEAN AS $$
-DECLARE me UUID := COALESCE(p_profile, public.my_profile_id()); x UUID;
+DECLARE me UUID := public.acting_profile(p_profile); x UUID;
 BEGIN
   IF me IS NULL THEN PERFORM public.fail('UNAUTHENTICATED'); END IF;
   SELECT exchange_id INTO x FROM public.posts WHERE id = p_post;
@@ -750,7 +804,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- 9. Agents
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.create_agent(p_name TEXT, p_emotion TEXT, p_color TEXT, p_owner UUID DEFAULT NULL) RETURNS JSONB AS $$
-DECLARE owner UUID := COALESCE(p_owner, public.my_profile_id()); aid UUID; key TEXT; h TEXT;
+DECLARE owner UUID := public.acting_profile(p_owner); aid UUID; key TEXT; h TEXT;
 BEGIN
   IF owner IS NULL THEN PERFORM public.fail('UNAUTHENTICATED'); END IF;
   IF public.ring_index('emotion', p_emotion) IS NULL OR public.ring_index('color', p_color) IS NULL THEN PERFORM public.fail('INVALID_STATE'); END IF;

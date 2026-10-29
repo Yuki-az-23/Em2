@@ -51,3 +51,29 @@ describe('the simulator', () => {
     await waitFor(() => expect(say).toHaveBeenCalledWith(500001, 'מסכים'));
   });
 });
+
+describe("the bot's keyboard in the simulator", () => {
+  beforeEach(() => {
+    for (const k of Object.keys(chats)) delete chats[k];
+    sessionStorage.clear();
+    sessionStorage.setItem('lab-base', '500000');
+    vi.mocked(say).mockClear();
+  });
+
+  it('shows the latest keyboard, and a tap sends its label to that chat', async () => {
+    chats[500000] = [
+      { from: 'bot', text: 'איזה רגש?', keyboard: [['שמחה', 'אמון', 'פחד', 'הפתעה'], ['עצב', 'גועל', 'כעס', 'ציפייה']] }
+    ];
+    renderAt('/lab');
+    const keys = await screen.findAllByTestId('pane-a-key');
+    expect(keys).toHaveLength(8);
+    fireEvent.click(screen.getByRole('button', { name: 'אמון' }));
+    await waitFor(() => expect(say).toHaveBeenCalledWith(500000, 'אמון'));
+  });
+
+  it('a removed keyboard is gone', async () => {
+    const { currentKeyboard } = await vi.importActual('../../services/demo/simService');
+    expect(currentKeyboard([{ from: 'bot', keyboard: [['א']] }, { from: 'me', text: 'א' }, { from: 'bot', text: 'נרשם', removeKeyboard: true }])).toBeNull();
+    expect(currentKeyboard([{ from: 'bot', keyboard: [['א']] }, { from: 'me', text: 'x' }, { from: 'bot', text: 'שוב' }])).toEqual([['א']]);
+  });
+});

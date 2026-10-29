@@ -5,7 +5,7 @@
  * Two simulated people go through the whole exhibit against the real local
  * stack, and every claim the exhibit makes is checked on the way:
  *   1. the door gives a code and a pseudonym
- *   2. both people consent and are paired through the bot
+ *   2. both people consent, tell the bot the emotion and color they bring, and are paired
  *   3. their messages are relayed with pseudonyms
  *   4. ending the chat puts a card on the wall with no names and no words
  *   5. one trigger holds the card's state, three move it one step; a brace counts
@@ -16,7 +16,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { point, names, stepInteraction, EMOTIONS, COLORS } from '@hermes/core';
+import { point, names, stepInteraction, exchangeToAssigned, EMOTIONS, COLORS } from '@hermes/core';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const env = JSON.parse(readFileSync(join(ROOT, '.demo', 'env.json'), 'utf8'));
@@ -56,6 +56,15 @@ async function botLines(chatId) {
   return r.messages.filter((m) => m.from === 'bot').map((m) => m.text);
 }
 const lastBot = async (chatId) => (await botLines(chatId)).at(-1) || '';
+async function lastKeyboard(chatId) {
+  const r = await (await fetch(`${HUB}/demo/chats/${chatId}`)).json();
+  for (const m of [...r.messages].reverse()) {
+    if (m.from !== 'bot') continue;
+    if (m.removeKeyboard) return null;
+    if (m.keyboard) return m.keyboard;
+  }
+  return null;
+}
 
 async function main() {
   try { await fetch(`${HUB}/demo/health`); } catch { console.error(`no hub at ${HUB}; start it with: npm run demo`); process.exit(2); }
@@ -72,13 +81,22 @@ async function main() {
   const handleA = inv.data.handle;
   check(/^\S+-\S+$/.test(handleA) && !handleA.includes(nameA), `the system renamed "${nameA}" to "${handleA}"`);
 
-  say('2. consent and pairing through the bot');
+  say('2. consent, the two questions, and pairing through the bot');
   await tell(A, `/start ${inv.data.code}`);
   check((await lastBot(A)).includes(handleA) && (await lastBot(A)).includes('מסכים'), 'A is greeted by pseudonym and asked to consent');
   await tell(A, 'שלום?');
   check((await lastBot(A)).includes('מסכים'), 'before consent, text is not relayed and consent is asked again');
   await tell(A, 'מסכים');
   check((await botLines(A)).some((t) => t.startsWith('נרשם')), 'A consents');
+  check((await lastKeyboard(A))?.flat().includes('אמון'), 'the bot asks A for an emotion, with eight buttons');
+  await tell(A, '/invite');
+  check(!/start=/.test(await lastBot(A)) && (await lastBot(A)).includes('איזה רגש'), 'no invitation link before A answers');
+  await tell(A, 'רגוע');
+  check((await lastBot(A)).includes('איזה רגש'), 'an answer that is not on the wheel gets the question again');
+  await tell(A, 'אמון');
+  check((await lastBot(A)) === 'ואיזה צבע?' && (await lastKeyboard(A))?.flat().includes('ליים'), 'then asks for a color');
+  await tell(A, 'ליים');
+  check((await botLines(A)).some((t) => t.startsWith('נרשם: אמון, ליים')), 'A declared trust/lime');
   await tell(A, '/invite');
   const pair = /start=([A-Za-z0-9_-]+)/.exec(await lastBot(A));
   must(pair, 'A gets a one-person link to send');
@@ -87,6 +105,12 @@ async function main() {
   const handleB = /קוראים לך (\S+)\./.exec(greetB)?.[1];
   must(handleB && handleB !== handleA, `B is renamed "${handleB}"`);
   await tell(B, 'מסכים');
+  await tell(B, 'היי, את שם?');
+  check(!(await botLines(A)).some((t) => t.includes('היי, את שם?')), 'before answering, B\'s text is not relayed');
+  check(!(await botLines(B)).some((t) => t.includes('השיחה פתוחה')), 'and the chat is not open yet');
+  await tell(B, 'עצב');
+  await tell(B, 'כחול');
+  check((await botLines(B)).some((t) => t.startsWith('נרשם: עצב, כחול')), 'B declared sad/blue');
   check((await botLines(B)).some((t) => t.includes(handleA) && t.includes('השיחה פתוחה')), `B is told ${handleA} is there`);
   check((await botLines(A)).some((t) => t.includes(handleB) && t.includes('השיחה פתוחה')), `A is told ${handleB} is there`);
 
@@ -117,6 +141,10 @@ async function main() {
   }
   must(card, `a card with "${handleA}" and "${handleB}" is on the wall`);
   console.log(`        ${card.emotion}/${card.color}: ${card.body}`);
+  const decided = exchangeToAssigned([{ id: 'a', emotion: 'trust', color: 'lime' }, { id: 'b', emotion: 'sad', color: 'blue' }], []);
+  check(card.emotion === decided.emotion && card.color === decided.color,
+    `the card sits where the core puts trust/lime and sad/blue: ${decided.emotion}/${decided.color}`);
+  check(!(card.emotion === 'joy' && card.color === 'yellow'), 'not the joy/yellow default');
   const hay = JSON.stringify(card);
   check(!hay.includes('אלה') && !hay.includes('כהן'), 'the typed name is not on the card');
   check(lines.every(([, t]) => t.length < 12 || !hay.includes(t)), 'no message line is on the card');

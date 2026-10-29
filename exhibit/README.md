@@ -45,9 +45,9 @@ npm run test:e2e     # starts the whole demo and drives the door, simulator and 
 The scenario checks, against the real database and worker:
 
 1. The door gives a code and renames the visitor.
-2. Nothing is relayed before consent; pairing goes through a one-person link.
+2. Nothing is relayed before consent and before each person tells the bot the emotion and color they bring; pairing goes through a one-person link.
 3. Messages are relayed under pseudonyms.
-4. On `/end` a card appears with no typed name, message line, place, third person or email.
+4. On `/end` a card appears at the midpoint of the two declared states, with no typed name, message line, place, third person or email.
 5. One trigger holds the card's state, three move it one step, and a brace counts.
 6. `/withdraw` takes it off the wall.
 7. A fourth invitation from one address within ten minutes has to wait.

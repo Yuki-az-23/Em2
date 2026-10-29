@@ -2,13 +2,17 @@
  * Telegram: the private channel. The bot is a relay between two people and
  * never writes first. Every state lives in the database; this file has none.
  */
-import { parseUpdate, consentText, isConsent } from '@hermes/core/telegram';
+import { parseUpdate, consentText, isConsent, stateKeyboard, REMOVE_KEYBOARD } from '@hermes/core/telegram';
+import { parseEmotion, parseColor, EMOTION_HE, COLOR_HE } from '@hermes/core/hebrew';
 
 const T = {
   hello: 'שלום. הדלת היא באתר. פתח את הקישור שקיבלת, או כתוב /help.',
-  help: 'פקודות: /invite לקבל קישור לאדם אחד, /end לסגור את השיחה, /withdraw למשוך את הכרטיס האחרון מהקיר, /stop להפסיק הכל.',
+  help: 'פקודות: /invite לקבל קישור לאדם אחד, /end לסגור את השיחה, /withdraw למשוך את הכרטיס האחרון מהקיר, /state לשנות רגש וצבע, /stop להפסיק הכל.',
   needConsent: 'כדי להמשיך צריך להסכים. כתוב: מסכים',
   consented: 'נרשם. מעכשיו מה שתכתוב כאן עובר לאדם השני, ובסוף השיחה למגביר.',
+  askEmotion: 'לפני שמתחילים: איזה רגש מגיע איתך לשיחה? המגביר ישתמש בזה כדי להחליט מה לכתוב עליכם על הקיר, וזה יופיע ליד הכינוי שלך.',
+  askColor: 'ואיזה צבע?',
+  declared: (e, c) => `נרשם: ${e}, ${c}. אפשר לשנות בכל רגע עם /state.`,
   noPartner: 'אין לך עדיין עם מי לדבר. כתוב /invite ותקבל קישור לשלוח לאדם אחד.',
   invite: (link) => `שלח את הקישור הזה לאדם אחד. הוא פותח את אותה דלת:\n${link}\nתקף שבעה ימים, פעם אחת.`,
   paired: (handle) => `${handle} נכנס. השיחה פתוחה. מה שתכתוב כאן מגיע אליו, ולהפך. /end כשסיימתם.`,
@@ -26,16 +30,39 @@ export function makeTelegram(env, db, fetchImpl = globalThis.fetch) {
   const token = env.TELEGRAM_BOT_TOKEN;
   const apiBase = String(env.TELEGRAM_API_BASE || 'https://api.telegram.org').replace(/\/$/, '');
 
-  async function send(chatId, text) {
+  async function send(chatId, text, markup) {
     if (!token) return;
+    const body = { chat_id: chatId, text, disable_web_page_preview: true };
+    if (markup) body.reply_markup = markup;
     await fetchImpl(`${apiBase}/bot${token}/sendMessage`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true })
+      body: JSON.stringify(body)
     });
   }
 
+  const declared = (p) => !!(p && p.emotion_declared_at && p.color_declared_at);
+
+  /** The next question for someone who has not finished declaring. */
+  function askState(chat, me) {
+    if (!me.emotion_declared_at) return send(chat, T.askEmotion, stateKeyboard('emotion'));
+    return send(chat, T.askColor, stateKeyboard('color'));
+  }
+
+  /** An answer to the state questions: an emotion or a color, in Hebrew or English. */
+  async function onAnswer(chat, me, text) {
+    const emotion = parseEmotion(text);
+    const color = parseColor(text);
+    if (!emotion && !color) return askState(chat, me);   // not an answer: the same question again
+    const r = await db.rpc('declare_state', { p_profile: me.id, p_emotion: emotion, p_color: color });
+    if (!r.emotionDeclared) return send(chat, T.askEmotion, stateKeyboard('emotion'));
+    if (!r.colorDeclared) return send(chat, T.askColor, stateKeyboard('color'));
+    await send(chat, T.declared(EMOTION_HE[r.emotion], COLOR_HE[r.color]), REMOVE_KEYBOARD);
+    if (await openExchangeFor(me.id)) return;             // changed mid-chat: the card at close uses it
+    return tryPair(me.id, chat);
+  }
+
   async function profileByTelegram(userId) {
-    const rows = await db.select('profiles', `telegram_user_id=eq.${userId}&select=id,handle,consent_at,stopped_at&limit=1`);
+    const rows = await db.select('profiles', `telegram_user_id=eq.${userId}&select=id,handle,consent_at,stopped_at,emotion,color,emotion_declared_at,color_declared_at&limit=1`);
     return rows[0] || null;
   }
 
@@ -65,7 +92,15 @@ export function makeTelegram(env, db, fetchImpl = globalThis.fetch) {
         if (u.name === 'help') return send(chat, T.help);
         if (u.name === 'stop') { await db.rpc('stop_profile', { p_profile: me.id }); return send(chat, T.stopped); }
         if (!me.consent_at) return send(chat, T.needConsent);
-        if (u.name === 'invite') { const r = await db.rpc('create_pair_invite', { p_from_profile: me.id }); return send(chat, T.invite(r.telegram_link)); }
+        if (u.name === 'state') {
+          await db.rpc('declare_state', { p_profile: me.id, p_reset: true });
+          return askState(chat, { ...me, emotion_declared_at: null, color_declared_at: null });
+        }
+        if (u.name === 'invite') {
+          if (!declared(me)) return askState(chat, me);
+          const r = await db.rpc('create_pair_invite', { p_from_profile: me.id });
+          return send(chat, T.invite(r.telegram_link));
+        }
         if (u.name === 'end') {
           const x = await openExchangeFor(me.id);
           if (!x) return send(chat, T.nothingToEnd);
@@ -92,10 +127,11 @@ export function makeTelegram(env, db, fetchImpl = globalThis.fetch) {
         if (isConsent(u.text)) {
           await db.rpc('record_consent', { p_profile: me.id });
           await send(chat, T.consented);
-          return tryPair(me.id, chat);
+          return askState(chat, me);
         }
         return send(chat, T.needConsent);
       }
+      if (!declared(me)) return onAnswer(chat, me, u.text);
       const x = await openExchangeFor(me.id);
       if (!x) return send(chat, T.noPartner);
       await db.rpc('append_message', { p_exchange: x.id, p_from: me.id, p_text: u.text, p_witness: 'self_wrote' });
@@ -115,6 +151,8 @@ export function makeTelegram(env, db, fetchImpl = globalThis.fetch) {
     const version = (await db.select('app_settings', 'key=eq.consent_version&select=value'))[0]?.value || 'exhibit-consent-1';
     if (!r.consent_version) return send(u.chatId, consentText(r.handle, version));
     await send(u.chatId, `שוב שלום, ${r.handle}.`);
+    const me = await profileByTelegram(u.userId);
+    if (me && !declared(me)) return askState(u.chatId, me);
     return tryPair(r.profile_id, u.chatId);
   }
 

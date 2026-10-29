@@ -68,6 +68,8 @@ BEGIN
   IF jsonb_array_length(bundle->'messages') <> 2 THEN RAISE EXCEPTION 'bundle should carry 2 messages: %', bundle; END IF;
   IF jsonb_array_length(bundle->'participants') <> 2 THEN RAISE EXCEPTION 'bundle should carry 2 participants'; END IF;
   IF (bundle->'participants'->0->'consent'->>'version') IS NULL THEN RAISE EXCEPTION 'bundle should carry consent snapshot'; END IF;
+  -- the order is the exchange's (inviter first), so the same two states always give the same card
+  IF (bundle->'participants'->0->>'id')::uuid <> a OR (bundle->'participants'->1->>'id')::uuid <> b THEN RAISE EXCEPTION 'bundle participants out of order'; END IF;
   BEGIN PERFORM public.append_message(x, a, 'עוד'); RAISE EXCEPTION 'closed exchange should refuse messages';
   EXCEPTION WHEN OTHERS THEN IF SQLERRM <> 'EXCHANGE_CLOSED' THEN RAISE; END IF; END;
   INSERT INTO t VALUES ('X', x::text);
@@ -205,6 +207,66 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub', '', true);
   PERFORM set_config('request.jwt.claim.role', 'anon', true);
   RAISE NOTICE 'ok 11: me';
+END $$;
+
+-- 12. Nobody acts as someone else: a signed-in user naming another profile is refused
+--     everywhere; the service role (the Worker) may name one.
+DO $$ DECLARE victim UUID; attacker UUID := gen_random_uuid(); inv JSONB; post UUID; x UUID; msg TEXT; f TEXT;
+BEGIN
+  PERFORM set_config('request.jwt.claims', '{"role":"service_role"}', true);
+  inv := public.create_invite('נגה', 'participant', 'trust_signal');
+  victim := (public.claim_invite(inv->>'code', 9001)->>'profile_id')::uuid;
+  INSERT INTO auth.users(id, email) VALUES (attacker, 'attacker@example.test');
+
+  PERFORM set_config('request.jwt.claims', json_build_object('role', 'authenticated', 'sub', attacker)::text, true);
+  PERFORM set_config('request.jwt.claim.sub', attacker::text, true);
+  PERFORM set_config('request.jwt.claim.role', 'authenticated', true);
+  FOREACH f IN ARRAY ARRAY['record_consent', 'set_home', 'set_state', 'withdraw_post', 'create_agent', 'create_pair_invite', 'stop_profile', 'declare_state', 'claim_invite'] LOOP
+    BEGIN
+      CASE f
+        WHEN 'record_consent' THEN PERFORM public.record_consent(victim);
+        WHEN 'set_home' THEN PERFORM public.set_home('angry', 'red', victim);
+        WHEN 'set_state' THEN PERFORM public.set_state('angry', 'red', false, victim);
+        WHEN 'withdraw_post' THEN PERFORM public.withdraw_post(gen_random_uuid(), victim);
+        WHEN 'create_agent' THEN PERFORM public.create_agent('שתול', 'joy', 'yellow', victim);
+        WHEN 'create_pair_invite' THEN PERFORM public.create_pair_invite(victim);
+        WHEN 'stop_profile' THEN PERFORM public.stop_profile(victim);
+        WHEN 'declare_state' THEN PERFORM public.declare_state(victim, 'angry', 'red');
+        WHEN 'claim_invite' THEN PERFORM public.claim_invite(public.create_invite('זר', 'participant', 'trust_signal')->>'code', 9001);
+      END CASE;
+      RAISE EXCEPTION 'impersonation through % should be refused', f;
+    EXCEPTION WHEN OTHERS THEN
+      IF SQLERRM NOT LIKE 'FORBIDDEN%' THEN RAISE EXCEPTION '% refused with % instead of FORBIDDEN', f, SQLERRM; END IF;
+    END;
+  END LOOP;
+  IF (SELECT consent_at FROM public.profiles WHERE id = victim) IS NOT NULL THEN RAISE EXCEPTION 'consent was forged'; END IF;
+  IF (SELECT stopped_at FROM public.profiles WHERE id = victim) IS NOT NULL THEN RAISE EXCEPTION 'victim was stopped'; END IF;
+
+  PERFORM set_config('request.jwt.claims', '{"role":"service_role"}', true);
+  PERFORM set_config('request.jwt.claim.sub', '', true);
+  PERFORM set_config('request.jwt.claim.role', '', true);
+  PERFORM public.record_consent(victim);
+  IF (SELECT consent_at FROM public.profiles WHERE id = victim) IS NULL THEN RAISE EXCEPTION 'the service role should record consent'; END IF;
+  PERFORM set_config('request.jwt.claims', '', true);
+  RAISE NOTICE 'ok 12: no impersonation';
+END $$;
+
+-- 13. Declaring a state in the bot: one part at a time, both stamped, reset asks again.
+DO $$ DECLARE p UUID; r JSONB; inv JSONB;
+BEGIN
+  inv := public.create_invite('עמית', 'participant', 'amplifier_shapes');
+  p := (public.claim_invite(inv->>'code', 9101)->>'profile_id')::uuid;
+  r := public.declare_state(p, 'trust');
+  IF NOT (r->>'emotionDeclared')::boolean OR (r->>'colorDeclared')::boolean THEN RAISE EXCEPTION 'emotion only: %', r; END IF;
+  r := public.declare_state(p, NULL, 'Lime');
+  IF r->>'emotion' <> 'trust' OR r->>'color' <> 'lime' OR NOT (r->>'colorDeclared')::boolean THEN RAISE EXCEPTION 'both: %', r; END IF;
+  IF (SELECT emotion || '/' || color FROM public.public_profiles WHERE id = p) <> 'trust/lime' THEN RAISE EXCEPTION 'expressed state not public'; END IF;
+  BEGIN PERFORM public.declare_state(p, 'calm'); RAISE EXCEPTION 'unknown emotion should fail';
+  EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE 'INVALID_STATE%' THEN RAISE; END IF; END;
+  r := public.declare_state(p, p_reset => true);
+  IF (r->>'emotionDeclared')::boolean OR (r->>'colorDeclared')::boolean THEN RAISE EXCEPTION 'reset should clear: %', r; END IF;
+  IF r->>'emotion' <> 'trust' THEN RAISE EXCEPTION 'reset keeps the last state until a new answer'; END IF;
+  RAISE NOTICE 'ok 13: declare_state';
 END $$;
 
 ROLLBACK;

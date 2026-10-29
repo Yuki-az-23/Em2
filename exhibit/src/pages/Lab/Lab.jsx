@@ -7,7 +7,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '../../components';
-import { getChat, say, startCode } from '../../services/demo/simService';
+import { getChat, say, startCode, currentKeyboard } from '../../services/demo/simService';
 import './Lab.css';
 
 function baseId() {
@@ -24,6 +24,7 @@ function baseId() {
 
 const Pane = ({ title, chatId, messages, onSend, onHandOver, testid }) => {
   const [text, setText] = useState('');
+  const keyboard = currentKeyboard(messages);
   const list = useRef(null);
   useEffect(() => { if (list.current) list.current.scrollTop = list.current.scrollHeight; }, [messages.length]);
   const submit = (e) => {
@@ -55,6 +56,19 @@ const Pane = ({ title, chatId, messages, onSend, onHandOver, testid }) => {
           );
         })}
       </ol>
+      {keyboard && (
+        <div className="lab-keyboard" role="group" aria-label={`כפתורים מהבוט ל${title}`}>
+          {keyboard.map((row, r) => (
+            <div key={r} className="lab-keyboard__row">
+              {row.map((label) => (
+                <button key={label} type="button" className="lab-keyboard__key" onClick={() => onSend(label)} data-testid={`${testid}-key`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
       <form className="lab-pane__form" onSubmit={submit}>
         <label className="sr-only" htmlFor={`say-${chatId}`}>הודעה מ{title}</label>
         <input id={`say-${chatId}`} className="lab-pane__input" value={text} onChange={(e) => setText(e.target.value)}

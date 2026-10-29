@@ -30,13 +30,25 @@ test('door, simulator, wall', async ({ page }) => {
     await expect(pane).toContainText(text);
   };
 
+  const tap = async (pane, testid, label) => {
+    await pane.getByTestId(`${testid}-key`).filter({ hasText: label }).click();
+    await expect(pane).toContainText(label);
+  };
+
   await sayIn(a, 'pane-a', 'מסכים');
-  await expect(a).toContainText('נרשם');
+  await expect(a).toContainText('איזה רגש');
+  await tap(a, 'pane-a', 'אמון');
+  await expect(a).toContainText('ואיזה צבע?');
+  await tap(a, 'pane-a', 'ליים');
+  await expect(a).toContainText('נרשם: אמון, ליים');
+  await expect(a.getByTestId('pane-a-key')).toHaveCount(0);
   await sayIn(a, 'pane-a', '/invite');
   await a.getByTestId('hand-over').click();
   await expect(b).toContainText('קוראים לך');
   const handleB = await handleIn(b);
   await sayIn(b, 'pane-b', 'מסכים');
+  await tap(b, 'pane-b', 'עצב');
+  await tap(b, 'pane-b', 'כחול');
   await expect(b).toContainText(`${handleA} נכנס`);
   await expect(a).toContainText(`${handleB} נכנס`);
 
@@ -47,9 +59,10 @@ test('door, simulator, wall', async ({ page }) => {
   await sayIn(a, 'pane-a', '/end');
   await expect(b).toContainText('השיחה נסגרה');
 
-  // the wall: declare a state, find the card, embrace it
+  // the wall: enter at the card's state (trust/lime and sad/blue meet at feared/green), find it, embrace it
   await page.goto('/wall');
-  await page.getByRole('button', { name: /^להיכנס כ/ }).click();
+  await page.evaluate(() => localStorage.setItem('hermes.visitor', JSON.stringify({ emotion: 'feared', color: 'green' })));
+  await page.reload();
   const card = page.getByTestId('wall-card').filter({ hasText: handleA }).filter({ hasText: handleB });
   await expect(card).toBeVisible({ timeout: 30_000 });
   await expect(card).not.toContainText('אלה');

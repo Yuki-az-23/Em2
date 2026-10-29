@@ -84,7 +84,12 @@ export function startHub({ port, host = '127.0.0.1', postgrestUrl, workerEnv, lo
       const tg = /^\/fake-telegram\/bot[^/]+\/(\w+)$/.exec(p);
       if (tg) {
         const body = JSON.parse(String(await readBody(req) || '{}'));
-        if (tg[1] === 'sendMessage') chat(body.chat_id).push({ from: 'bot', text: String(body.text || ''), at: new Date().toISOString() });
+        if (tg[1] === 'sendMessage') {
+          // A reply keyboard stays until the bot removes it, as in Telegram.
+          const rm = body.reply_markup || {};
+          const keyboard = Array.isArray(rm.keyboard) ? rm.keyboard.map((row) => row.map((b) => String(b.text ?? b))) : undefined;
+          chat(body.chat_id).push({ from: 'bot', text: String(body.text || ''), at: new Date().toISOString(), keyboard, removeKeyboard: rm.remove_keyboard === true || undefined });
+        }
         return send(res, 200, { ok: true, result: { message_id: Date.now() } });
       }
 
