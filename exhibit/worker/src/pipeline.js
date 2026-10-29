@@ -39,11 +39,11 @@ export async function runPipeline(bundle, deps) {
   let card;
   try {
     const raw = exchange.messages.map((m) => m.text).join('\n');
-    const red = await ai.redact(raw);
+    const red = await ai.redact(raw, { names: exchange.participants.map((p) => p.name).filter(Boolean) });
     const para = red && red.confirmed ? await ai.paraphrase(red.text) : '';
     const r = exchangeToWallCard(exchange, { redact: () => red, paraphrase: () => para, now: deps.now });
     if (!r.ok) return fail(r.error.code, r.error.detail);
-    card = r.card;
+    card = { ...r.card, provenance: { ...r.card.provenance, model: ai.textModel || 'unknown' } };
   } catch (e) { return fail('PIPELINE_ERROR', e.message); }
 
   // 3. publish first, draw after: a card without a picture is still a card

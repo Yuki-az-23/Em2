@@ -9,13 +9,16 @@ const REDACT_SCHEMA = {
   properties: { text: { type: 'string' }, removed: { type: 'array', items: { type: 'string' } } }
 };
 
+import { makeFakeAi } from './fakeAi.js';
+
 export function makeAi(env) {
+  if (env.AI_MODE === 'fake') return makeFakeAi();
   const ai = env.AI;
   const textModel = env.AI_TEXT_MODEL || '@cf/openai/gpt-oss-120b';
   const imageModel = env.AI_IMAGE_MODEL || '@cf/black-forest-labs/flux-1-schnell';
 
   /** @returns {Promise<{text:string, removed:string[], confirmed:boolean}>} */
-  async function redact(text) {
+  async function redact(text) { // the fake also takes {names}; the model finds names itself
     if (!ai) return { text: '', removed: [], confirmed: false };
     const r = await ai.run(textModel, {
       messages: [

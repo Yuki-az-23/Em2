@@ -42,12 +42,14 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
                  WHERE n.nspname = 'auth' AND p.proname = 'uid') THEN
     CREATE FUNCTION auth.uid() RETURNS UUID LANGUAGE sql STABLE AS
-      $f$ SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid $f$;
+      $f$ SELECT NULLIF(COALESCE(NULLIF(current_setting('request.jwt.claim.sub', true), ''),
+                              NULLIF(current_setting('request.jwt.claims', true), '')::json->>'sub'), '')::uuid $f$;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
                  WHERE n.nspname = 'auth' AND p.proname = 'role') THEN
     CREATE FUNCTION auth.role() RETURNS TEXT LANGUAGE sql STABLE AS
-      $f$ SELECT COALESCE(NULLIF(current_setting('request.jwt.claim.role', true), ''), 'anon') $f$;
+      $f$ SELECT COALESCE(NULLIF(current_setting('request.jwt.claim.role', true), ''),
+                       NULLIF(current_setting('request.jwt.claims', true), '')::json->>'role', 'anon') $f$;
   END IF;
 END $$;
 

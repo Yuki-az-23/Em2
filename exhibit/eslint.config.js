@@ -5,7 +5,12 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'worker/dist']),
+  globalIgnores(['dist', 'worker/dist', '.demo', 'test-results', 'playwright-report']),
+  {
+    files: ['demo/**/*.mjs', 'e2e/**/*.js', 'playwright.config.js'],
+    extends: [js.configs.recommended],
+    languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: { ...globals.node } },
+  },
   {
     files: ['packages/**/*.js', 'worker/**/*.js'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },

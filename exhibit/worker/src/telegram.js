@@ -24,10 +24,11 @@ const T = {
 
 export function makeTelegram(env, db, fetchImpl = globalThis.fetch) {
   const token = env.TELEGRAM_BOT_TOKEN;
+  const apiBase = String(env.TELEGRAM_API_BASE || 'https://api.telegram.org').replace(/\/$/, '');
 
   async function send(chatId, text) {
     if (!token) return;
-    await fetchImpl(`https://api.telegram.org/bot${token}/sendMessage`, {
+    await fetchImpl(`${apiBase}/bot${token}/sendMessage`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true })
     });

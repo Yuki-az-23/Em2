@@ -1,5 +1,5 @@
 {
-  "name": "mobile-web",
+  "name": "hermes-exhibit",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -14,7 +14,11 @@
     "test:coverage": "vitest run --coverage",
     "test:bench": "vitest bench",
     "test:core": "vitest run packages/core src/services/rpc",
-    "test:worker": "npm --workspace worker test"
+    "test:worker": "npm --workspace worker test",
+    "demo": "node demo/run.mjs",
+    "demo:check": "node demo/run.mjs --no-site --scenario",
+    "demo:scenario": "node demo/scenario.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.3",
