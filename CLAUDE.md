@@ -53,6 +53,7 @@ python3 -m unittest discover -s scripts/tests -t .   # tests for the seed script
 | `test/` | `contract`, `regression`, `smoke`, `integration` (and later `security`) |
 | `deploy/` | Dockerfile, docker-compose, Kubernetes manifests for the GitOps PR |
 | `web/` | observatory UI (from M6); currently only `src/tokens.css` |
+| `exhibit/` | the art exhibit, a separate React + Supabase + Cloudflare Worker app with its own tests and CI; see `exhibit/README.md` and ADR-016 |
 | `scripts/` | seed coordination scripts (Python, stdlib only) |
 
 ## Rules that are easy to break

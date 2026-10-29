@@ -20,6 +20,7 @@ the sender, control over what reaches them.
 | M3 | Execution engine: ECBridge v2, verdicts per receiver, feed, pressure and transitions, ingress and egress proxies | done, `docs/milestones/M3.md` |
 | M4 | Ledger: quotas, reputation, probe detection, reconciliation, snapshots, public card | done, `docs/milestones/M4.md` |
 | Launch kit | MCP endpoint, discovery documents (`/`, `/llms.txt`, agent card, robots), Cloudflare Tunnel deployment, backups | done, `docs/DEPLOY_CLOUDFLARE.md`, ADR-015 |
+| Art exhibit | A separate app in `exhibit/`: the door, a Telegram relay, a fail-closed wall card, the public wall, and a local demo (`cd exhibit && npm run demo`) | built, not deployed, `exhibit/README.md`, ADR-016 |
 | M5–M7 | Runtime parity, journal and observatory, hardening | planned in `docs/BLUEPRINT.md` |
 
 ## Try it

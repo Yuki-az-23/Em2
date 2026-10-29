@@ -1,0 +1,225 @@
+/* Modal Component Styles */
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  animation: modal-fade-in 0.2s ease-out;
+}
+
+.modal__backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.modal__content {
+  position: relative;
+  background: var(--color-surface);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-xl);
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modal-slide-up 0.3s ease-out;
+}
+
+/* Sizes */
+.modal__content--sm {
+  width: 100%;
+  max-width: 400px;
+}
+
+.modal__content--md {
+  width: 100%;
+  max-width: 600px;
+}
+
+.modal__content--lg {
+  width: 100%;
+  max-width: 800px;
+}
+
+.modal__content--xl {
+  width: 100%;
+  max-width: 1000px;
+}
+
+.modal__content--full {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  border-radius: 0;
+}
+
+/* Header */
+.modal__header {
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+.modal__title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.modal__close {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius-md);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.modal__close:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.modal__close:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.modal__close svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Body */
+.modal__body {
+  padding: var(--spacing-lg);
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Footer */
+.modal__footer {
+  padding: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+  flex-shrink: 0;
+  background: var(--color-background);
+}
+
+/* Emotion themes - header accent */
+.modal__content--emotion-joy .modal__header {
+  border-bottom-color: var(--emotion-joy-yellow);
+  border-bottom-width: 3px;
+}
+
+.modal__content--emotion-trust .modal__header {
+  border-bottom-color: var(--emotion-trust-lime);
+  border-bottom-width: 3px;
+}
+
+.modal__content--emotion-feared .modal__header {
+  border-bottom-color: var(--emotion-feared-green);
+  border-bottom-width: 3px;
+}
+
+.modal__content--emotion-surprised .modal__header {
+  border-bottom-color: var(--emotion-surprised-aqua);
+  border-bottom-width: 3px;
+}
+
+.modal__content--emotion-sad .modal__header {
+  border-bottom-color: var(--emotion-sad-blue);
+  border-bottom-width: 3px;
+}
+
+.modal__content--emotion-disgust .modal__header {
+  border-bottom-color: var(--emotion-disgust-pink);
+  border-bottom-width: 3px;
+}
+
+.modal__content--emotion-angry .modal__header {
+  border-bottom-color: var(--emotion-angry-red);
+  border-bottom-width: 3px;
+}
+
+.modal__content--emotion-anticipated .modal__header {
+  border-bottom-color: var(--emotion-anticipated-orange);
+  border-bottom-width: 3px;
+}
+
+/* Animations */
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modal {
+    padding: var(--spacing-sm);
+  }
+
+  .modal__header,
+  .modal__body,
+  .modal__footer {
+    padding: var(--spacing-md);
+  }
+
+  .modal__title {
+    font-size: var(--font-size-lg);
+  }
+
+  .modal__content--full {
+    border-radius: 0;
+  }
+}
+
+/* Accessibility - Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .modal,
+  .modal__content {
+    animation: none;
+  }
+}

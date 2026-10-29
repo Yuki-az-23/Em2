@@ -1,0 +1,11 @@
+/**
+ * EM2 Application Entry Styles
+ *
+ * This file imports the complete design system and global styles.
+ */
+
+/* Import Design System */
+@import './styles/global.css';
+
+/* Import App-level styles */
+@import './App.css';

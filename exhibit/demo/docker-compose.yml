@@ -1,0 +1,58 @@
+# The light local demo in containers, for a machine with Docker:
+#   docker compose -f exhibit/demo/docker-compose.yml up
+# then open http://localhost:5173 (the door), /lab (the simulator), /wall.
+# Postgres and PostgREST run as images; the demo container applies the schema,
+# the demo roles and the seeded wall, runs the hub (Supabase gateway + the
+# Hermes worker + a fake Telegram) and the site. Nothing here is for production.
+name: hermes-demo
+
+x-secret: &jwt "hermes-demo-jwt-secret-change-me-at-least-32-chars"
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: hermes-demo
+      POSTGRES_DB: hermes
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d hermes"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  rest:
+    image: postgrest/postgrest:v12.2.3
+    # Retries until the demo container has created the authenticator role.
+    environment:
+      PGRST_DB_URI: postgres://authenticator:authenticator-demo@db:5432/hermes
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: *jwt
+      PGRST_SERVER_PORT: "3000"
+    depends_on:
+      db: {condition: service_healthy}
+
+  demo:
+    image: node:22-bookworm
+    working_dir: /app
+    command: >-
+      sh -c "apt-get update -qq && apt-get install -y -qq postgresql-client >/dev/null &&
+             npm install --no-audit --no-fund && node demo/run.mjs"
+    volumes:
+      - ..:/app
+      - /app/node_modules
+      - /app/worker/node_modules
+      - /app/packages/core/node_modules
+    environment:
+      DEMO_DATABASE_URL: postgres://postgres:hermes-demo@db:5432/hermes
+      DEMO_POSTGREST_URL: http://rest:3000
+      DEMO_JWT_SECRET: *jwt
+      DEMO_BIND: 0.0.0.0
+      DEMO_PUBLIC_HUB: http://localhost:54321
+      DEMO_PUBLIC_SITE: http://localhost:5173
+    ports:
+      - "127.0.0.1:54321:54321"
+      - "127.0.0.1:5173:5173"
+    depends_on:
+      db: {condition: service_healthy}
+      rest: {condition: service_started}

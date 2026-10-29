@@ -1,0 +1,186 @@
+/* EmotionPicker Component Styles */
+
+.emotion-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.emotion-picker__label {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.emotion-picker__options {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+/* Layouts */
+.emotion-picker--grid .emotion-picker__options {
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+}
+
+.emotion-picker--list .emotion-picker__options {
+  grid-template-columns: 1fr;
+}
+
+.emotion-picker--inline .emotion-picker__options {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+/* Option button */
+.emotion-picker__option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: var(--font-family-base);
+}
+
+.emotion-picker__option:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.emotion-picker__option:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.emotion-picker__option:active {
+  transform: translateY(0);
+}
+
+/* Sizes */
+.emotion-picker__option--sm {
+  padding: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.emotion-picker__option--md {
+  padding: var(--spacing-md);
+  font-size: var(--font-size-base);
+}
+
+.emotion-picker__option--lg {
+  padding: var(--spacing-lg);
+  font-size: var(--font-size-lg);
+}
+
+/* Icon */
+.emotion-picker__icon {
+  font-size: 2em;
+  line-height: 1;
+}
+
+/* Name */
+.emotion-picker__name {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* Selected state */
+.emotion-picker__option--selected {
+  border-width: 3px;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* Emotion-specific colors */
+.emotion-picker__option--joy {
+  border-color: var(--emotion-joy-yellow);
+}
+
+.emotion-picker__option--joy.emotion-picker__option--selected {
+  background: var(--emotion-joy-yellow);
+  color: #000;
+}
+
+.emotion-picker__option--trust {
+  border-color: var(--emotion-trust-lime);
+}
+
+.emotion-picker__option--trust.emotion-picker__option--selected {
+  background: var(--emotion-trust-lime);
+  color: #000;
+}
+
+.emotion-picker__option--feared {
+  border-color: var(--emotion-feared-green);
+}
+
+.emotion-picker__option--feared.emotion-picker__option--selected {
+  background: var(--emotion-feared-green);
+  color: #fff;
+}
+
+.emotion-picker__option--surprised {
+  border-color: var(--emotion-surprised-aqua);
+}
+
+.emotion-picker__option--surprised.emotion-picker__option--selected {
+  background: var(--emotion-surprised-aqua);
+  color: #000;
+}
+
+.emotion-picker__option--sad {
+  border-color: var(--emotion-sad-blue);
+}
+
+.emotion-picker__option--sad.emotion-picker__option--selected {
+  background: var(--emotion-sad-blue);
+  color: #fff;
+}
+
+.emotion-picker__option--disgust {
+  border-color: var(--emotion-disgust-pink);
+}
+
+.emotion-picker__option--disgust.emotion-picker__option--selected {
+  background: var(--emotion-disgust-pink);
+  color: #fff;
+}
+
+.emotion-picker__option--angry {
+  border-color: var(--emotion-angry-red);
+}
+
+.emotion-picker__option--angry.emotion-picker__option--selected {
+  background: var(--emotion-angry-red);
+  color: #fff;
+}
+
+.emotion-picker__option--anticipated {
+  border-color: var(--emotion-anticipated-orange);
+}
+
+.emotion-picker__option--anticipated.emotion-picker__option--selected {
+  background: var(--emotion-anticipated-orange);
+  color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .emotion-picker--grid .emotion-picker__options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .emotion-picker__icon {
+    font-size: 1.5em;
+  }
+
+  .emotion-picker__option--lg {
+    padding: var(--spacing-md);
+    font-size: var(--font-size-base);
+  }
+}

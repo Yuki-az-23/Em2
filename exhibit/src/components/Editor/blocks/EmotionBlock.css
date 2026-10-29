@@ -1,0 +1,330 @@
+/**
+ * EmotionBlock Styles
+ *
+ * Custom EditorJS block for emotion expression
+ */
+
+/* ============================================
+   BASE BLOCK STYLES
+   ============================================ */
+
+.emotion-block {
+  padding: var(--space-4);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--color-gray-200);
+  margin: var(--space-4) 0;
+}
+
+/* ============================================
+   EMOTION BADGE
+   ============================================ */
+
+.emotion-block__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--badge-bg);
+  border: 2px solid var(--badge-border);
+  border-radius: var(--radius-full);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-900);
+  transition: all var(--transition-fast);
+}
+
+.emotion-block__icon {
+  font-size: var(--font-size-lg);
+  line-height: 1;
+}
+
+.emotion-block__name {
+  text-transform: capitalize;
+}
+
+/* Emotion-specific badge colors */
+.emotion-block__badge[data-emotion="joy"] {
+  --badge-bg: rgba(255, 255, 0, 0.1);
+  --badge-border: var(--emotion-joy-yellow);
+}
+
+.emotion-block__badge[data-emotion="trust"] {
+  --badge-bg: rgba(0, 255, 0, 0.1);
+  --badge-border: var(--emotion-trust-lime);
+}
+
+.emotion-block__badge[data-emotion="feared"] {
+  --badge-bg: rgba(0, 128, 0, 0.1);
+  --badge-border: var(--emotion-feared-green);
+}
+
+.emotion-block__badge[data-emotion="surprised"] {
+  --badge-bg: rgba(0, 255, 255, 0.1);
+  --badge-border: var(--emotion-surprised-aqua);
+}
+
+.emotion-block__badge[data-emotion="sad"] {
+  --badge-bg: rgba(0, 0, 255, 0.1);
+  --badge-border: var(--emotion-sad-blue);
+}
+
+.emotion-block__badge[data-emotion="disgust"] {
+  --badge-bg: rgba(255, 192, 203, 0.1);
+  --badge-border: var(--emotion-disgust-pink);
+}
+
+.emotion-block__badge[data-emotion="angry"] {
+  --badge-bg: rgba(255, 0, 0, 0.1);
+  --badge-border: var(--emotion-angry-red);
+}
+
+.emotion-block__badge[data-emotion="anticipated"] {
+  --badge-bg: rgba(255, 165, 0, 0.1);
+  --badge-border: var(--emotion-anticipated-orange);
+}
+
+/* ============================================
+   TEXT INPUT
+   ============================================ */
+
+.emotion-block__input {
+  width: 100%;
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family-base);
+  color: var(--color-gray-900);
+  background: var(--color-white);
+  transition: border-color var(--transition-fast);
+}
+
+.emotion-block__input:focus {
+  outline: none;
+  border-color: var(--color-gray-500);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+.emotion-block__input::placeholder {
+  color: var(--color-gray-500);
+}
+
+/* ============================================
+   TEXT DISPLAY (READ-ONLY)
+   ============================================ */
+
+.emotion-block__text {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-gray-700);
+}
+
+/* ============================================
+   EMOTION PICKER
+   ============================================ */
+
+.emotion-block__picker {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-gray-200);
+}
+
+.emotion-block__picker-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-700);
+  margin-bottom: var(--space-3);
+}
+
+.emotion-block__picker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+}
+
+/* ============================================
+   PICKER BUTTONS
+   ============================================ */
+
+.emotion-block__picker-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-2);
+  background: var(--color-white);
+  border: 2px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: var(--font-family-base);
+}
+
+.emotion-block__picker-button:hover {
+  background: var(--color-gray-50);
+  border-color: var(--color-gray-300);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.emotion-block__picker-button:active {
+  transform: translateY(0);
+}
+
+.emotion-block__picker-icon {
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+}
+
+.emotion-block__picker-name {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray-700);
+  text-align: center;
+}
+
+/* Active state */
+.emotion-block__picker-button--active {
+  background: var(--active-bg);
+  border-color: var(--active-border);
+  box-shadow: 0 0 0 3px var(--active-shadow);
+}
+
+.emotion-block__picker-button--active .emotion-block__picker-name {
+  color: var(--color-gray-900);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Emotion-specific active states */
+.emotion-block__picker-button[data-emotion="joy"].emotion-block__picker-button--active {
+  --active-bg: rgba(255, 255, 0, 0.1);
+  --active-border: var(--emotion-joy-yellow);
+  --active-shadow: rgba(255, 255, 0, 0.2);
+}
+
+.emotion-block__picker-button[data-emotion="trust"].emotion-block__picker-button--active {
+  --active-bg: rgba(0, 255, 0, 0.1);
+  --active-border: var(--emotion-trust-lime);
+  --active-shadow: rgba(0, 255, 0, 0.2);
+}
+
+.emotion-block__picker-button[data-emotion="feared"].emotion-block__picker-button--active {
+  --active-bg: rgba(0, 128, 0, 0.1);
+  --active-border: var(--emotion-feared-green);
+  --active-shadow: rgba(0, 128, 0, 0.2);
+}
+
+.emotion-block__picker-button[data-emotion="surprised"].emotion-block__picker-button--active {
+  --active-bg: rgba(0, 255, 255, 0.1);
+  --active-border: var(--emotion-surprised-aqua);
+  --active-shadow: rgba(0, 255, 255, 0.2);
+}
+
+.emotion-block__picker-button[data-emotion="sad"].emotion-block__picker-button--active {
+  --active-bg: rgba(0, 0, 255, 0.1);
+  --active-border: var(--emotion-sad-blue);
+  --active-shadow: rgba(0, 0, 255, 0.2);
+}
+
+.emotion-block__picker-button[data-emotion="disgust"].emotion-block__picker-button--active {
+  --active-bg: rgba(255, 192, 203, 0.1);
+  --active-border: var(--emotion-disgust-pink);
+  --active-shadow: rgba(255, 192, 203, 0.2);
+}
+
+.emotion-block__picker-button[data-emotion="angry"].emotion-block__picker-button--active {
+  --active-bg: rgba(255, 0, 0, 0.1);
+  --active-border: var(--emotion-angry-red);
+  --active-shadow: rgba(255, 0, 0, 0.2);
+}
+
+.emotion-block__picker-button[data-emotion="anticipated"].emotion-block__picker-button--active {
+  --active-bg: rgba(255, 165, 0, 0.1);
+  --active-border: var(--emotion-anticipated-orange);
+  --active-shadow: rgba(255, 165, 0, 0.2);
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 640px) {
+  .emotion-block {
+    padding: var(--space-3);
+  }
+
+  .emotion-block__picker-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-1);
+  }
+
+  .emotion-block__picker-button {
+    padding: var(--space-2);
+  }
+
+  .emotion-block__picker-icon {
+    font-size: var(--font-size-xl);
+  }
+
+  .emotion-block__picker-name {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .emotion-block__picker-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .emotion-block__picker-button,
+  .emotion-block__badge {
+    transition: none;
+  }
+
+  .emotion-block__picker-button:hover {
+    transform: none;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .emotion-block {
+    border-width: 3px;
+  }
+
+  .emotion-block__badge {
+    border-width: 3px;
+  }
+
+  .emotion-block__picker-button {
+    border-width: 3px;
+  }
+
+  .emotion-block__picker-button:focus {
+    outline: 3px solid var(--color-gray-900);
+    outline-offset: 2px;
+  }
+}
+
+/* Focus visible for keyboard navigation */
+.emotion-block__picker-button:focus-visible {
+  outline: 2px solid var(--color-gray-900);
+  outline-offset: 2px;
+}
+
+.emotion-block__input:focus-visible {
+  outline: 2px solid var(--color-gray-900);
+  outline-offset: 2px;
+}
