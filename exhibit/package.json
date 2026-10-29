@@ -44,17 +44,18 @@
     "@editorjs/paragraph": "^2.11.7",
     "@editorjs/quote": "^2.7.6",
     "@editorjs/table": "^2.4.5",
+    "@hermes/core": "*",
     "@supabase/supabase-js": "^2.75.0",
     "@weekwood/editorjs-video": "^1.0.2",
     "editorjs-react-renderer": "^3.5.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.4",
-    "react-swipeable": "^7.0.2",
-    "@hermes/core": "*"
+    "react-swipeable": "^7.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
+    "@playwright/test": "1.56.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",

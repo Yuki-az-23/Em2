@@ -5,6 +5,7 @@
  */
 import { supabase } from '../supabase/client.js';
 import { parseRpcError } from '../rpc/errors.js';
+import { isDemo } from '../demo/simService.js';
 
 export const KIND = Object.freeze({ TRIGGER: 'trigger', BRACE: 'brace' });
 
@@ -65,6 +66,7 @@ export async function react({ postId, kind, emotion, color, text = null, apiKey 
  * unsubscribe function. Silent when realtime is unavailable.
  */
 export function subscribePosts(onChange, onStatus = () => {}) {
+  if (isDemo()) { onStatus('down'); return () => {}; } // the light demo has no realtime
   let channel;
   try {
     channel = supabase

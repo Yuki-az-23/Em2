@@ -45,7 +45,7 @@ const Pane = ({ title, chatId, messages, onSend, onHandOver, testid }) => {
           const code = m.from === 'bot' ? startCode(m.text) : null;
           return (
             <li key={i} className={`lab-msg lab-msg--${m.from}`}>
-              <span className="lab-msg__text">{m.text}</span>
+              <span className="lab-msg__text" dir="auto">{m.text}</span>
               {code && onHandOver && (
                 <Button type="button" variant="secondary" size="sm" onClick={() => onHandOver(code)} data-testid="hand-over">
                   פתח את הקישור כאדם השני
@@ -58,7 +58,7 @@ const Pane = ({ title, chatId, messages, onSend, onHandOver, testid }) => {
       <form className="lab-pane__form" onSubmit={submit}>
         <label className="sr-only" htmlFor={`say-${chatId}`}>הודעה מ{title}</label>
         <input id={`say-${chatId}`} className="lab-pane__input" value={text} onChange={(e) => setText(e.target.value)}
-          placeholder="כתוב לבוט, או /end, /withdraw, /invite" autoComplete="off" data-testid={`${testid}-input`} />
+          placeholder="כתוב לבוט, או /end, /withdraw, /invite" autoComplete="off" dir="auto" data-testid={`${testid}-input`} />
         <Button type="submit" variant="primary">שלח</Button>
       </form>
     </section>

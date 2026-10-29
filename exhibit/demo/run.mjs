@@ -140,7 +140,8 @@ async function main() {
 
   if (!args.has('--no-site')) {
     say('site');
-    const vite = spawn('npx', ['vite', '--host', bind, '--port', String(PORTS.site), '--strictPort'], {
+    const viteBin = join(ROOT, 'node_modules', 'vite', 'bin', 'vite.js');
+    const vite = spawn(process.execPath, [viteBin, '--host', bind, '--port', String(PORTS.site), '--strictPort'], {
       cwd: ROOT, stdio: 'inherit',
       env: { ...process.env, VITE_SUPABASE_URL: publicHub, VITE_SUPABASE_ANON_KEY: keys.anonKey, VITE_DEMO_HUB: publicHub }
     });

@@ -55,3 +55,38 @@ jobs:
         run: psql -h localhost -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f supabase/smoke.sql
       - name: schema.sql is idempotent (applies twice)
         run: psql -h localhost -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+      - name: the demo compose file parses
+        run: docker compose -f demo/docker-compose.yml config --quiet
+
+  e2e:
+    name: exhibit end to end (scenario and browser)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hermes
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      DEMO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/hermes
+      CI: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: scenario (door, consent, relay, card, inertia, withdrawal, rate limit)
+        run: npm run demo:check
+      - name: browser (door, simulator, wall)
+        run: npx playwright test
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: exhibit/playwright-report
+          retention-days: 7

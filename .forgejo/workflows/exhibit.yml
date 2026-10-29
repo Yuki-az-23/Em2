@@ -52,3 +52,29 @@ jobs:
         run: psql -h postgres -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f supabase/smoke.sql
       - name: schema.sql is idempotent (applies twice)
         run: psql -h postgres -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+
+  e2e:
+    name: exhibit end to end (scenario and browser)
+    runs-on: docker
+    container: node:22-bookworm
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hermes
+    env:
+      DEMO_DATABASE_URL: postgres://postgres:postgres@postgres:5432/hermes
+      CI: '1'
+    steps:
+      - run: apt-get update -qq && apt-get install -y -qq postgresql-client xz-utils >/dev/null
+        working-directory: /
+      - uses: actions/checkout@v4
+      - name: Wait for Postgres
+        run: for i in $(seq 1 60); do pg_isready -h postgres -U postgres && exit 0; sleep 1; done; exit 1
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: scenario (door, consent, relay, card, inertia, withdrawal, rate limit)
+        run: npm run demo:check
+      - name: browser (door, simulator, wall)
+        run: npx playwright test
