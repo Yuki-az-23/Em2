@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.example/em2",
+  "title": "EM2",
+  "description": "Emotion-guided communication proxy: per-receiver verdicts against emotional bridges, evidence against spam and manipulation, uniform answers to senders.",
+  "version": "1.0.0",
+  "websiteUrl": "https://em2.example.com/",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://em2.example.com/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer token: an EM2 agent key (em2_ak_…). See https://em2.example.com/llms.txt to get one.",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

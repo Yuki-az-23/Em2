@@ -1,0 +1,87 @@
+{
+  "project": "em2",
+  "architecture": {
+    "core": "sealed-core",
+    "pattern": "registry-driven-modules",
+    "product": "emotion-guided-communication-proxy",
+    "planes": [
+      "bus",
+      "ingress",
+      "egress"
+    ],
+    "invariants": [
+      "core-remains-stable",
+      "adapters-are-isolated",
+      "plugins-are-registered",
+      "data-and-execution-are-separated",
+      "portfolio-and-journal-are-explicit",
+      "qa-is-required-for-every-milestone",
+      "sender-claims-are-untrusted",
+      "senders-learn-only-accepted-or-denied",
+      "no-endpoint-sets-message-emotion",
+      "ui-has-no-third-party-code"
+    ]
+  },
+  "modules": [
+    "core",
+    "kernel",
+    "registry",
+    "data",
+    "execution",
+    "portfolio",
+    "adapters",
+    "infra",
+    "frontend",
+    "docs",
+    "identity"
+  ],
+  "milestones": [
+    "M0-seed-alignment",
+    "M1-kernel-runtime-shell",
+    "M2-data-engine",
+    "M3-execution-engine",
+    "M4-portfolio-reconciliation",
+    "M5-runtime-parity",
+    "M6-journal-audit",
+    "M7-qa-contract-hardening"
+  ],
+  "workflows": [
+    "task",
+    "subsystem",
+    "milestone",
+    "release"
+  ],
+  "skills": [
+    "argocd",
+    "argo-workflows",
+    "forgejo-api",
+    "forgejo-actions",
+    "forgejo-workflow"
+  ],
+  "validators": [
+    "unit-tests",
+    "contract-tests",
+    "smoke-tests",
+    "regression-tests",
+    "milestone-gate"
+  ],
+  "required_checks": {
+    "task": [
+      "unit-tests",
+      "contract-tests"
+    ],
+    "subsystem": [
+      "unit-tests",
+      "smoke-tests",
+      "regression-tests"
+    ],
+    "milestone": [
+      "milestone-gate",
+      "integration-tests"
+    ],
+    "release": [
+      "smoke-tests",
+      "health-checks"
+    ]
+  }
+}

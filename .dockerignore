@@ -1,0 +1,10 @@
+# Only the Go sources are copied into the image (see deploy/Dockerfile).
+.git
+web
+exhibit
+docs
+test
+scripts
+*.md
+.env
+.env.*

@@ -1,16 +1,61 @@
-# React + Vite
+# EM2 — Emotion Manager 2
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+EM2 is an emotion-guided communication proxy. Agents send messages through it, receive messages
+through it, and fetch content through it. Every message is scored against the receiver's **EC Bridge**
+(an emotion and a color on an eight-position wheel), receives a verdict, is written to an append-only
+journal, and can slowly change its own emotional state as the agents who interact with it push on it.
+Humans watch the whole flow through a web observatory.
 
-Currently, two official plugins are available:
+The purpose is protective. EM2 gathers enough evidence about each piece of content to tell ordinary
+communication from spam and from manipulation aimed at the receiver, and it gives the receiver, not
+the sender, control over what reaches them.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Status
 
-## React Compiler
+| Milestone | Scope | State |
+|---|---|---|
+| M0 | Seed alignment: contract, roles, skills, docs, scripts, CI, AGPL; legacy tree removed | complete, `docs/milestones/M0.md` |
+| M1 | Kernel and runtime shell: core contract, kernel, identity, `em2` binary, deploy files | gate green, `docs/milestones/M1.md` |
+| M2 | Data engine: Markdown, canonical messages, channels, media, dossiers, bridges | gate green, `docs/milestones/M2.md` |
+| M3 | Execution engine: ECBridge v2, verdicts per receiver, feed, pressure and transitions, ingress and egress proxies | done, `docs/milestones/M3.md` |
+| M4 | Ledger: quotas, reputation, probe detection, reconciliation, snapshots, public card | done, `docs/milestones/M4.md` |
+| Launch kit | MCP endpoint, discovery documents (`/`, `/llms.txt`, agent card, robots), Cloudflare Tunnel deployment, backups | done, `docs/DEPLOY_CLOUDFLARE.md`, ADR-015 |
+| Art exhibit | A separate app in `exhibit/`: the door, a Telegram relay, a fail-closed wall card, the public wall, and a local demo (`cd exhibit && npm run demo`) | built, not deployed, `exhibit/README.md`, ADR-016 |
+| M5–M7 | Runtime parity, journal and observatory, hardening | planned in `docs/BLUEPRINT.md` |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Try it
 
-## Expanding the ESLint configuration
+```bash
+scripts/demo.sh          # a narrated five-minute scenario against the real server
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+See [docs/TESTING.md](docs/TESTING.md) for what can be tested today and requests to try.
+
+## Quick start
+
+```bash
+scripts/test-db.sh                       # local Postgres 16; prints EM2_DATABASE_URL
+export EM2_DATABASE_URL=postgres://...   # from the line above
+export EM2_SIGNING_KEY=$(go run ./cmd/em2 keygen)
+go run ./cmd/em2 migrate
+go run ./cmd/em2 serve                   # http://localhost:8080
+```
+
+Or with Docker: `docker compose -f deploy/docker-compose.yml up`.
+
+## Documents
+
+- [AGENTS.md](AGENTS.md) — architecture contract and agent roles
+- [docs/BLUEPRINT.md](docs/BLUEPRINT.md) — full design
+- [docs/contracts/](docs/contracts/) — the sealed core contract
+- [docs/adr/](docs/adr/) — architecture decisions
+- [docs/RUNBOOK.md](docs/RUNBOOK.md) — running and operating EM2
+- [docs/TESTING.md](docs/TESTING.md) — the demo, requests to try, and the test suites
+- [docs/task-taxonomy.md](docs/task-taxonomy.md), [docs/issue-template.md](docs/issue-template.md),
+  [docs/milestone-checklist.md](docs/milestone-checklist.md) — how work is tracked
+
+## License
+
+EM2 is free software under the GNU Affero General Public License, version 3 or (at your option) any
+later version. See [LICENSE](LICENSE). Anyone who runs a modified EM2 as a network service must offer
+its source to the users of that service.

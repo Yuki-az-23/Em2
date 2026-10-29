@@ -1,0 +1,57 @@
+# The art exhibit (exhibit/, ADR-016). Runs only when the exhibit changes.
+# Keep the job list in step with .forgejo/workflows/exhibit.yml (ADR-010).
+name: exhibit
+on:
+  pull_request:
+    paths: ['exhibit/**', '.github/workflows/exhibit.yml']
+  push:
+    branches: [main]
+    paths: ['exhibit/**', '.github/workflows/exhibit.yml']
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: exhibit
+
+jobs:
+  web:
+    name: exhibit lint, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - run: npm install --no-audit --no-fund
+      - run: npx eslint .
+      - run: npx vitest run
+      - run: npm --workspace worker test
+      - run: npx vite build
+        env:
+          VITE_SUPABASE_URL: https://example.invalid
+          VITE_SUPABASE_ANON_KEY: ci
+
+  schema:
+    name: exhibit schema on postgres 16
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hermes
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: apply schema.sql to an empty database
+        run: psql -h localhost -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+      - name: run smoke.sql
+        run: psql -h localhost -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f supabase/smoke.sql
+      - name: schema.sql is idempotent (applies twice)
+        run: psql -h localhost -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f supabase/schema.sql

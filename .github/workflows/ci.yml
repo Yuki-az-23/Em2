@@ -1,50 +1,63 @@
+# Keep the job list in step with .forgejo/workflows/ci.yml (ADR-010).
 name: ci
-
 on:
-  push:
-    branches: ['**']
   pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
-  web:
-    name: lint, test, build
+  seed:
+    name: seed gate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: npm install --no-audit --no-fund
-      - run: npx eslint packages/core src/pages/Invite src/services/invite src/services/wall src/services/rpc src/router src/main.jsx
-      - run: npx vitest run packages/core src/services/rpc src/components src/pages
-      - run: npm --workspace worker test
-      - run: npm run build
-        env:
-          VITE_SUPABASE_URL: https://example.invalid
-          VITE_SUPABASE_ANON_KEY: ci
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.13"}
+      - name: Seed scripts tests
+        run: python3 -m unittest discover -s scripts/tests -t .
+      - name: Validate project contract
+        run: python3 scripts/validate_project.py
 
-  schema:
-    name: schema on postgres 16
+  go:
+    name: go (vet, fmt, unit, contract, integration, smoke)
     runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: hermes
-        ports: ['5432:5432']
+          POSTGRES_PASSWORD: em2
+          POSTGRES_DB: em2_test
+        ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
+          --health-cmd "pg_isready -U postgres -d em2_test"
+          --health-interval 2s --health-timeout 3s --health-retries 30
     env:
-      PGPASSWORD: postgres
+      EM2_TEST_DATABASE_URL: postgres://postgres:em2@localhost:5432/em2_test?sslmode=disable
     steps:
       - uses: actions/checkout@v4
-      - name: apply schema.sql to an empty database
-        run: psql -h localhost -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
-      - name: run smoke.sql
-        run: psql -h localhost -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f supabase/smoke.sql
-      - name: schema.sql is idempotent (applies twice)
-        run: psql -h localhost -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+      - uses: actions/setup-go@v5
+        with: {go-version: "1.24"}
+      - name: gofmt
+        run: test -z "$(gofmt -l core kernel pkg internal cmd test)"
+      - name: go vet
+        run: go vet ./...
+      - name: Tests (race)
+        run: go test -race -count=1 ./...
+      - name: Public OpenAPI snapshot is current
+        run: go run ./cmd/em2 openapi > /tmp/openapi.json && diff -u docs/api/openapi.json /tmp/openapi.json
+
+  image:
+    name: container image
+    runs-on: ubuntu-latest
+    needs: [go]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: docker build -f deploy/Dockerfile -t em2:ci .
+      - name: Image runs as non-root and prints usage
+        run: |
+          test "$(docker inspect -f '{{.Config.User}}' em2:ci)" = "nonroot:nonroot"
+          docker run --rm em2:ci keygen | grep -q '^EM2_SIGNING_KEY='
