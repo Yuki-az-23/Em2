@@ -1,0 +1,12 @@
+.wall { max-width: 760px; margin-inline: auto; padding-block: var(--space-6) var(--space-16); padding-inline: max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: var(--space-5); }
+.wall__head { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-4); flex-wrap: wrap; }
+.wall__title { margin: 0; font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); }
+.wall__sub { margin: var(--space-1) 0 0; color: var(--color-text-secondary); max-width: 60ch; }
+.wall__tools { display: flex; gap: var(--space-2); }
+.wall__resting, .wall__empty { margin: 0; padding: var(--space-4); border: 1px dashed var(--color-border-secondary); border-radius: var(--radius-md); color: var(--color-text-secondary); }
+.wall__list { display: flex; flex-direction: column; gap: var(--space-4); }
+.wall-entry { display: flex; flex-direction: column; gap: var(--space-5); align-items: center; text-align: center; padding-block: var(--space-6); }
+.wall-entry__title { margin: 0; font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); text-wrap: balance; }
+.wall-entry__lede { margin: 0; color: var(--color-text-secondary); max-width: 60ch; }
+.wall-entry__pickers { display: flex; flex-direction: column; gap: var(--space-4); align-items: center; }
+.wall-entry__note { margin: 0; color: var(--color-text-tertiary); font-size: var(--font-size-sm); }

@@ -1,0 +1,156 @@
+/* Badge Component Styles */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: var(--border-radius-full);
+  white-space: nowrap;
+  vertical-align: middle;
+  transition: all var(--transition-fast);
+}
+
+/* Sizes */
+.badge--sm {
+  padding: 2px 6px;
+  font-size: var(--font-size-xs);
+  min-width: 18px;
+  height: 18px;
+}
+
+.badge--md {
+  padding: 4px 8px;
+  font-size: var(--font-size-sm);
+  min-width: 22px;
+  height: 22px;
+}
+
+.badge--lg {
+  padding: 6px 10px;
+  font-size: var(--font-size-base);
+  min-width: 26px;
+  height: 26px;
+}
+
+/* Dot variant */
+.badge--dot {
+  padding: 0;
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  border-radius: 50%;
+}
+
+.badge--dot.badge--md {
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+}
+
+.badge--dot.badge--lg {
+  width: 12px;
+  height: 12px;
+  min-width: 12px;
+}
+
+/* Variants */
+.badge--default {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.badge--success {
+  background: #22c55e;
+  color: #fff;
+}
+
+.badge--warning {
+  background: #f59e0b;
+  color: #fff;
+}
+
+.badge--error {
+  background: #ef4444;
+  color: #fff;
+}
+
+.badge--info {
+  background: #3b82f6;
+  color: #fff;
+}
+
+/* Emotion variants */
+.badge--emotion-joy {
+  background: var(--emotion-joy-yellow);
+  color: #000;
+}
+
+.badge--emotion-trust {
+  background: var(--emotion-trust-lime);
+  color: #000;
+}
+
+.badge--emotion-feared {
+  background: var(--emotion-feared-green);
+  color: #fff;
+}
+
+.badge--emotion-surprised {
+  background: var(--emotion-surprised-aqua);
+  color: #000;
+}
+
+.badge--emotion-sad {
+  background: var(--emotion-sad-blue);
+  color: #fff;
+}
+
+.badge--emotion-disgust {
+  background: var(--emotion-disgust-pink);
+  color: #fff;
+}
+
+.badge--emotion-angry {
+  background: var(--emotion-angry-red);
+  color: #fff;
+}
+
+.badge--emotion-anticipated {
+  background: var(--emotion-anticipated-orange);
+  color: #fff;
+}
+
+/* Pulse animation */
+.badge--pulse {
+  animation: badge-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Badge with icon */
+.badge-icon {
+  position: relative;
+  display: inline-flex;
+}
+
+.badge-icon__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  box-shadow: 0 0 0 2px var(--color-surface);
+}
+
+.badge-icon__badge.badge--dot {
+  top: 0;
+  right: 0;
+}

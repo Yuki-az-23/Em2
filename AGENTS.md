@@ -26,6 +26,7 @@ EM2 invariants:
 - **No endpoint returns another principal's current bridge or threshold**, apart from the coarse public card.
 - **Public errors are generic.** problem+json with a request id; technical detail goes to internal logs and the journal.
 - **The UI contains no third-party code.** `web/` is AGPL-3.0-or-later code written in this repo, with no build step.
+  The art exhibit in `exhibit/` is a separate application with its own stack and is outside this rule (ADR-016).
 - **Dependencies are minimal.** Go: `github.com/jackc/pgx/v5` and `golang.org/x/crypto` only.
 
 ## Agent roles
@@ -47,7 +48,7 @@ Definitions live in `.claude/agents/`. Each has an "In EM2" section naming the p
 | `qa-regression` | `test/` |
 | `infra-release` | `deploy/`, `.forgejo/`, `.github/`, `docs/RUNBOOK.md` |
 | `docs-maintainer` | `docs/`, `agent/`, `CLAUDE.md`, `README.md` |
-| `observatory-engineer` | `web/` |
+| `observatory-engineer` | `web/`, `exhibit/` (ADR-016) |
 
 `python3 scripts/orchestrator.py --path <file>` prints the owner for a path.
 

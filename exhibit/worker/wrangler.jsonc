@@ -1,0 +1,20 @@
+{
+  // Hermes on Cloudflare Workers. Secrets are set with `wrangler secret put`:
+  //   TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hermes",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "vars": {
+    "AI_TEXT_MODEL": "@cf/openai/gpt-oss-120b",
+    "AI_IMAGE_MODEL": "@cf/black-forest-labs/flux-1-schnell",
+    "PUBLIC_IMAGE_BASE": "",            // e.g. https://images.<domain> (R2 custom domain) ; empty = images stay unpublished
+    "PIPELINE_MAX_ATTEMPTS": "3"
+  },
+  "ai": { "binding": "AI" },
+  "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "hermes-images" }],
+  "triggers": { "crons": ["*/10 * * * *"] },
+  "routes": [{ "pattern": "hermes.example.invalid", "custom_domain": true }]
+}

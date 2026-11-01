@@ -1,0 +1,30 @@
+/* FollowButton Component Styles */
+
+.follow-button {
+  min-width: 100px;
+  position: relative;
+}
+
+/* Text states */
+.follow-button__text-hover {
+  display: none;
+}
+
+.follow-button--following:hover .follow-button__text-default {
+  display: none;
+}
+
+.follow-button--following:hover .follow-button__text-hover {
+  display: inline;
+  color: var(--emotion-angry-red);
+}
+
+/* Hover state for unfollowing */
+.follow-button--following:hover {
+  border-color: var(--emotion-angry-red);
+  color: var(--emotion-angry-red);
+}
+
+.follow-button--following:hover:not(:disabled) {
+  background: rgba(220, 20, 60, 0.1);
+}

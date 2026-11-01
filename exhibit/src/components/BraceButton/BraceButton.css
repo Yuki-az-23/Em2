@@ -1,0 +1,44 @@
+/* BraceButton Component Styles */
+
+.brace-button {
+  min-width: 80px;
+}
+
+.brace-button__icon {
+  font-size: 1.2em;
+  line-height: 1;
+  transition: transform var(--transition-fast);
+}
+
+.brace-button--braced .brace-button__icon {
+  animation: brace-bounce 0.4s ease-out;
+}
+
+.brace-button:hover .brace-button__icon {
+  transform: scale(1.2);
+}
+
+.brace-button:active .brace-button__icon {
+  transform: scale(0.9);
+}
+
+.brace-button__count {
+  font-weight: 600;
+}
+
+/* Bounce animation when braced */
+@keyframes brace-bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .brace-button--braced .brace-button__icon {
+    animation: none;
+  }
+}

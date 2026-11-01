@@ -1,0 +1,67 @@
+/**
+ * App Global Styles
+ */
+
+/* ============================================
+   ROOT
+   ============================================ */
+
+.app {
+  min-height: 100vh;
+  background: var(--color-gray-50);
+}
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+
+.app-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+/* Focus Visible for Keyboard Navigation */
+*:focus-visible {
+  outline: 3px solid var(--color-gray-900);
+  outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  *:focus-visible {
+    outline-width: 4px;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  .app {
+    background: white;
+  }
+
+  /* Hide navigation and interactive elements */
+  nav,
+  button,
+  .modal {
+    display: none !important;
+  }
+}

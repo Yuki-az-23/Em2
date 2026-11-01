@@ -1,0 +1,1 @@
+.demo-notice { margin: var(--space-4) auto 0; max-width: 640px; padding: var(--space-3) var(--space-4); border: 1px dashed var(--color-border-secondary); border-radius: var(--radius-md); color: var(--color-text-secondary); font-size: var(--font-size-sm); }

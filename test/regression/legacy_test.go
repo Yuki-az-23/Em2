@@ -100,8 +100,8 @@ func TestTokensExpireAndLogoutExists(t *testing.T) {
 func TestEveryBodyIsValidatedAgainstAClosedSchema(t *testing.T) {
 	opaqueBodies := map[string]bool{
 		"POST /ingress/{handle}": true,
-		"POST /mcp":             true,
-		"POST /v1/mcp":          true, // compatibility if MCP is versioned in OpenAPI paths
+		"POST /mcp":              true,
+		"POST /v1/mcp":           true, // compatibility if MCP is versioned in OpenAPI paths
 	}
 	for key, op := range operations(openapi(t, true)) {
 		rb, ok := op["requestBody"].(map[string]any)
