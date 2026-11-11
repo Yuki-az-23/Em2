@@ -1,0 +1,13 @@
+[Unit]
+Description=Exhibit test: nightly database and storage backup
+Documentation=https://github.com/Yuki-az-23/Em2/blob/main/exhibit/deploy/README.md
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/exhibit-test-backup
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+UMask=0077

@@ -108,9 +108,9 @@ npm workspaces בשורש: `"workspaces": ["packages/core", "worker"]`. האתר
 5. `/stop`: חוסם את המשלוח, שום דבר נוסף לא נשמר.
 6. **הבוט לא שולח כלום מיוזמתו** חוץ מהממסר והאישורים האלה. אין תזכורות.
 
-### הצינור (Queue consumer באותו Worker)
+### הצינור
 
-`close_exchange` ← ה-Worker מכניס הודעה לתור `pipeline` ← הצרכן:
+**לא מומש כתור.** בפועל הצינור רץ מתוך ה-webhook עם `ctx.waitUntil` אחרי `close_exchange`, וה-cron מנסה שוב שיחות שנכשלו ומעביר ל-`failed` שיחה שתקועה ב-`closed` יותר מ-15 דקות (ראה 6.3). השלבים:
 
 1. קורא `messages` עם service role.
 2. `assigned = exchangeToAssigned(messages, participants)` מהליבה.
@@ -121,7 +121,7 @@ npm workspaces בשורש: `"workspaces": ["packages/core", "worker"]`. האתר
 7. העלאת התמונה ל-Storage, `publish_post(card)`.
 
 ### סודות (wrangler secrets)
-`SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `MCP_OAUTH_*` (שלב 2). בינדינגים: `AI`, `QUEUE`, `KV` לסשנים של MCP.
+`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `MCP_OAUTH_*` (שלב 2). בינדינגים קיימים: `AI`, ו-`IMAGES` (R2). **לא מומשו**: `QUEUE` (אין תור, ראה הצינור למעלה) ו-`KV` לסשנים של MCP (MCP עדיין מחזיר 501).
 
 ### MCP (שלב 2)
 `createMcpHandler` (הדרך העדכנית ב-Cloudflare, לא `McpAgent` שמסומן כמיושן). OAuth מול Supabase Auth, שמגדיר את ה-`profile` לפי `auth_user_id`. כלים לבני אדם: `set_home`, `leave`, `waiting`, `open`, `recall`, `share`, `settings`. כלים לסוכנים עם מפתח: `wall_feed`, `wall_react`. לאדם שרוצה "מסנן על המילים", `leave` דרך MCP נכנס ל-`exchanges` עם `channel=mcp` ו-`witness=agent_drafted` כשהסוכן ניסח.
@@ -171,6 +171,8 @@ npm workspaces בשורש: `"workspaces": ["packages/core", "worker"]`. האתר
 
 ## 6. תשתית (אומת מול התיעוד הנוכחי)
 
+> פריסת הבדיקה בפועל: `deploy/README.md` (ספר ההפעלה) ו-`infra/README.md` (הסיכום). הם גוברים על הסעיף הזה כשיש סתירה. VM הבדיקה קטנה מזו שמתוארת כאן: 4 vCPU, 8GB, 80GB.
+
 **אמירה ישרה קודם:** קוברנטיס הוא עודף למכונה אחת. המסלול היחיד ש-Supabase תומכים בו רשמית לאירוח עצמי הוא Docker Compose. המסלול המומלץ שלי: **VM אחת של Ubuntu עם Docker Compose של Supabase ו-cloudflared**. המסלול של k3s מופיע כי ביקשת, עם ה-chart הקהילתי, וכל השאר זהה.
 
 ### 6.1 Proxmox והמכונה
@@ -179,17 +181,17 @@ npm workspaces בשורש: `"workspaces": ["packages/core", "worker"]`. האתר
 - **גיבוי בשלוש שכבות:** vzdump של ה-VM כל לילה, 7 עותקים. `pg_dump -Fc` כל לילה, 14 עותקים. rclone של הדאמפים ושל Storage ל-Cloudflare R2 פעם בשבוע. הדיסק יחיד, ולכן העותק מחוץ למכונה אינו אופציונלי.
 
 ### 6.2 Supabase עצמאי
-- Compose: `supabase/supabase/docker` עם `setup.sh`, `run.sh`, `update.sh`. Postgres 17, שער Envoy (`api-gw`). אותם נתיבים `/rest/v1`, `/auth/v1`, `/storage/v1`, `/realtime/v1`, ולכן הסכמה וה-RLS לא משתנים.
+- Compose: `supabase/supabase/docker`, נעול בתג `self-hosted/v0.8.4`. Postgres 17, PostgREST v14, שער Envoy (`api-gw`) על 8000, ו-Studio מוגש דרכו. אותם נתיבים `/rest/v1`, `/auth/v1`, `/storage/v1`, `/realtime/v1`, ולכן הסכמה וה-RLS לא משתנים.
 - k3s, אם בכל זאת: `supabase-community/supabase-kubernetes`, chart `charts/supabase` 0.7.x, Postgres 17, עדיין עם Kong. ה-README שלהם אומר "אין תצורת ייצור מלאה". `environment.<component>` הוא מערך מגרסה 0.7.1, ודריסה של `environment.kong` מחליפה את כל הרשימה. לא להשתמש ב-operator שבאותו ריפו.
 - רכיבים: db, שער, auth, rest, realtime, storage על דיסק, meta, studio. **לדלג**: analytics, vector, functions (הצינור ב-Workers), imgproxy, minio, supavisor.
-- סודות: `JWT_SECRET` (`openssl rand -base64 64`), ומפתחות anon ו-service_role כ-JWT חתומים HS256 עם אותו סוד (`docker/utils/generate-keys.sh`). סיסמת Postgres, basic auth ל-Studio, `SECRET_KEY_BASE`, `VAULT_ENC_KEY`. SMTP: לא נחוץ בשלב טלגרם, `GOTRUE_MAILER_AUTOCONFIRM=true`.
-- הסכמה: `psql -f supabase/schema.sql` פעם אחת אחרי העלייה הראשונה.
+- סודות: `JWT_SECRET` (`openssl rand -base64 64`), ומפתחות anon ו-service_role כ-JWT חתומים HS256 עם אותו סוד (`docker/utils/generate-keys.sh`). סיסמת Postgres, basic auth ל-Studio, `SECRET_KEY_BASE`, `VAULT_ENC_KEY`. SMTP: לא נחוץ בשלב טלגרם, `ENABLE_EMAIL_AUTOCONFIRM=true` ב-`.env` (ה-compose מעביר אותו ל-`GOTRUE_MAILER_AUTOCONFIRM`).
+- הסכמה: `docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < schema.sql` אחרי העלייה הראשונה. Postgres לא חשוף על פורט של המארח.
 
 ### 6.3 Cloudflare
-- דומיין ב-DNS של Cloudflare. **Tunnel** מנוהל מהלוח, `cloudflared` כ-systemd ב-VM (או Deployment ב-k3s). שמות ציבוריים: `api.<domain>` → השער של Supabase, `studio.<domain>` → Studio. אפס פורטים פתוחים. WebSockets עוברים דרך Tunnel בכל התוכניות, ולכן Realtime עובד. זמן קריאה מקסימלי 100 שניות לבקשה.
+- דומיין ב-DNS של Cloudflare. **Tunnel** מנוהל מהלוח, `cloudflared` ב-VM (בפריסת הבדיקה: קונטיינר Docker, פרויקט compose `exhibit-edge`; או Deployment ב-k3s). שמות ציבוריים: `api.<domain>` ו-`studio.<domain>`, שניהם → `http://localhost:8000` (השער של Supabase, שמגיש גם את Studio). אפס פורטים פתוחים. WebSockets עוברים דרך Tunnel בכל התוכניות, ולכן Realtime עובד. זמן קריאה מקסימלי 125 שניות לבקשה (לפי סקירת התכנון של פריסת הבדיקה; לא נבדק מחדש כאן).
 - **Access** (חינם עד 50 משתמשים): אפליקציה אחת על `studio.<domain>`, מדיניות = המייל שלך עם PIN. `api.<domain>` ציבורי, RLS מגן.
 - **האתר**: Workers static assets, שזו ההמלצה הנוכחית של Cloudflare לפרויקטים חדשים (Pages נתמך עדיין). מצב SPA. משתני בנייה: `VITE_SUPABASE_URL=https://api.<domain>`, `VITE_SUPABASE_ANON_KEY`. אותם שני ערכים יצביעו על Supabase מנוהל אם תעבור.
-- **Worker הרמס** ב-`hermes.<domain>`, תוכנית Paid של 5 דולר (החינמית מוגבלת ל-10ms CPU ו-100 אלף בקשות ביום). הצינור רץ מתוך ה-webhook עם `ctx.waitUntil` אחרי תשובה 200 מיידית לטלגרם; Queues רק אם ניסיונות חוזרים יהפכו לבעיה. Cron Trigger אחד לניסיונות חוזרים ולצילום "הקיר נח".
+- **Worker הרמס** ב-`hermes.<domain>`, תוכנית Paid של 5 דולר (החינמית מוגבלת ל-10ms CPU ו-100 אלף בקשות ביום). הצינור רץ מתוך ה-webhook עם `ctx.waitUntil` אחרי תשובה 200 מיידית לטלגרם; Queues רק אם ניסיונות חוזרים יהפכו לבעיה. Cron Trigger אחד לניסיונות חוזרים ולשיחות תקועות. צילום "הקיר נח" **לא מומש**.
 - **MCP**: `createMcpHandler` מ-`agents/mcp/server` עם `McpServer`, Streamable HTTP, ללא Durable Objects. `McpAgent` מיושן ומוקפא מגרסה 0.20.0 של ה-SDK (27 ביולי 2026).
 - **Workers AI**, 0.011 דולר לאלף נוירונים, 10 אלף חינם ביום:
   - טקסט, השחרה ופרפרזה: `@cf/openai/gpt-oss-120b` ראשי, כי יש לו `response_format: json_schema` וההשחרה חייבת JSON מחייב. חלופה זולה: `@cf/google/gemma-4-26b-a4b-it`. **כיסוי עברית של שניהם לא אומת בתיעוד הרשמי.** חובה: הערכה על 30 הודעות בעברית לפני שמתחייבים, ו-AI Gateway עם מודל חזק כגיבוי, החלטה שלך.
@@ -201,7 +203,7 @@ npm workspaces בשורש: `"workspaces": ["packages/core", "worker"]`. האתר
 - בוט לא יכול לכתוב למי שלא לחץ Start. שני המשתתפים כותבים לבוט בנפרד, והבוט מעביר. מגבלות: 4096 תווים להודעה, הודעה בשנייה לצ'אט. ממסר של שניים לא מתקרב לזה.
 
 ### 6.5 סודות
-- Worker (`wrangler secret put`): `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`. בינדינגים: `AI`, `R2` לתמונות וצילומי הקיר.
+- Worker (`wrangler secret put`): `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`. בינדינגים: `AI`, ו-R2 בשם `IMAGES` לתמונות (צילומי הקיר לא מומשו).
 - ה-VM: קובץ `.env` של Compose מחוץ ל-git, או SOPS + age.
 - האתר: שני משתני `VITE_*` בלבד.
 
@@ -209,7 +211,7 @@ npm workspaces בשורש: `"workspaces": ["packages/core", "worker"]`. האתר
 - בדיקת שחזור פעם לפני ההשקה ואחת לרבעון: שחזור הדאמפ האחרון למסד זמני, האתר מולו, מחיקה.
 - ניטור: בדיקת זמינות חיצונית על `<domain>` ועל `api.<domain>/rest/v1/`. CronJob שבודק דיסק ושולח לטלגרם שלך מעל 80 אחוז דרך אותו בוט. התראות ZFS מ-Proxmox.
 - עדכונים: תגי גרסה נעולים, קפיצה רבעונית אחרי גיבוי. שני שברים צפויים ב-upstream: Postgres 15 ל-17 (לא רלוונטי אם מתחילים על 17) ו-Kong ל-Envoy.
-- **הקיר נח**: ה-Cron ב-Worker מצלם את N הפוסטים האחרונים ל-R2 כל 10 דקות. האתר מנסה Supabase, ובכשל מציג את הצילום במצב "נח", בלי תגובות. Tunnel שנפל משתיק את התגובות, לא את הקיר.
+- **הקיר נח** (**לא מומש**, תוכנית בלבד): ה-Cron ב-Worker מצלם את N הפוסטים האחרונים ל-R2 כל 10 דקות. האתר מנסה Supabase, ובכשל מציג את הצילום במצב "נח", בלי תגובות. Tunnel שנפל משתיק את התגובות, לא את הקיר.
 
 ### 6.7 זמן וסיכונים
 דומיין, חשבון, Paid, טוקן בוט: שעה. VM, Docker או k3s, cloudflared: 2 עד 3 שעות. Supabase, סודות, סכמה, אימות `api.<domain>` ו-Realtime: 4 עד 8 שעות, כאן רוב אי-הוודאות. האתר על static assets: שעה עד שעתיים. Worker עם ממסר וצינור: יום עד יומיים, ועוד שעתיים להערכת עברית ו-2 עד 4 שעות לכיול הציור. גיבויים, שחזור, ניטור: 3 שעות. MCP: יום, אחרי ההשקה.
@@ -243,7 +245,7 @@ npm workspaces בשורש: `"workspaces": ["packages/core", "worker"]`. האתר
 
 1. `psql -f supabase/schema.sql` על Postgres ריק, ואז `psql -f supabase/smoke.sql` עובר נקי.
 2. `npm test` בשורש: ליבה, אתר, Worker, הכל ירוק.
-3. מקומית: `supabase start` (CLI) עם `schema.sql`, `npm run dev`, הדלת מייצרת קישור, `/wall` ריק מציג "הקיר נח".
+3. מקומית: `supabase start` (CLI) עם `schema.sql`, `npm run dev`, הדלת מייצרת קישור, `/wall` ריק (מצב "הקיר נח" לא מומש).
 4. `wrangler dev` עם עדכוני טלגרם מדומים ב-curl: `/start`, שתי הודעות, `/end` → פוסט מופיע ב-`/wall` תוך דקה, עם כינויים, פרפרזה, בלי שמות.
 5. טריגר מהדפדפן: הפוסט זז צעד אחד. חיבוק: המונה עולה. `comments` רושם before/after.
 6. `/withdraw` בטלגרם: הפוסט נעלם מ-`/wall`, השורה נשארת בלי תוכן.

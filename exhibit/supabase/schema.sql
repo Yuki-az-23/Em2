@@ -15,6 +15,10 @@
 --   the audit log holds ids, never content.
 -- =============================================================================
 
+-- On Supabase pgcrypto already exists in schema `extensions` and this is a no-op; on
+-- plain PostgreSQL it lands in public. Either way the functions below find it through
+-- their pinned search_path (SET on every definition, section 14 as a net), never
+-- through the caller's.
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- -----------------------------------------------------------------------------
@@ -62,26 +66,26 @@ CREATE OR REPLACE FUNCTION public.ring_names(p_kind TEXT) RETURNS TEXT[] AS $$
   SELECT CASE p_kind
     WHEN 'emotion' THEN ARRAY['joy','trust','feared','surprised','sad','disgust','angry','anticipated']
     ELSE ARRAY['yellow','lime','green','aqua','blue','pink','red','orange'] END;
-$$ LANGUAGE sql IMMUTABLE;
+$$ LANGUAGE sql IMMUTABLE SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.ring_index(p_kind TEXT, p_name TEXT) RETURNS INT AS $$
   SELECT array_position(public.ring_names(p_kind), lower(p_name)) - 1;
-$$ LANGUAGE sql IMMUTABLE;
+$$ LANGUAGE sql IMMUTABLE SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.ring_d8(a INT, b INT) RETURNS INT AS $$
   SELECT LEAST(abs(a - b) % 8, 8 - (abs(a - b) % 8));
-$$ LANGUAGE sql IMMUTABLE;
+$$ LANGUAGE sql IMMUTABLE SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.ring_step(a INT, b INT) RETURNS INT AS $$
   SELECT CASE WHEN a = b THEN a
               WHEN ((b - a + 8) % 8) <= 4 THEN (a + 1) % 8
               ELSE (a + 7) % 8 END;
-$$ LANGUAGE sql IMMUTABLE;
+$$ LANGUAGE sql IMMUTABLE SET search_path = public, extensions, pg_temp;
 
 -- resonance in [0,1] between two (emotion,color) index pairs
 CREATE OR REPLACE FUNCTION public.ring_rho(e1 INT, c1 INT, e2 INT, c2 INT) RETURNS NUMERIC AS $$
   SELECT 1 - (public.ring_d8(e1, e2) + public.ring_d8(c1, c2))::NUMERIC / 8;
-$$ LANGUAGE sql IMMUTABLE;
+$$ LANGUAGE sql IMMUTABLE SET search_path = public, extensions, pg_temp;
 
 -- -----------------------------------------------------------------------------
 -- 2. Settings
@@ -104,7 +108,7 @@ ON CONFLICT (key) DO NOTHING;
 
 CREATE OR REPLACE FUNCTION public.setting(p_key TEXT) RETURNS TEXT AS $$
   SELECT value FROM public.app_settings WHERE key = p_key;
-$$ LANGUAGE sql STABLE;
+$$ LANGUAGE sql STABLE SET search_path = public, extensions, pg_temp;
 
 -- -----------------------------------------------------------------------------
 -- 3. Tables
@@ -171,7 +175,7 @@ CREATE TABLE IF NOT EXISTS public.contacts (
 -- store the pair ordered so (x,y) and (y,x) are one row
 CREATE OR REPLACE FUNCTION public.pair_key(x UUID, y UUID, OUT lo UUID, OUT hi UUID) AS $$
   SELECT LEAST(x, y), GREATEST(x, y);
-$$ LANGUAGE sql IMMUTABLE;
+$$ LANGUAGE sql IMMUTABLE SET search_path = public, extensions, pg_temp;
 
 CREATE TABLE IF NOT EXISTS public.exchanges (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -285,7 +289,7 @@ CREATE TABLE IF NOT EXISTS public.audit_log (
 -- updated_at trigger
 CREATE OR REPLACE FUNCTION public.touch_updated_at() RETURNS TRIGGER AS $$
 BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public, extensions, pg_temp;
 DROP TRIGGER IF EXISTS profiles_touch ON public.profiles;
 CREATE TRIGGER profiles_touch BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
 DROP TRIGGER IF EXISTS posts_touch ON public.posts;
@@ -298,19 +302,19 @@ CREATE TRIGGER contacts_touch BEFORE UPDATE ON public.contacts FOR EACH ROW EXEC
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.audit(p_actor TEXT, p_action TEXT, p_target TEXT) RETURNS VOID AS $$
   INSERT INTO public.audit_log(actor, action, target) VALUES (p_actor, p_action, p_target);
-$$ LANGUAGE sql;
+$$ LANGUAGE sql SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.fail(p_code TEXT, p_detail TEXT DEFAULT NULL) RETURNS VOID AS $$
 BEGIN
   RAISE EXCEPTION '%', CASE WHEN p_detail IS NULL THEN p_code ELSE p_code || ':' || p_detail END
     USING ERRCODE = 'P0001';
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public, extensions, pg_temp;
 
 -- The profile of the calling authenticated user, or null.
 CREATE OR REPLACE FUNCTION public.my_profile_id() RETURNS UUID AS $$
   SELECT id FROM public.profiles WHERE auth_user_id = auth.uid() LIMIT 1;
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 -- Who may name a profile other than their own: the service role (the Worker), or
 -- a direct database session with no API caller behind it (psql, the seed). Every
@@ -323,7 +327,7 @@ CREATE OR REPLACE FUNCTION public.trusted_caller() RETURNS BOOLEAN AS $$
       THEN current_setting('request.jwt.claim.role', true) = 'service_role'
     ELSE TRUE
   END;
-$$ LANGUAGE sql STABLE;
+$$ LANGUAGE sql STABLE SET search_path = public, extensions, pg_temp;
 
 -- The profile a call acts for: the caller's own when none is named; a named one only
 -- for a trusted caller. A signed-in user naming any profile is refused, even their own,
@@ -334,7 +338,7 @@ BEGIN
   IF NOT public.trusted_caller() THEN PERFORM public.fail('FORBIDDEN', 'profile'); END IF;
   RETURN p_profile;
 END;
-$$ LANGUAGE plpgsql STABLE;
+$$ LANGUAGE plpgsql STABLE SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.client_key() RETURNS TEXT AS $$
 DECLARE hdr JSON; ip TEXT;
@@ -345,7 +349,7 @@ BEGIN
   IF ip = '' THEN ip := 'unknown'; END IF;
   RETURN 'ip:' || ip;
 END;
-$$ LANGUAGE plpgsql STABLE;
+$$ LANGUAGE plpgsql STABLE SET search_path = public, extensions, pg_temp;
 
 -- 3, then 1, 2, 4: burst free, then doubling cooldowns, strikes forgiven after a quiet day.
 CREATE OR REPLACE FUNCTION public.rate_limit_check(
@@ -375,7 +379,7 @@ BEGIN
     window_start = NOW(), count = 0, updated_at = NOW() WHERE key = k;
   RETURN QUERY SELECT FALSE, CEIL(EXTRACT(EPOCH FROM cooldown))::INT, r.strikes + 1;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.make_handle() RETURNS TEXT AS $$
 DECLARE
@@ -390,7 +394,7 @@ BEGIN
     IF i > 20 THEN RETURN h || '-' || substr(encode(gen_random_bytes(2), 'hex'), 1, 3); END IF;
   END LOOP;
 END;
-$$ LANGUAGE plpgsql VOLATILE;
+$$ LANGUAGE plpgsql VOLATILE SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.make_code() RETURNS TEXT AS $$
 DECLARE alphabet TEXT := 'abcdefghijkmnpqrstuvwxyz23456789'; b BYTEA := gen_random_bytes(22); o TEXT := ''; i INT;
@@ -398,16 +402,16 @@ BEGIN
   FOR i IN 0..21 LOOP o := o || substr(alphabet, 1 + (get_byte(b, i) % 32), 1); END LOOP;
   RETURN o;
 END;
-$$ LANGUAGE plpgsql VOLATILE;
+$$ LANGUAGE plpgsql VOLATILE SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.telegram_link(p_code TEXT) RETURNS TEXT AS $$
   SELECT 'https://t.me/' || public.setting('telegram_bot') || '?start=' || p_code;
-$$ LANGUAGE sql STABLE;
+$$ LANGUAGE sql STABLE SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.are_contacts(x UUID, y UUID) RETURNS BOOLEAN AS $$
   SELECT EXISTS (SELECT 1 FROM public.contacts c, public.pair_key(x, y) k
                  WHERE c.a = k.lo AND c.b = k.hi AND c.status = 'accepted');
-$$ LANGUAGE sql STABLE;
+$$ LANGUAGE sql STABLE SET search_path = public, extensions, pg_temp;
 
 -- -----------------------------------------------------------------------------
 -- 5. The door
@@ -429,7 +433,7 @@ BEGIN
   PERFORM public.audit(public.client_key(), 'invite.create', v_code);
   RETURN jsonb_build_object('code', v_code, 'handle', v_handle, 'telegram_link', public.telegram_link(v_code), 'expires_at', v_exp);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 -- A participant invites a specific other person. Called by the Worker (service role)
 -- on behalf of a Telegram user, or by a signed-in user.
@@ -446,7 +450,7 @@ BEGIN
   PERFORM public.audit('profile:' || me::text, 'invite.pair', v_code);
   RETURN jsonb_build_object('code', v_code, 'telegram_link', public.telegram_link(v_code), 'expires_at', v_exp);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 -- What the /join page may show: who left something, by handle. Nothing else.
 CREATE OR REPLACE FUNCTION public.peek_invite(p_code TEXT) RETURNS JSONB AS $$
@@ -455,7 +459,7 @@ CREATE OR REPLACE FUNCTION public.peek_invite(p_code TEXT) RETURNS JSONB AS $$
   FROM (SELECT p_code AS code) q
   LEFT JOIN public.invites i ON i.code = q.code
   LEFT JOIN public.profiles p ON p.id = i.created_by;
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 -- Claim: binds the invite to a profile found or created by telegram id or auth user.
 -- Returns the profile and, for pair invites, opens the contact.
@@ -498,7 +502,7 @@ BEGIN
   RETURN jsonb_build_object('profile_id', me, 'handle', (SELECT handle FROM public.profiles WHERE id = me),
                             'paired_with', paired, 'consent_version', (SELECT consent_version FROM public.profiles WHERE id = me));
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.record_consent(p_profile UUID DEFAULT NULL) RETURNS JSONB AS $$
 DECLARE me UUID := public.acting_profile(p_profile); v TEXT := public.setting('consent_version');
@@ -508,7 +512,7 @@ BEGIN
   PERFORM public.audit('profile:' || me::text, 'consent', v);
   RETURN jsonb_build_object('consent_version', v);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 -- -----------------------------------------------------------------------------
 -- 6. Home, contacts, follows
@@ -522,7 +526,7 @@ BEGIN
   PERFORM public.audit('profile:' || me::text, 'home.set', lower(p_emotion) || '/' || lower(p_color));
   RETURN jsonb_build_object('base_emotion', lower(p_emotion), 'base_color', lower(p_color));
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.set_state(p_emotion TEXT, p_color TEXT, p_felt BOOLEAN DEFAULT FALSE, p_profile UUID DEFAULT NULL) RETURNS JSONB AS $$
 DECLARE me UUID := public.acting_profile(p_profile);
@@ -533,7 +537,7 @@ BEGIN
   ELSE UPDATE public.profiles SET emotion = lower(p_emotion), color = lower(p_color) WHERE id = me; END IF;
   RETURN jsonb_build_object('ok', true);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 -- A participant tells the bot the emotion and color they bring. Writes the expressed
 -- (public) state, one part at a time; p_reset clears both stamps so the bot asks again.
@@ -554,7 +558,7 @@ BEGIN
   RETURN jsonb_build_object('emotion', r.emotion, 'color', r.color,
     'emotionDeclared', r.emotion_declared_at IS NOT NULL, 'colorDeclared', r.color_declared_at IS NOT NULL);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.add_contact(p_handle TEXT) RETURNS JSONB AS $$
 DECLARE me UUID := public.my_profile_id(); other UUID; k RECORD; cid UUID;
@@ -567,7 +571,7 @@ BEGIN
   ON CONFLICT (a, b) DO NOTHING RETURNING id INTO cid;
   RETURN jsonb_build_object('request_id', cid, 'status', 'pending');
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.respond_contact(p_request UUID, p_accept BOOLEAN) RETURNS JSONB AS $$
 DECLARE me UUID := public.my_profile_id(); c public.contacts%ROWTYPE;
@@ -578,7 +582,7 @@ BEGIN
   UPDATE public.contacts SET status = CASE WHEN p_accept THEN 'accepted' ELSE 'blocked' END WHERE id = p_request;
   RETURN jsonb_build_object('status', CASE WHEN p_accept THEN 'accepted' ELSE 'blocked' END);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.toggle_follow(p_handle TEXT) RETURNS JSONB AS $$
 DECLARE me UUID := public.my_profile_id(); other UUID; existed BOOLEAN;
@@ -591,7 +595,7 @@ BEGIN
   IF NOT existed THEN INSERT INTO public.follows(follower, followed) VALUES (me, other); END IF;
   RETURN jsonb_build_object('following', NOT existed);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 -- -----------------------------------------------------------------------------
 -- 7. Exchanges: the private channel. Service role (the Worker) only.
@@ -616,7 +620,7 @@ BEGIN
   PERFORM public.audit('system', 'exchange.open', x::text);
   RETURN x;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.append_message(p_exchange UUID, p_from UUID, p_text TEXT, p_witness TEXT DEFAULT 'self_wrote') RETURNS BIGINT AS $$
 DECLARE x public.exchanges%ROWTYPE; mid BIGINT;
@@ -628,7 +632,7 @@ BEGIN
   UPDATE public.exchanges SET last_message_at = NOW() WHERE id = p_exchange;
   RETURN mid;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 -- Closes and hands the bundle to the pipeline. The bundle is the only place the words leave the table.
 CREATE OR REPLACE FUNCTION public.close_exchange(p_exchange UUID) RETURNS JSONB AS $$
@@ -642,7 +646,7 @@ BEGIN
   PERFORM public.audit('system', 'exchange.close', p_exchange::text);
   RETURN public.exchange_bundle(p_exchange);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.exchange_bundle(p_exchange UUID) RETURNS JSONB AS $$
   SELECT jsonb_build_object(
@@ -655,12 +659,12 @@ CREATE OR REPLACE FUNCTION public.exchange_bundle(p_exchange UUID) RETURNS JSONB
     'messages', COALESCE((SELECT jsonb_agg(jsonb_build_object('from', m.from_profile, 'text', m.text, 'witness', m.witness, 'at', m.created_at) ORDER BY m.id)
       FROM public.messages m WHERE m.exchange_id = x.id), '[]'::jsonb))
   FROM public.exchanges x WHERE x.id = p_exchange;
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.mark_exchange_failed(p_exchange UUID, p_code TEXT) RETURNS VOID AS $$
   UPDATE public.exchanges SET status = 'failed', error_code = p_code, attempts = attempts + 1 WHERE id = p_exchange;
   SELECT public.audit('system', 'exchange.failed', p_exchange::text || ':' || p_code);
-$$ LANGUAGE sql SECURITY DEFINER;
+$$ LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.stop_profile(p_profile UUID) RETURNS VOID AS $$
 DECLARE me UUID := public.acting_profile(p_profile);
@@ -670,7 +674,7 @@ BEGIN
   UPDATE public.exchanges SET status = 'closed', closed_at = NOW() WHERE status = 'open' AND me = ANY (participants);
   PERFORM public.audit('profile:' || me::text, 'stop', NULL);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 -- -----------------------------------------------------------------------------
 -- 8. The wall
@@ -695,11 +699,11 @@ BEGIN
   PERFORM public.audit('system', 'post.publish', pid::text);
   RETURN pid;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.set_post_image(p_post UUID, p_url TEXT) RETURNS VOID AS $$
   UPDATE public.posts SET image_url = p_url WHERE id = p_post;
-$$ LANGUAGE sql SECURITY DEFINER;
+$$ LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 -- trigger: the post moves one step toward the actor, through decaying memory.
 -- brace: the post's original cell gains weight, by the actor's resonance to it.
@@ -762,7 +766,7 @@ BEGIN
     'before', jsonb_build_object('emotion', c.emotion, 'color', c.color),
     'after', jsonb_build_object('emotion', (public.ring_names('emotion'))[ne + 1], 'color', (public.ring_names('color'))[nc + 1]));
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 -- The feed: visitor declares a state, sees by resonance above epsilon, with a crack of pi.
 CREATE OR REPLACE FUNCTION public.get_feed(p_emotion TEXT, p_color TEXT, p_limit INT DEFAULT 30, p_before TIMESTAMPTZ DEFAULT NULL)
@@ -785,7 +789,7 @@ BEGIN
   ORDER BY 13 DESC, p.created_at DESC
   LIMIT GREATEST(1, LEAST(p_limit, 100));
 END;
-$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.withdraw_post(p_post UUID, p_profile UUID DEFAULT NULL) RETURNS BOOLEAN AS $$
 DECLARE me UUID := public.acting_profile(p_profile); x UUID;
@@ -798,7 +802,7 @@ BEGIN
   PERFORM public.audit('profile:' || me::text, 'post.withdraw', p_post::text);
   RETURN FOUND;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 -- -----------------------------------------------------------------------------
 -- 9. Agents
@@ -819,7 +823,7 @@ BEGIN
   PERFORM public.audit('profile:' || owner::text, 'agent.create', aid::text);
   RETURN jsonb_build_object('agent_id', aid, 'handle', h, 'api_key', key, 'note', 'The key is shown once. We store only its hash.');
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.authenticate_agent(p_key TEXT) RETURNS UUID AS $$
 DECLARE pid UUID;
@@ -829,7 +833,7 @@ BEGIN
   UPDATE public.agent_keys SET last_used_at = NOW() WHERE profile_id = pid AND revoked_at IS NULL;
   RETURN pid;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.revoke_agent_key(p_agent UUID) RETURNS VOID AS $$
 DECLARE me UUID := public.my_profile_id();
@@ -838,7 +842,7 @@ BEGIN
   UPDATE public.agent_keys SET revoked_at = NOW() WHERE profile_id = p_agent AND revoked_at IS NULL
     AND EXISTS (SELECT 1 FROM public.profiles WHERE id = p_agent AND owner_profile_id = me);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 
 -- -----------------------------------------------------------------------------
@@ -853,7 +857,7 @@ BEGIN
   UPDATE public.profiles SET style = COALESCE(p_style, style), accept_from = COALESCE(p_accept_from, accept_from) WHERE id = me;
   RETURN jsonb_build_object('style', (SELECT style FROM public.profiles WHERE id = me), 'accept_from', (SELECT accept_from FROM public.profiles WHERE id = me));
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 CREATE OR REPLACE FUNCTION public.my_agents()
 RETURNS TABLE(id UUID, handle TEXT, emotion TEXT, color TEXT, key_prefix TEXT, revoked BOOLEAN, last_used_at TIMESTAMPTZ, created_at TIMESTAMPTZ) AS $$
@@ -861,7 +865,7 @@ RETURNS TABLE(id UUID, handle TEXT, emotion TEXT, color TEXT, key_prefix TEXT, r
   FROM public.profiles p LEFT JOIN public.agent_keys k ON k.profile_id = p.id
   WHERE p.kind = 'agent' AND p.owner_profile_id = public.my_profile_id()
   ORDER BY p.created_at DESC;
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 -- Leaving: withdraw every post of mine, then delete the profile. Posts keep
 -- their withdrawn row (no content); the audit log keeps the id.
@@ -877,7 +881,7 @@ BEGIN
   DELETE FROM public.profiles WHERE id = me;
   RETURN TRUE;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions, pg_temp;
 
 -- -----------------------------------------------------------------------------
 -- 10. Views for the public
@@ -927,6 +931,15 @@ DROP POLICY IF EXISTS settings_public ON public.app_settings;
 CREATE POLICY settings_public ON public.app_settings FOR SELECT USING (true);
 -- invites, agent_keys, rate_limits, audit_log: no policies. Functions only.
 
+-- Start from nothing. Supabase's default privileges grant anon and authenticated ALL
+-- on every new table, view, sequence and function in public, so without this the
+-- auto-updatable view public_profiles (owned by postgres, which bypasses RLS) would be
+-- writable and deletable through the API. REVOKE ALL rather than a list, because ALL
+-- also covers MAINTAIN on PostgreSQL 17 and any privilege a later version adds.
+-- "ALL TABLES" includes views (public_profiles, post_trail).
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
+
 -- Column-level: the public never selects private columns of profiles directly.
 REVOKE ALL ON public.profiles FROM anon, authenticated;
 GRANT SELECT (id, handle, kind, emotion, color, created_at, role, base_emotion, base_color, felt_emotion, felt_color, style, accept_from, consent_version, consent_at, stopped_at)
@@ -939,6 +952,8 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO service_role;
 -- -----------------------------------------------------------------------------
 -- 12. Function grants: who may call what
 -- -----------------------------------------------------------------------------
+-- Revoke first (Supabase's default privileges grant EXECUTE to anon and authenticated
+-- on every new function), then grant exactly the list below.
 REVOKE ALL ON ALL FUNCTIONS IN SCHEMA public FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.ring_names(TEXT), public.ring_index(TEXT, TEXT), public.ring_d8(INT, INT), public.ring_step(INT, INT), public.ring_rho(INT, INT, INT, INT), public.setting(TEXT), public.telegram_link(TEXT) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.create_invite(TEXT, TEXT, TEXT), public.peek_invite(TEXT), public.react_to_post(UUID, TEXT, TEXT, TEXT, TEXT, TEXT), public.get_feed(TEXT, TEXT, INT, TIMESTAMPTZ) TO anon, authenticated;
@@ -967,6 +982,36 @@ BEGIN
       CREATE POLICY "post images are public" ON storage.objects FOR SELECT USING (bucket_id = 'post-images');
     EXCEPTION WHEN duplicate_object THEN NULL; END;
   END IF;
+END $$;
+
+-- -----------------------------------------------------------------------------
+-- 14. Pinned search_path on every function this file owns
+-- -----------------------------------------------------------------------------
+-- On Supabase, pgcrypto (digest, gen_random_bytes) lives in the `extensions` schema
+-- and an API session's search_path is only `public`, so unpinned functions fail with
+-- 42883. An unpinned SECURITY DEFINER function can also be hijacked by objects on the
+-- caller's search_path. `extensions` is ignored where it does not exist (plain
+-- PostgreSQL, pgcrypto in public); pg_temp is last so temp objects never shadow ours.
+-- Every definition above carries the same SET clause, so re-applying this file never
+-- leaves a function unpinned, even for a moment. This block is the safety net for a
+-- definition that forgets it; it runs at the end and is idempotent.
+-- Functions that belong to an extension (pgcrypto in public on plain PostgreSQL) are
+-- left alone.
+DO $$
+DECLARE f REGPROCEDURE;
+BEGIN
+  FOR f IN
+    SELECT p.oid::regprocedure
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.prokind = 'f'
+      AND p.proowner = (SELECT oid FROM pg_roles WHERE rolname = current_user)
+      AND NOT EXISTS (SELECT 1 FROM pg_depend d
+                      WHERE d.classid = 'pg_proc'::regclass AND d.objid = p.oid AND d.deptype = 'e')
+  LOOP
+    EXECUTE format('ALTER FUNCTION %s SET search_path = public, extensions, pg_temp', f);
+  END LOOP;
 END $$;
 
 COMMENT ON TABLE public.profiles IS 'One identity per entity. base_* is the home (owner only), felt_* is private, emotion/color is public.';

@@ -29,12 +29,18 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ci
 
   schema:
-    name: exhibit schema on postgres 16
+    # On each version: Supabase's defaults first (pgcrypto in `extensions`, default
+    # privileges granting anon ALL), then schema.sql twice, then smoke.sql.
+    name: exhibit schema on postgres ${{ matrix.postgres }}
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ['16', '17']
     runs-on: docker
     container: node:22-bookworm
     services:
       postgres:
-        image: postgres:16
+        image: postgres:${{ matrix.postgres }}
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: hermes
@@ -46,12 +52,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Wait for Postgres
         run: for i in $(seq 1 60); do pg_isready -h postgres -U postgres && exit 0; sleep 1; done; exit 1
+      - name: emulate Supabase (demo/supabase-defaults.sql)
+        run: psql -h postgres -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f demo/supabase-defaults.sql
       - name: apply schema.sql to an empty database
+        run: psql -h postgres -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+      - name: schema.sql is idempotent (applies twice)
         run: psql -h postgres -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
       - name: run smoke.sql
         run: psql -h postgres -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f supabase/smoke.sql
-      - name: schema.sql is idempotent (applies twice)
-        run: psql -h postgres -U postgres -d hermes -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
 
   e2e:
     name: exhibit end to end (scenario and browser)

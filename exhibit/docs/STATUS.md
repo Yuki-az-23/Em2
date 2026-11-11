@@ -1,8 +1,9 @@
 # מצב הפרויקט: מה קיים, מה בדוק, מה חסר
 
-עדכון אחרון: המיצג עבר לתיקייה `exhibit/` ליד שרת ה-Go (ADR-016), וקיבל דמו מקומי
-שרץ מקצה לקצה. כל מה שלא דורש את השרת הפרטי, חשבון Cloudflare או טוקן של בוט נבנה
-ונבדק, גם מול מסד ו-Worker אמיתיים. השאר ממתין לבעלים.
+עדכון אחרון: נוסף קיט לפריסת בדיקה על VM ב-Proxmox מאחורי Cloudflare (`deploy/`, ספר
+ההפעלה ב-`deploy/README.md`). לפני כן המיצג עבר לתיקייה `exhibit/` ליד שרת ה-Go (ADR-016),
+וקיבל דמו מקומי שרץ מקצה לקצה. כל מה שלא דורש את השרת הפרטי, חשבון Cloudflare או טוקן של
+בוט נבנה ונבדק, גם מול מסד ו-Worker אמיתיים. הפריסה עצמה ממתינה לבעלים.
 
 ## 1. צינור ההזנה, מקצה לקצה
 
@@ -33,15 +34,42 @@
 - **`npm run test:e2e`**: Chromium עובר דרך הדלת, הסימולטור והקיר, ומחבק את הכרטיס שנוצר. עובר.
 - CI מריץ את שניהם בכל שינוי ב-`exhibit/`.
 
+## 2א. קיט הפריסה (`deploy/`)
+
+| קובץ | מה |
+|---|---|
+| `deploy/bootstrap-vm.sh` | סקריפט אחד ואידמפוטנטי ל-VM: Docker, Supabase בתג `self-hosted/v0.8.4` על loopback, סכמה ו-`smoke.sql` כשער, cloudflared, גיבוי לילי, ודוח PASS/FAIL בלי סודות עם סריקת דליפות |
+| `deploy/healthcheck.sh` | בדיקות לקריאה בלבד על ה-VM: קונטיינרים, מאזינים, REST, Realtime, WAF, הרשאות anon, גיבוי |
+| `deploy/cloudflare-test.sh` | מהמחשב של הבעלים: R2, ה-Worker עם `--env test` וסודותיו, האתר, webhook, בדיקות מבחוץ |
+| `deploy/backup.sh` + `deploy/systemd/` | `pg_dump -Fc` ו-Storage כל לילה, סבב 14 יום |
+| `deploy/config.example`, `deploy/supabase/`, `deploy/edge/` | ההגדרות וה-overrides. קבצי upstream לא נערכים |
+| `wrangler.site.jsonc`, `env.test` ב-`worker/wrangler.jsonc` | האתר וה-Worker של הבדיקה, בלי `workers.dev` |
+
+תיקונים שהתכנון חשף ונכנסו יחד עם הקיט: `search_path` נעול בכל פונקציה ב-`schema.sql`
+(ב-Supabase `pgcrypto` יושב בסכמת `extensions`); `REVOKE` מפורש של כתיבה מ-anon ו-authenticated,
+כי הרשאות ברירת המחדל של Supabase היו משאירות את `public_profiles` פתוח לכתיבה; בלוק ב-`smoke.sql`
+שבודק את זה; `demo/supabase-defaults.sql` שמדמה את Supabase ב-CI; `max_tokens` ו-`steps` ב-`ai.js`;
+וה-cron מעביר ל-`failed` שיחה שתקועה ב-`closed` יותר מ-15 דקות.
+
+**לא הורץ מכאן**: הדומיין, ה-tunnel, Supabase האמיתי על Postgres 17, ו-Workers AI. ספר ההפעלה
+מסמן כל הנחה שלא אומתה.
+
 ## 3. מה ממתין לבעלים
 
 | מה | למה אי אפשר מכאן | איפה כתוב |
 |---|---|---|
-| VM, Supabase, Tunnel, דומיין | דורש את המכונה והחשבון | `infra/README.md`, `BUILD_PLAN.md` סעיף 6 |
-| טוקן בוט, סוד webhook, סודות Worker | דורש BotFather ו-wrangler עם חשבון | `infra/README.md` שלבים 6–7 |
+| לאשר את הדומיין (`solorpunk.com` כברירת מחדל, האיות לא אומת) והגדרות zone | דורש את חשבון Cloudflare | `deploy/README.md` שלבים 1–2 |
+| WAF, Access, tunnel, בסדר הזה | דורש את חשבון Cloudflare | `deploy/README.md` שלב 3 |
+| בוט בדיקה ב-BotFather | דורש טלגרם | `deploy/README.md` שלב 4 |
+| VM, `bootstrap-vm.sh`, ולשלוח חזרה רק את הדוח | דורש את המכונה | `deploy/README.md` שלבים 5–7 |
+| `cloudflare-test.sh`: R2, Worker, סודות, אתר, webhook | דורש wrangler עם חשבון וטוקן בוט | `deploy/README.md` שלב 8 |
+| שיחה אמיתית בין שני טלפונים, ומדידה שהצינור מסיים בתוך 30 השניות של `waitUntil` | אחרי כל מה שלמעלה | `deploy/README.md` שלב 9 |
+| בדיקת שחזור מגיבוי | דורש את ה-VM | `deploy/README.md` שלב 11 |
 | הערכת עברית של `gpt-oss-120b` על 30 הודעות | דורש Workers AI אמיתי | `BUILD_PLAN.md` 6.3 |
 | כיול ציור וסגנונות | דורש Workers AI אמיתי | שלב 10 |
-| שיחה אמיתית בין שני טלפונים | אחרי כל מה שלמעלה | שלב 7 |
+
+עוד חסר אחרי הבדיקה: עותק גיבוי מחוץ למכונה (R2), מצב "הקיר נח", SMTP, סגירת ההרשמה
+(`DISABLE_SIGNUP`), ומחיקת תמונות R2 כשמושכים פוסט.
 
 ## 3א. מה הדמו חשף
 
@@ -54,4 +82,4 @@
 
 1. **פרטיות נשענת על ההשחרה.** המודל חייב להחזיר JSON מאושר, אחרת הכרטיס לא יוצא. אבל השחרה שאישרה ופספסה שם לא נתפסת, אלא אם השם מופיע בפרפרזה (אז `findLeak` תופס). לכן ההערכה בעברית לפני השקה אינה אופציונלית.
 2. **"בלי פנים" נאכף בפרומפט בלבד.** אין מסנן פנים בצד השרת.
-3. **דיסק אחד.** הגיבוי ל-R2 חובה לפני שיחה ראשונה.
+3. **דיסק אחד.** הגיבוי הלילי קיים, אבל על אותו דיסק. עותק ל-R2 חובה לפני שיחה ראשונה אמיתית, ועוד לא קיים.

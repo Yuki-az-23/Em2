@@ -56,13 +56,31 @@ The scenario checks, against the real database and worker:
 
 | Left out | Why | Where it lives for real |
 |---|---|---|
-| Real Telegram | The hub fakes the Bot API | `worker/src/telegram.js`, webhook set per `infra/README.md` |
+| Real Telegram | The hub fakes the Bot API | `worker/src/telegram.js`, webhook set per `deploy/README.md` |
 | The real model | `AI_MODE=fake` redacts simple names and summarizes from templates; every card it makes says `model: demo-fake` | Workers AI, `worker/src/ai.js` |
 | Pictures | The fake model draws nothing | Workers AI image model, R2 |
 | Accounts, settings, agents | No sign-in service | Full Supabase (`supabase start` or self-hosted) |
 | Realtime | No realtime server; the wall polls every 5 seconds | Supabase Realtime |
 
 The door allows three invitations per address per ten minutes, in the demo too.
+
+## Deploy
+
+The test deployment runs the backend on one Proxmox VM (Supabase self-hosted,
+pinned at `self-hosted/v0.8.4`, on the VM's loopback) behind a Cloudflare
+Tunnel, and the site and the Hermes worker on Cloudflare Workers. The domain is
+a parameter; the default is `solorpunk.com`.
+
+The owner runbook, in Hebrew with English commands, is
+[`deploy/README.md`](deploy/README.md). In short:
+
+1. Cloudflare: zone settings, then the WAF and cache rules, then Access, then the tunnel.
+2. On the VM: `sudo bash exhibit/deploy/bootstrap-vm.sh`, and send back only its report.
+3. On your machine: copy the handoff file to `~/.config/exhibit-test/`, then run
+   `bash deploy/cloudflare-test.sh`.
+4. One real conversation between two phones, then `deploy/healthcheck.sh` on the VM.
+
+`infra/README.md` is the short version of the same path.
 
 ## Layout
 
@@ -75,7 +93,8 @@ The door allows three invitations per address per ten minutes, in the demo too.
 | `demo/` | The local stack: launcher, hub, PostgREST launcher, scenario, compose file |
 | `e2e/` | The browser test |
 | `docs/` | The formal model, operations, build plan and status (Hebrew) |
-| `infra/` | Deployment order for the private server and Cloudflare |
+| `deploy/` | Test deployment kit: VM bootstrap, healthcheck, backup, Cloudflare script, runbook |
+| `infra/` | Deployment order for the private server and Cloudflare, in short |
 
 ## Tests
 
