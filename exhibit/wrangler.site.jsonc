@@ -1,0 +1,18 @@
+{
+  // The exhibit site on Workers static assets, for the test deployment.
+  // Build first with only VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY set
+  // (deploy/cloudflare-test.sh does both), then:
+  //   npx --no-install wrangler deploy -c wrangler.site.jsonc
+  // The domain below is the default; cloudflare-test.sh refuses to run if it
+  // differs from DOMAIN in the handoff file.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hermes-site-test",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./dist/",
+    "not_found_handling": "single-page-application"
+  },
+  "routes": [{ "pattern": "exhibit-test.solorpunk.com", "custom_domain": true }]
+}

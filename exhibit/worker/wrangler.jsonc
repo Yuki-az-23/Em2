@@ -16,5 +16,27 @@
   "ai": { "binding": "AI" },
   "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "hermes-images" }],
   "triggers": { "crons": ["*/10 * * * *"] },
-  "routes": [{ "pattern": "hermes.example.invalid", "custom_domain": true }]
+  "routes": [{ "pattern": "hermes.example.invalid", "custom_domain": true }],
+
+  // The test deployment: `npx --no-install wrangler deploy --env test` (deploy/cloudflare-test.sh).
+  // Bindings, vars and routes are not inherited by an env, so each is repeated here.
+  // The domain below is the default; cloudflare-test.sh refuses to run if it differs
+  // from DOMAIN in the handoff file.
+  "env": {
+    "test": {
+      "name": "hermes-test",
+      "workers_dev": false,               // reachable only through the zone, no *.workers.dev twin
+      "preview_urls": false,
+      "vars": {
+        "AI_TEXT_MODEL": "@cf/openai/gpt-oss-120b",
+        "AI_IMAGE_MODEL": "@cf/black-forest-labs/flux-1-schnell",
+        "PUBLIC_IMAGE_BASE": "https://images-test.solorpunk.com",
+        "PIPELINE_MAX_ATTEMPTS": "3"
+      },
+      "ai": { "binding": "AI" },
+      "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "hermes-images-test" }],
+      "triggers": { "crons": ["*/10 * * * *"] },
+      "routes": [{ "pattern": "hermes-test.solorpunk.com", "custom_domain": true }]
+    }
+  }
 }

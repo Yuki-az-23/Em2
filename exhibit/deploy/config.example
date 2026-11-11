@@ -1,0 +1,38 @@
+# /etc/exhibit-test/config: settings for bootstrap-vm.sh and healthcheck.sh.
+#
+# Create it on the VM as root, mode 600:
+#   sudo install -d -m 700 /etc/exhibit-test
+#   sudo install -m 600 ~/Em2/exhibit/deploy/config.example /etc/exhibit-test/config
+#   sudoedit /etc/exhibit-test/config
+#
+# Edit at least BOT_USERNAME (ships empty), SSH_ALLOW_CIDR (the default is only
+# an example), CF_TUNNEL_TOKEN and EM2_REF.
+#
+# Plain KEY=VALUE lines. The file is parsed, never sourced; unknown keys are
+# an error. Only CF_TUNNEL_TOKEN is secret: never commit a filled-in copy.
+
+# Cloudflare zone the test hostnames live under (api-test.<DOMAIN>,
+# exhibit-test.<DOMAIN>, studio-test.<DOMAIN>, ...). Default: solorpunk.com.
+DOMAIN=solorpunk.com
+
+# Username of the TEST bot from @BotFather, without the @ (required; the
+# script stops while it is empty). The bot token never goes on the VM.
+BOT_USERNAME=
+
+# 40-hex commit on main that has the schema and smoke fixes. The VM fetches
+# exactly this commit from EM2_REPO. Leave empty to use the checkout the
+# script runs from (the report then says WARN em2_ref).
+EM2_REF=
+EM2_REPO=https://github.com/Yuki-az-23/Em2
+
+# 1 applies exhibit/supabase/seed.sql (twelve demo cards) once. Default 0.
+SEED_DEMO=0
+
+# The firewall allows SSH only from here. It must contain the address you SSH
+# from, or the script stops before enabling the firewall.
+SSH_ALLOW_CIDR=192.168.1.0/24
+
+# Token of the "exhibit-test" tunnel (Networking > Tunnels > the tunnel >
+# install command, the long value after --token). Optional: empty skips
+# cloudflared. Create the WAF rule and the Access app before its routes.
+CF_TUNNEL_TOKEN=

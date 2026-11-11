@@ -11,6 +11,12 @@ const REDACT_SCHEMA = {
 
 import { makeFakeAi } from './fakeAi.js';
 
+// The text model's default output budget (256 tokens) cuts the JSON short, and
+// gpt-oss spends part of the budget on reasoning before it answers.
+export const TEXT_MAX_TOKENS = 4096;
+// flux-1-schnell takes `steps` (max 8); its input schema rejects `num_steps`.
+export const IMAGE_STEPS = 4;
+
 export function makeAi(env) {
   if (env.AI_MODE === 'fake') return makeFakeAi();
   const ai = env.AI;
@@ -25,7 +31,8 @@ export function makeAi(env) {
         { role: 'system', content: 'אתה מסיר מזהים מטקסט בעברית. החלף כל שם פרטי, שם משפחה, שם מקום, שם עסק, מספר טלפון, כתובת, אימייל, ושם של אדם שלישי ב-[מושחר]. אל תשנה שום דבר אחר. החזר JSON בלבד.' },
         { role: 'user', content: text }
       ],
-      response_format: { type: 'json_schema', json_schema: REDACT_SCHEMA }
+      response_format: { type: 'json_schema', json_schema: REDACT_SCHEMA },
+      max_tokens: TEXT_MAX_TOKENS
     });
     const parsed = pickJson(r);
     if (!parsed || typeof parsed.text !== 'string' || !Array.isArray(parsed.removed)) return { text: '', removed: [], confirmed: false };
@@ -39,7 +46,8 @@ export function makeAi(env) {
       messages: [
         { role: 'system', content: 'אתה המערכת. תאר בשניים או שלושה משפטים בעברית, בגוף שלישי, מה קרה בין שני אנשים בשיחה הזאת. בלי ציטוטים, בלי שמות, בלי פרטים מזהים. קול של מכונה שמסכמת.' },
         { role: 'user', content: redactedText }
-      ]
+      ],
+      max_tokens: TEXT_MAX_TOKENS
     });
     const out = typeof r === 'string' ? r : (r && (r.response || r.output_text || (r.choices && r.choices[0]?.message?.content))) || '';
     return String(out).trim();
@@ -49,7 +57,7 @@ export function makeAi(env) {
   async function render(seed, style) {
     if (!ai) return null;
     const prompt = `${style || 'watercolor'} illustration, ${seed || 'two figures, distance, quiet'}, no faces, no text, silhouettes or back view, abstract, soft light`;
-    const r = await ai.run(imageModel, { prompt, num_steps: 4 });
+    const r = await ai.run(imageModel, { prompt, steps: IMAGE_STEPS });
     if (r instanceof ArrayBuffer) return r;
     if (r && r.image && typeof r.image === 'string') return Uint8Array.from(atob(r.image), (c) => c.charCodeAt(0)).buffer;
     if (r && typeof r.arrayBuffer === 'function') return r.arrayBuffer();

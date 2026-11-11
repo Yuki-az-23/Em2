@@ -1,0 +1,38 @@
+# cloudflared for the exhibit test deployment, as its own compose project.
+#
+# bootstrap-vm.sh copies this file to /opt/exhibit-test/edge and writes
+# /opt/exhibit-test/edge/.env (root, mode 600) with TUNNEL_TOKEN and
+# CLOUDFLARED_IMAGE. Start it by hand with:
+#
+#   sudo docker compose -f /opt/exhibit-test/edge/docker-compose.yml -p exhibit-edge up -d
+#
+# (/opt/exhibit-test/edge is root-only, mode 700, so a plain cd fails.)
+#
+# Host networking is required: the Supabase gateway binds only to the VM's
+# loopback (127.0.0.1:8000), which a bridge network cannot reach. The tunnel's
+# routes point at http://localhost:8000.
+#
+# --metrics 127.0.0.1:20241 is required too. Without it, cloudflared running in
+# a container binds its metrics and /ready server on 0.0.0.0:20241, which host
+# networking would expose on the LAN. healthcheck.sh polls
+# http://127.0.0.1:20241/ready and checks that nothing but :22 listens on a
+# non-loopback address.
+
+name: exhibit-edge
+
+services:
+  cloudflared:
+    image: ${CLOUDFLARED_IMAGE:?set CLOUDFLARED_IMAGE, e.g. cloudflare/cloudflared:2026.9.0}
+    command: ["tunnel", "--no-autoupdate", "--metrics", "127.0.0.1:20241", "run"]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN from the exhibit-test tunnel}
+    network_mode: host
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"

@@ -6,6 +6,11 @@
 \set ON_ERROR_STOP on
 BEGIN;
 
+-- Call everything the way PostgREST does: its sessions have search_path = public only
+-- (db-schemas plus db-extra-search-path), never `extensions`, where Supabase keeps
+-- pgcrypto. A function that finds digest() only through the caller's path fails here.
+SET LOCAL search_path = public;
+
 -- Pretend to be an anonymous web visitor from one address.
 SELECT set_config('request.headers', '{"cf-connecting-ip":"203.0.113.7"}', true);
 SELECT set_config('request.jwt.claim.sub', '', true);
@@ -267,6 +272,89 @@ BEGIN
   IF (r->>'emotionDeclared')::boolean OR (r->>'colorDeclared')::boolean THEN RAISE EXCEPTION 'reset should clear: %', r; END IF;
   IF r->>'emotion' <> 'trust' THEN RAISE EXCEPTION 'reset keeps the last state until a new answer'; END IF;
   RAISE NOTICE 'ok 13: declare_state';
+END $$;
+
+-- 14. Privileges, as Supabase's default privileges would leave them if schema.sql did
+--     not revoke them first (run in CI after demo/supabase-defaults.sql). anon and
+--     authenticated write nothing directly: not the auto-updatable view public_profiles
+--     (owned by postgres, so RLS on profiles would not stop it), not the wall.
+DO $$ DECLARE r TEXT; op TEXT; stmt TEXT; bad TEXT;
+BEGIN
+  FOREACH r IN ARRAY ARRAY['anon', 'authenticated'] LOOP
+    FOREACH stmt IN ARRAY ARRAY[
+      $s$INSERT INTO public.public_profiles(id, handle, kind, emotion, color) VALUES (gen_random_uuid(), 'פולש', 'human', 'joy', 'yellow')$s$,
+      $s$UPDATE public.public_profiles SET handle = 'פולש' WHERE id = '00000000-0000-0000-0000-000000000000'$s$,
+      $s$DELETE FROM public.public_profiles WHERE id = '00000000-0000-0000-0000-000000000000'$s$,
+      $s$INSERT INTO public.posts(emotion, color) VALUES ('joy', 'yellow')$s$,
+      $s$UPDATE public.posts SET body = 'פולש' WHERE id = '00000000-0000-0000-0000-000000000000'$s$,
+      $s$DELETE FROM public.posts WHERE id = '00000000-0000-0000-0000-000000000000'$s$,
+      $s$TRUNCATE public.posts CASCADE$s$,
+      $s$UPDATE public.app_settings SET value = 'x' WHERE key = 'telegram_bot'$s$
+    ] LOOP
+      BEGIN
+        EXECUTE format('SET LOCAL ROLE %I', r);
+        EXECUTE stmt;
+        RESET ROLE;
+        RAISE EXCEPTION '% must not run: %', r, stmt USING ERRCODE = 'P0002';
+      EXCEPTION WHEN insufficient_privilege THEN NULL;
+      END;
+    END LOOP;
+  END LOOP;
+  RESET ROLE;
+
+  -- Table privileges: SELECT only, and only on what the site reads. relacl covers views
+  -- too; any privilege a default grant left behind (including MAINTAIN on 17) shows here.
+  SELECT string_agg(format('%s %s on %s', g.rolname, a.privilege_type, c.relname), ', ' ORDER BY 1) INTO bad
+  FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace,
+       LATERAL aclexplode(c.relacl) a JOIN pg_roles g ON g.oid = a.grantee
+  WHERE n.nspname = 'public' AND g.rolname IN ('anon', 'authenticated')
+    AND NOT (a.privilege_type = 'SELECT' AND (
+      c.relname IN ('public_profiles', 'post_trail', 'posts', 'comments', 'braces', 'follows', 'app_settings')
+      OR (g.rolname = 'authenticated' AND c.relname IN ('contacts', 'exchanges', 'messages'))));
+  IF bad IS NOT NULL THEN RAISE EXCEPTION 'unexpected table privileges: %', bad; END IF;
+
+  -- Every function this schema owns has a pinned search_path (extension members excluded).
+  SELECT string_agg(p.oid::regprocedure::text, ', ') INTO bad
+  FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname = 'public' AND p.prokind = 'f'
+    AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_proc'::regclass AND d.objid = p.oid AND d.deptype = 'e')
+    AND NOT EXISTS (SELECT 1 FROM unnest(p.proconfig) cfg WHERE cfg LIKE 'search_path=%');
+  IF bad IS NOT NULL THEN RAISE EXCEPTION 'functions without a pinned search_path: %', bad; END IF;
+
+  -- anon may call only the public RPCs, even with Supabase's default EXECUTE grants.
+  SELECT string_agg(p.oid::regprocedure::text, ', ') INTO bad
+  FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname = 'public' AND p.prokind = 'f'
+    AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_proc'::regclass AND d.objid = p.oid AND d.deptype = 'e')
+    AND has_function_privilege('anon', p.oid, 'EXECUTE')
+    AND p.proname NOT IN ('ring_names', 'ring_index', 'ring_d8', 'ring_step', 'ring_rho', 'setting', 'telegram_link',
+                          'create_invite', 'peek_invite', 'react_to_post', 'get_feed');
+  IF bad IS NOT NULL THEN RAISE EXCEPTION 'anon may execute: %', bad; END IF;
+  RAISE NOTICE 'ok 14: anon and authenticated write nothing directly; search_path pinned';
+END $$;
+
+-- 15. The anonymous RPCs work as anon with an API search_path (pgcrypto reached only
+--     through the functions' own path): door, peek, feed, reaction on a missing post.
+DO $$ DECLARE r JSONB; n INT;
+BEGIN
+  DELETE FROM public.rate_limits;
+  PERFORM set_config('request.headers', '{"cf-connecting-ip":"203.0.113.9"}', true);
+  PERFORM set_config('request.jwt.claims', '{"role":"anon"}', true);
+  SET LOCAL ROLE anon;
+  SET LOCAL search_path = public;
+  r := public.create_invite('שי', 'participant', 'trust_signal');
+  IF char_length(r->>'code') <> 22 THEN RAISE EXCEPTION 'anon create_invite: %', r; END IF;
+  IF public.peek_invite(r->>'code') IS NULL THEN RAISE EXCEPTION 'anon peek_invite'; END IF;
+  SELECT count(*) INTO n FROM public.get_feed('joy', 'yellow');
+  BEGIN
+    PERFORM public.react_to_post(gen_random_uuid(), 'trigger', 'joy', 'yellow');
+    RAISE EXCEPTION 'reaction on a missing post should fail';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE IN ('42883', '42501') OR SQLERRM LIKE '%does not exist%' THEN RAISE; END IF;
+  END;
+  RESET ROLE;
+  PERFORM set_config('request.jwt.claims', '', true);
+  RAISE NOTICE 'ok 15: anon RPCs under search_path=public';
 END $$;
 
 ROLLBACK;

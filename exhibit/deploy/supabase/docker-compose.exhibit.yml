@@ -1,0 +1,53 @@
+# Exhibit overrides for Supabase self-hosted (self-hosted/v0.8.4).
+#
+# bootstrap-vm.sh copies this file next to the upstream docker-compose.yml in
+# /opt/exhibit-test/supabase and adds it through COMPOSE_FILE in .env:
+#
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.exhibit.yml
+#
+# Upstream files are never edited. What this file changes:
+#
+# - functions (supabase-edge-functions) and supavisor (supabase-pooler) move to
+#   the profile "off", so `docker compose up -d` never starts them. The exhibit
+#   uses no edge functions, and nothing connects to Postgres from outside the
+#   compose network. Upstream publishes the pooler on 0.0.0.0:5432 and :6543;
+#   with the profile off those ports are never opened. Requests to
+#   /functions/v1/* through the gateway are expected to return 503.
+# - Every running service gets json-file logging with a size cap. The gateway's
+#   access log can carry the public anon key in request headers; the cap limits
+#   how long such lines stay on disk.
+#
+# There is deliberately no ports override. The gateway binds to loopback through
+# API_GW_HTTP_PORT=127.0.0.1:8000 in .env, because upstream reads
+# ${API_GW_HTTP_PORT:-${KONG_HTTP_PORT:-8000}}:8000/tcp for its only port.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
+services:
+  functions:
+    profiles: ["off"]
+  supavisor:
+    profiles: ["off"]
+
+  db:
+    logging: *logging
+  auth:
+    logging: *logging
+  rest:
+    logging: *logging
+  realtime:
+    logging: *logging
+  storage:
+    logging: *logging
+  imgproxy:
+    logging: *logging
+  meta:
+    logging: *logging
+  studio:
+    logging: *logging
+  api-gw:
+    logging: *logging
